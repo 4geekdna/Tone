@@ -321,8 +321,6 @@
     let currentAudio = null;
     let currentAudioUrl = null;
     let speechController = null;
-    let affirmationTimeout = null;
-    let currentAffirmationText = "";
 
     const affirmationIndex = {};
     CHAKRAS.forEach(ch => affirmationIndex[ch.name] = 0);
@@ -375,7 +373,6 @@
 
     async function speakWithElevenLabs(text) {
       stopVoice();
-      currentAffirmationText = text;
       speechController = new AbortController();
 
       setStatus("Generating voice...");
@@ -527,7 +524,6 @@
 
     function clearAffirmation() {
       stopVoice();
-      clearTimeout(affirmationTimeout);
       affirmLabel.style.display = "none";
       affirmText.textContent = "Select a chakra to begin";
       affirmPanel.classList.add("empty");
@@ -536,34 +532,28 @@
       setStatus("");
     }
 
-    // ---------- Main tap handler ----------
+    // ---------- Main tap handler (SPEAKS IMMEDIATELY) ----------
     function handleCardTap(ch) {
       if (isPlayingAll) stopPlayAll();
 
-      clearTimeout(affirmationTimeout);
       stopVoice();
 
       const affirmation = getNextAffirmation(ch);
 
-      // Show text immediately
+      // 1. Show text immediately
       showAffirmation(ch, affirmation);
 
-      // Start tone immediately
+      // 2. Start tone immediately
       playTone(ch);
 
-      setStatus("Tone playing... voice in 6 seconds");
-
-      // Speak after 6 seconds
-      affirmationTimeout = setTimeout(() => {
-        speakWithElevenLabs(affirmation);
-      }, 6000);
+      // 3. Speak immediately
+      speakWithElevenLabs(affirmation);
     }
 
     // ---------- Play All ----------
     function stopPlayAll() {
       isPlayingAll = false;
       currentPlayAllIndex = 0;
-      clearTimeout(affirmationTimeout);
       playAllBtn.textContent = "Play All";
       stopTone();
       clearAffirmation();
@@ -582,18 +572,10 @@
       showAffirmation(ch, affirmation);
       playTone(ch, 40);
 
-      setStatus("Tone playing... voice in 6 seconds");
-
-      await new Promise(r => {
-        affirmationTimeout = setTimeout(r, 6000);
-      });
-
-      if (!isPlayingAll) return;
-
       await speakWithElevenLabs(affirmation);
 
-      // Wait until voice finishes
-      await new Promise(r => setTimeout(r, 1200));
+      // Small pause after voice finishes
+      await new Promise(r => setTimeout(r, 1000));
 
       currentPlayAllIndex++;
       playAllSequence();
@@ -610,11 +592,9 @@
       playAllSequence();
     });
 
-    stopBtn.addEventListener("click", () => {
-      stopPlayAll();
-    });
+    stopBtn.addEventListener("click", stopPlayAll);
 
-    // Volume
+    // Volume controls both
     volumeSlider.addEventListener("input", (e) => {
       volume = parseFloat(e.target.value);
       if (currentGain && audioCtx) {
@@ -625,7 +605,7 @@
       }
     });
 
-    // Unlock audio on first interaction
+    // Unlock audio
     document.body.addEventListener("touchstart", ensureAudio, { once: true });
     document.body.addEventListener("click", ensureAudio, { once: true });
 
