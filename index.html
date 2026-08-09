@@ -362,7 +362,6 @@
     let playAllTimeout = null;
     let currentPlayAllIndex = 0;
     let currentAudio = null;
-    let affirmationTimeout = null;
 
     const affirmationIndex = {};
     CHAKRAS.forEach(ch => affirmationIndex[ch.name] = 0);
@@ -499,7 +498,6 @@
         currentAudio = null;
       }
       speechSynthesis.cancel();
-      clearTimeout(affirmationTimeout);
       
       affirmText.style.opacity = "0";
       setTimeout(() => {
@@ -533,7 +531,7 @@
     }
 
     function playTone(ch, duration = null) {
-      ensureAudio();
+      ensureAudio();          // force resume every time
       stopTone();
 
       const osc = audioCtx.createOscillator();
@@ -542,6 +540,7 @@
       osc.type = "sine";
       osc.frequency.value = ch.freq;
 
+      // Start silent then ramp up (helps prevent suspension on iOS)
       gain.gain.setValueAtTime(0, audioCtx.currentTime);
       gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.1);
 
@@ -549,7 +548,7 @@
       gain.connect(audioCtx.destination);
       osc.start();
 
-      const playDuration = duration || (loop ? null : 14); // longer so it covers the delayed voice
+      const playDuration = duration || (loop ? null : 8);
 
       if (playDuration) {
         gain.gain.setValueAtTime(volume, audioCtx.currentTime + playDuration - 0.5);
@@ -561,6 +560,7 @@
       currentGain = gain;
       activeName = ch.name;
 
+      // Visual update
       document.querySelectorAll(".card").forEach(c => {
         if (c.dataset.name === ch.name) {
           c.classList.add("playing");
@@ -576,26 +576,18 @@
     function handleCardTap(ch) {
       if (isPlayingAll) stopPlayAll();
 
-      // Clear any previous delayed affirmation
-      clearTimeout(affirmationTimeout);
-
       const affirmation = getNextAffirmation(ch);
+      showAffirmation(ch, affirmation);
+      speakWithElevenLabs(affirmation);
 
-      // Start tone immediately
+      if (activeName === ch.name) return;
       playTone(ch);
-
-      // After 6 seconds → show text + play voice
-      affirmationTimeout = setTimeout(() => {
-        showAffirmation(ch, affirmation);
-        speakWithElevenLabs(affirmation);
-      }, 6000);
     }
 
     function stopPlayAll() {
       isPlayingAll = false;
       currentPlayAllIndex = 0;
       clearTimeout(playAllTimeout);
-      clearTimeout(affirmationTimeout);
       playAllBtn.textContent = "Play All (11s each)";
       stopTone();
       clearAffirmation();
@@ -610,17 +602,12 @@
       const ch = CHAKRAS[currentPlayAllIndex];
       const affirmation = getNextAffirmation(ch);
 
-      // Start tone right away
+      showAffirmation(ch, affirmation);
+      speakWithElevenLabs(affirmation);
       playTone(ch, 11);
 
-      // Voice starts after 6 seconds
-      affirmationTimeout = setTimeout(() => {
-        showAffirmation(ch, affirmation);
-        speakWithElevenLabs(affirmation);
-      }, 6000);
-
       currentPlayAllIndex++;
-      playAllTimeout = setTimeout(playAllSequence, 11000); // total 11 seconds per chakra
+      playAllTimeout = setTimeout(playAllSequence, 11500);
     }
 
     playAllBtn.addEventListener("click", () => {
