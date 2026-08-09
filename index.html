@@ -192,10 +192,10 @@
 
     .status {
       text-align: center;
-      font-size: 0.8rem;
-      color: #888;
-      margin-top: 8px;
-      min-height: 1.2em;
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-top: 10px;
+      min-height: 1.3em;
     }
   </style>
 </head>
@@ -215,7 +215,7 @@
   <div class="controls">
     <div class="control-row">
       <label>Volume</label>
-      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.4" />
+      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.45" />
     </div>
 
     <div class="btn-row">
@@ -231,9 +231,9 @@
   </div>
 
   <script>
-    // ========== API KEY (kept as requested) ==========
+    // ========== API KEY ==========
     const ELEVENLABS_API_KEY = "sk_e9322bc962e4375aa8656bae5caf6a5ddf3fb744e54167aa";
-    // ================================================
+    // =============================
 
     const VOICE_ID = "EXAVITQu4vr4xnSDxMaL"; // Sarah
 
@@ -310,23 +310,24 @@
       }
     ];
 
-    // ========== State ==========
+    // State
     let audioCtx = null;
     let currentOsc = null;
     let currentGain = null;
     let activeName = null;
-    let volume = 0.4;
+    let volume = 0.45;
     let isPlayingAll = false;
     let currentPlayAllIndex = 0;
     let currentAudio = null;
     let currentAudioUrl = null;
     let speechController = null;
     let affirmationTimeout = null;
+    let currentAffirmationText = "";
 
     const affirmationIndex = {};
     CHAKRAS.forEach(ch => affirmationIndex[ch.name] = 0);
 
-    // ========== DOM ==========
+    // DOM
     const grid = document.getElementById("chakraGrid");
     const volumeSlider = document.getElementById("volume");
     const stopBtn = document.getElementById("stopAll");
@@ -355,7 +356,7 @@
       statusEl.textContent = msg || "";
     }
 
-    // ========== Voice control ==========
+    // ---------- Voice ----------
     function stopVoice() {
       if (speechController) {
         speechController.abort();
@@ -363,7 +364,6 @@
       }
       if (currentAudio) {
         currentAudio.pause();
-        currentAudio.currentTime = 0;
         currentAudio = null;
       }
       if (currentAudioUrl) {
@@ -375,11 +375,12 @@
 
     async function speakWithElevenLabs(text) {
       stopVoice();
+      currentAffirmationText = text;
       speechController = new AbortController();
 
-      try {
-        setStatus("Generating voice...");
+      setStatus("Generating voice...");
 
+      try {
         const response = await fetch(
           `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
           {
@@ -404,11 +405,13 @@
         );
 
         if (!response.ok) {
-          throw new Error(`ElevenLabs failed: ${response.status}`);
+          const err = await response.text();
+          console.error("ElevenLabs error:", response.status, err);
+          throw new Error("API error " + response.status);
         }
 
-        const audioBlob = await response.blob();
-        currentAudioUrl = URL.createObjectURL(audioBlob);
+        const blob = await response.blob();
+        currentAudioUrl = URL.createObjectURL(blob);
         currentAudio = new Audio(currentAudioUrl);
         currentAudio.volume = volume;
 
@@ -417,20 +420,24 @@
           setStatus("");
         };
 
+        setStatus("Speaking...");
         await currentAudio.play();
-        setStatus("");
       } catch (err) {
-        if (err.name === "AbortError") return;
+        if (err.name === "AbortError") {
+          setStatus("");
+          return;
+        }
         console.error(err);
-        setStatus("Voice failed – using device voice");
+        setStatus("Using device voice...");
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.87;
+        utterance.rate = 0.88;
         utterance.volume = volume;
+        utterance.onend = () => setStatus("");
         speechSynthesis.speak(utterance);
       }
     }
 
-    // ========== Audio helpers ==========
+    // ---------- Tone ----------
     function ensureAudio() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -439,39 +446,6 @@
         audioCtx.resume().catch(() => {});
       }
       return audioCtx;
-    }
-
-    function getNextAffirmation(ch) {
-      const idx = affirmationIndex[ch.name] || 0;
-      const text = ch.affirmations[idx];
-      affirmationIndex[ch.name] = (idx + 1) % ch.affirmations.length;
-      return text;
-    }
-
-    function showAffirmation(ch, text) {
-      affirmLabel.style.display = "block";
-      affirmText.textContent = text;
-      affirmPanel.classList.remove("empty");
-      affirmPanel.style.background = ch.color + "33";
-
-      const card = document.querySelector(`.card[data-name="${ch.name}"]`);
-      if (card) {
-        const el = card.querySelector("[data-affirm]");
-        if (el) el.textContent = text;
-      }
-    }
-
-    function clearAffirmation() {
-      stopVoice();
-      clearTimeout(affirmationTimeout);
-
-      affirmLabel.style.display = "none";
-      affirmText.textContent = "Select a chakra to begin";
-      affirmPanel.classList.add("empty");
-      affirmPanel.style.background = "#1a1a22";
-
-      document.querySelectorAll("[data-affirm]").forEach(el => el.textContent = "");
-      setStatus("");
     }
 
     function stopTone() {
@@ -504,13 +478,12 @@
       osc.frequency.value = ch.freq;
 
       gain.gain.setValueAtTime(0, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.12);
+      gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.15);
 
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start();
 
-      // Long duration so it continues until another chakra is selected
       gain.gain.setValueAtTime(volume, audioCtx.currentTime + duration - 1);
       gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
       osc.stop(audioCtx.currentTime + duration + 0.05);
@@ -531,28 +504,62 @@
       });
     }
 
-    // ========== Main interaction ==========
+    // ---------- Affirmation helpers ----------
+    function getNextAffirmation(ch) {
+      const idx = affirmationIndex[ch.name] || 0;
+      const text = ch.affirmations[idx];
+      affirmationIndex[ch.name] = (idx + 1) % 5;
+      return text;
+    }
+
+    function showAffirmation(ch, text) {
+      affirmLabel.style.display = "block";
+      affirmText.textContent = text;
+      affirmPanel.classList.remove("empty");
+      affirmPanel.style.background = ch.color + "33";
+
+      const card = document.querySelector(`.card[data-name="${ch.name}"]`);
+      if (card) {
+        const el = card.querySelector("[data-affirm]");
+        if (el) el.textContent = text;
+      }
+    }
+
+    function clearAffirmation() {
+      stopVoice();
+      clearTimeout(affirmationTimeout);
+      affirmLabel.style.display = "none";
+      affirmText.textContent = "Select a chakra to begin";
+      affirmPanel.classList.add("empty");
+      affirmPanel.style.background = "#1a1a22";
+      document.querySelectorAll("[data-affirm]").forEach(el => el.textContent = "");
+      setStatus("");
+    }
+
+    // ---------- Main tap handler ----------
     function handleCardTap(ch) {
       if (isPlayingAll) stopPlayAll();
 
       clearTimeout(affirmationTimeout);
-      stopVoice();                       // ← stop previous voice immediately
+      stopVoice();
 
       const affirmation = getNextAffirmation(ch);
 
-      // 1. Show text right away
+      // Show text immediately
       showAffirmation(ch, affirmation);
 
-      // 2. Start tone (keeps playing)
+      // Start tone immediately
       playTone(ch);
 
-      // 3. Speak after 6 seconds
+      setStatus("Tone playing... voice in 6 seconds");
+
+      // Speak after 6 seconds
       affirmationTimeout = setTimeout(() => {
         speakWithElevenLabs(affirmation);
       }, 6000);
     }
 
-    // ========== Play All (waits for voice to finish) ==========
+    // ---------- Play All ----------
     function stopPlayAll() {
       isPlayingAll = false;
       currentPlayAllIndex = 0;
@@ -573,19 +580,20 @@
       const affirmation = getNextAffirmation(ch);
 
       showAffirmation(ch, affirmation);
-      playTone(ch, 30); // long enough for speech
+      playTone(ch, 40);
 
-      // Wait 6 seconds then speak
-      await new Promise(resolve => {
-        affirmationTimeout = setTimeout(resolve, 6000);
+      setStatus("Tone playing... voice in 6 seconds");
+
+      await new Promise(r => {
+        affirmationTimeout = setTimeout(r, 6000);
       });
 
       if (!isPlayingAll) return;
 
       await speakWithElevenLabs(affirmation);
 
-      // Small pause after voice finishes
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Wait until voice finishes
+      await new Promise(r => setTimeout(r, 1200));
 
       currentPlayAllIndex++;
       playAllSequence();
@@ -602,9 +610,11 @@
       playAllSequence();
     });
 
-    stopBtn.addEventListener("click", stopPlayAll);
+    stopBtn.addEventListener("click", () => {
+      stopPlayAll();
+    });
 
-    // Volume controls both tone and voice
+    // Volume
     volumeSlider.addEventListener("input", (e) => {
       volume = parseFloat(e.target.value);
       if (currentGain && audioCtx) {
@@ -615,7 +625,7 @@
       }
     });
 
-    // Unlock audio
+    // Unlock audio on first interaction
     document.body.addEventListener("touchstart", ensureAudio, { once: true });
     document.body.addEventListener("click", ensureAudio, { once: true });
 
