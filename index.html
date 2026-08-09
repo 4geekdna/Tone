@@ -549,13 +549,13 @@
       gain.connect(audioCtx.destination);
       osc.start();
 
-      const playDuration = duration || (loop ? null : 14); // longer so it covers the delayed voice
-
-      if (playDuration) {
-        gain.gain.setValueAtTime(volume, audioCtx.currentTime + playDuration - 0.5);
-        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + playDuration);
-        osc.stop(audioCtx.currentTime + playDuration + 0.05);
+      // Only stop automatically if a duration is given (used by Play All)
+      if (duration) {
+        gain.gain.setValueAtTime(volume, audioCtx.currentTime + duration - 0.5);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration + 0.05);
       }
+      // Otherwise the tone keeps playing until another chakra is selected
 
       currentOsc = osc;
       currentGain = gain;
@@ -576,13 +576,12 @@
     function handleCardTap(ch) {
       if (isPlayingAll) stopPlayAll();
 
-      // Clear any previous delayed affirmation
       clearTimeout(affirmationTimeout);
 
       const affirmation = getNextAffirmation(ch);
 
-      // Start tone immediately
-      playTone(ch);
+      // Start tone and keep it playing until another chakra is selected
+      playTone(ch);   // no duration = continuous
 
       // After 6 seconds → show text + play voice
       affirmationTimeout = setTimeout(() => {
@@ -610,7 +609,7 @@
       const ch = CHAKRAS[currentPlayAllIndex];
       const affirmation = getNextAffirmation(ch);
 
-      // Start tone right away
+      // Play tone for exactly 11 seconds in Play All mode
       playTone(ch, 11);
 
       // Voice starts after 6 seconds
@@ -620,7 +619,7 @@
       }, 6000);
 
       currentPlayAllIndex++;
-      playAllTimeout = setTimeout(playAllSequence, 11000); // total 11 seconds per chakra
+      playAllTimeout = setTimeout(playAllSequence, 11000);
     }
 
     playAllBtn.addEventListener("click", () => {
