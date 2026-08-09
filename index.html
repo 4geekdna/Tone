@@ -162,38 +162,6 @@
       background: #fff;
     }
 
-    .switch {
-      position: relative;
-      width: 48px;
-      height: 28px;
-    }
-
-    .switch input { opacity: 0; width: 0; height: 0; }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      inset: 0;
-      background: #333;
-      border-radius: 28px;
-      transition: 0.2s;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 22px;
-      width: 22px;
-      left: 3px;
-      bottom: 3px;
-      background: white;
-      border-radius: 50%;
-      transition: 0.2s;
-    }
-
-    input:checked + .slider { background: #4caf50; }
-    input:checked + .slider:before { transform: translateX(20px); }
-
     .btn-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -250,15 +218,6 @@
       <input type="range" id="volume" min="0" max="1" step="0.01" value="0.4" />
     </div>
 
-    <div class="control-row">
-      <label>Loop</label>
-      <label class="switch">
-        <input type="checkbox" id="loopToggle" />
-        <span class="slider"></span>
-      </label>
-      <span style="color:var(--muted); font-size:0.9rem;">Single chakra</span>
-    </div>
-
     <div class="btn-row">
       <button class="btn btn-playall" id="playAll">Play All (11s each)</button>
       <button class="btn btn-stop" id="stopAll">Stop</button>
@@ -276,8 +235,7 @@
     const ELEVENLABS_API_KEY = "sk_e9322bc962e4375aa8656bae5caf6a5ddf3fb744e54167aa";
     // =========================================
 
-    // Sarah - Mature, Reassuring, Confident (works on free plan)
-    const VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
+    const VOICE_ID = "EXAVITQu4vr4xnSDxMaL"; // Sarah
 
     const CHAKRAS = [
       {
@@ -363,6 +321,7 @@
     let currentAudio = null;
     let affirmationTimeout = null;
 
+    // Track which affirmation to show next for each chakra
     const affirmationIndex = {};
     CHAKRAS.forEach(ch => affirmationIndex[ch.name] = 0);
 
@@ -375,7 +334,7 @@
     const affirmText = document.getElementById("affirmText");
     const statusEl = document.getElementById("status");
 
-    // Build cards
+    // Build the chakra cards
     CHAKRAS.forEach(ch => {
       const card = document.createElement("div");
       card.className = "card";
@@ -397,7 +356,7 @@
     async function speakWithElevenLabs(text) {
       try {
         setStatus("Generating voice...");
-        
+
         const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
           method: "POST",
           headers: {
@@ -418,9 +377,9 @@
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error("ElevenLabs error:", response.status, errorText);
-          throw new Error(`ElevenLabs error: ${response.status}`);
+          const errText = await response.text();
+          console.error("ElevenLabs error:", response.status, errText);
+          throw new Error("ElevenLabs failed: " + response.status);
         }
 
         const audioBlob = await response.blob();
@@ -433,7 +392,7 @@
 
         currentAudio = new Audio(audioUrl);
         currentAudio.volume = 1.0;
-        
+
         currentAudio.onended = () => {
           URL.revokeObjectURL(audioUrl);
           setStatus("");
@@ -460,33 +419,26 @@
       return audioCtx;
     }
 
+    // Returns the current affirmation and advances the index for next time
     function getNextAffirmation(ch) {
-      const idx = affirmationIndex[ch.name];
-      const text = ch.affirmations[idx];
-      affirmationIndex[ch.name] = (idx + 1) % ch.affirmations.length;
+      const currentIdx = affirmationIndex[ch.name] || 0;
+      const text = ch.affirmations[currentIdx];
+      // Move to next (wraps around after 5)
+      affirmationIndex[ch.name] = (currentIdx + 1) % ch.affirmations.length;
       return text;
     }
 
     function showAffirmation(ch, text) {
-      affirmText.style.opacity = "0";
-      setTimeout(() => {
-        affirmLabel.style.display = "block";
-        affirmText.textContent = text;
-        affirmPanel.classList.remove("empty");
-        affirmPanel.style.background = ch.color + "33";
-        affirmText.style.opacity = "1";
-      }, 120);
+      affirmLabel.style.display = "block";
+      affirmText.textContent = text;
+      affirmPanel.classList.remove("empty");
+      affirmPanel.style.background = ch.color + "33";
 
+      // Also show on the card itself
       const card = document.querySelector(`.card[data-name="${ch.name}"]`);
       if (card) {
         const el = card.querySelector("[data-affirm]");
-        if (el) {
-          el.style.opacity = "0";
-          setTimeout(() => {
-            el.textContent = text;
-            el.style.opacity = "1";
-          }, 100);
-        }
+        if (el) el.textContent = text;
       }
     }
 
@@ -497,15 +449,11 @@
       }
       speechSynthesis.cancel();
       clearTimeout(affirmationTimeout);
-      
-      affirmText.style.opacity = "0";
-      setTimeout(() => {
-        affirmLabel.style.display = "none";
-        affirmText.textContent = "Select a chakra to begin";
-        affirmPanel.classList.add("empty");
-        affirmPanel.style.background = "#1a1a22";
-        affirmText.style.opacity = "1";
-      }, 150);
+
+      affirmLabel.style.display = "none";
+      affirmText.textContent = "Select a chakra to begin";
+      affirmPanel.classList.add("empty");
+      affirmPanel.style.background = "#1a1a22";
 
       document.querySelectorAll("[data-affirm]").forEach(el => el.textContent = "");
       setStatus("");
@@ -517,11 +465,12 @@
           currentOsc.stop();
           currentOsc.disconnect();
           if (currentGain) currentGain.disconnect();
-        } catch(e) {}
+        } catch (e) {}
         currentOsc = null;
         currentGain = null;
       }
       activeName = null;
+
       document.querySelectorAll(".card").forEach(c => {
         c.classList.remove("playing");
         const original = CHAKRAS.find(x => x.name === c.dataset.name);
@@ -540,14 +489,14 @@
       osc.frequency.value = ch.freq;
 
       gain.gain.setValueAtTime(0, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.15);
+      gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.12);
 
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start();
 
-      // Long duration so it feels continuous
-      gain.gain.setValueAtTime(volume, audioCtx.currentTime + duration - 0.8);
+      // Long duration so tone continues until another chakra is selected
+      gain.gain.setValueAtTime(volume, audioCtx.currentTime + duration - 1);
       gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
       osc.stop(audioCtx.currentTime + duration + 0.05);
 
@@ -555,6 +504,7 @@
       currentGain = gain;
       activeName = ch.name;
 
+      // Highlight the active card
       document.querySelectorAll(".card").forEach(c => {
         if (c.dataset.name === ch.name) {
           c.classList.add("playing");
@@ -570,18 +520,19 @@
     function handleCardTap(ch) {
       if (isPlayingAll) stopPlayAll();
 
+      // Cancel any previous delayed speech
       clearTimeout(affirmationTimeout);
 
-      // Get the next affirmation (cycles through the 5)
+      // 1. Get the next affirmation in the cycle (1 → 2 → 3 → 4 → 5 → 1...)
       const affirmation = getNextAffirmation(ch);
 
-      // 1. Show the affirmation text immediately
+      // 2. Show the affirmation text immediately
       showAffirmation(ch, affirmation);
 
-      // 2. Start the tone immediately (keeps playing until another chakra is selected)
+      // 3. Start the tone immediately (keeps playing)
       playTone(ch);
 
-      // 3. After 6 seconds → speak the affirmation
+      // 4. After 6 seconds, speak the affirmation that is currently displayed
       affirmationTimeout = setTimeout(() => {
         speakWithElevenLabs(affirmation);
       }, 6000);
@@ -637,13 +588,12 @@
       }
     });
 
+    // Unlock audio on first interaction
     document.body.addEventListener("touchstart", ensureAudio, { once: true });
     document.body.addEventListener("click", ensureAudio, { once: true });
 
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") {
-        ensureAudio();
-      }
+      if (document.visibilityState === "visible") ensureAudio();
     });
   </script>
 </body>
