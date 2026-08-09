@@ -34,11 +34,11 @@
 
     .header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
 
     .header h1 {
-      font-size: 1.6rem;
+      font-size: 1.55rem;
       font-weight: 700;
       letter-spacing: -0.02em;
       margin-bottom: 4px;
@@ -53,12 +53,12 @@
       display: grid;
       gap: 10px;
       max-width: 480px;
-      margin: 0 auto 16px;
+      margin: 0 auto 14px;
     }
 
     .card {
       border-radius: var(--card-radius);
-      padding: 14px 16px;
+      padding: 13px 15px;
       cursor: pointer;
       transition: transform 0.15s ease, filter 0.2s ease;
       user-select: none;
@@ -74,33 +74,33 @@
     }
 
     .card-name {
-      font-size: 1.1rem;
+      font-size: 1.08rem;
       font-weight: 650;
       margin-bottom: 2px;
     }
 
     .card-meta {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       opacity: 0.85;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
 
     .card-affirmation {
-      font-size: 0.88rem;
+      font-size: 0.86rem;
       font-style: italic;
       opacity: 0.95;
       line-height: 1.35;
-      min-height: 1.3em;
+      min-height: 1.2em;
     }
 
     .affirmation-panel {
       max-width: 480px;
-      margin: 0 auto 18px;
+      margin: 0 auto 14px;
       background: #1a1a22;
       border-radius: 14px;
-      padding: 16px;
+      padding: 14px 16px;
       text-align: center;
-      min-height: 70px;
+      min-height: 78px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -112,15 +112,15 @@
     }
 
     .affirmation-label {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--muted);
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
 
     .affirmation-text {
-      font-size: 1.05rem;
+      font-size: 1.02rem;
       font-weight: 500;
       line-height: 1.4;
     }
@@ -130,20 +130,20 @@
       margin: 0 auto;
       background: #1a1a20;
       border-radius: 16px;
-      padding: 16px;
+      padding: 14px 16px;
     }
 
     .control-row {
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     label {
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       color: var(--muted);
-      min-width: 65px;
+      min-width: 70px;
     }
 
     input[type="range"] {
@@ -162,15 +162,57 @@
       background: #fff;
     }
 
+    select {
+      flex: 1;
+      background: #2a2a32;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+    }
+
+    .switch {
+      position: relative;
+      width: 46px;
+      height: 26px;
+    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #333;
+      border-radius: 26px;
+      transition: 0.2s;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+
+    input:checked + .slider { background: #4caf50; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
     .btn-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-top: 8px;
+      margin-top: 6px;
     }
 
     .btn {
-      padding: 13px 10px;
+      padding: 12px 10px;
       border: none;
       border-radius: 12px;
       font-size: 0.95rem;
@@ -185,14 +227,14 @@
 
     .footer {
       text-align: center;
-      margin-top: 22px;
-      font-size: 0.78rem;
+      margin-top: 18px;
+      font-size: 0.76rem;
       color: #555;
     }
 
     .status {
       text-align: center;
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       color: #aaa;
       margin-top: 10px;
       min-height: 1.3em;
@@ -214,8 +256,28 @@
 
   <div class="controls">
     <div class="control-row">
+      <label>Voice</label>
+      <select id="voiceSelect">
+        <option value="EXAVITQu4vr4xnSDxMaL">Sarah – Mature & Reassuring</option>
+        <option value="cgSgspJ2msm6clMCkdW9">Jessica – Bright & Warm</option>
+        <option value="pFZP5JQG7iQjIQuC4Bku">Lily – Soft & Velvety</option>
+        <option value="nPczCjzI2devNBz1zQrb">Brian – Deep & Resonant</option>
+        <option value="JBFqnCBsd6RMkjVDRZzb">George – Warm Storyteller</option>
+      </select>
+    </div>
+
+    <div class="control-row">
       <label>Volume</label>
       <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5" />
+    </div>
+
+    <div class="control-row">
+      <label>Tone</label>
+      <label class="switch">
+        <input type="checkbox" id="toneToggle" checked />
+        <span class="slider"></span>
+      </label>
+      <span style="color:var(--muted); font-size:0.88rem;">Play Solfeggio tone</span>
     </div>
 
     <div class="btn-row">
@@ -235,7 +297,7 @@
     const ELEVENLABS_API_KEY = "sk_e9322bc962e4375aa8656bae5caf6a5ddf3fb744e54167aa";
     // =============================
 
-    const VOICE_ID = "EXAVITQu4vr4xnSDxMaL"; // Sarah
+    let VOICE_ID = "EXAVITQu4vr4xnSDxMaL"; // default Sarah
 
     const CHAKRAS = [
       {
@@ -316,6 +378,7 @@
     let currentGain = null;
     let activeName = null;
     let volume = 0.5;
+    let toneEnabled = true;
     let isPlayingAll = false;
     let currentPlayAllIndex = 0;
     let currentAudio = null;
@@ -328,6 +391,8 @@
     // DOM
     const grid = document.getElementById("chakraGrid");
     const volumeSlider = document.getElementById("volume");
+    const toneToggle = document.getElementById("toneToggle");
+    const voiceSelect = document.getElementById("voiceSelect");
     const stopBtn = document.getElementById("stopAll");
     const playAllBtn = document.getElementById("playAll");
     const affirmPanel = document.getElementById("affirmationPanel");
@@ -354,7 +419,7 @@
       statusEl.textContent = msg || "";
     }
 
-    // ---------- Voice (same reliable pattern as the working test) ----------
+    // ---------- Voice ----------
     function stopVoice() {
       if (speechController) {
         speechController.abort();
@@ -369,6 +434,20 @@
         currentAudioUrl = null;
       }
       speechSynthesis.cancel();
+      // Restore tone volume after speech
+      restoreToneVolume();
+    }
+
+    function fadeToneForSpeech() {
+      if (currentGain && audioCtx && toneEnabled) {
+        currentGain.gain.setTargetAtTime(volume * 0.18, audioCtx.currentTime, 0.15);
+      }
+    }
+
+    function restoreToneVolume() {
+      if (currentGain && audioCtx && toneEnabled) {
+        currentGain.gain.setTargetAtTime(volume, audioCtx.currentTime, 0.3);
+      }
     }
 
     async function speakWithElevenLabs(text) {
@@ -410,6 +489,9 @@
         currentAudio = new Audio(currentAudioUrl);
         currentAudio.volume = volume;
 
+        // Fade tone down while speaking
+        fadeToneForSpeech();
+
         currentAudio.onended = () => {
           stopVoice();
           setStatus("");
@@ -428,7 +510,10 @@
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = 0.88;
         utterance.volume = volume;
-        utterance.onend = () => setStatus("");
+        utterance.onend = () => {
+          setStatus("");
+          restoreToneVolume();
+        };
         speechSynthesis.speak(utterance);
       }
     }
@@ -464,6 +549,22 @@
     }
 
     function playTone(ch, duration = 300) {
+      if (!toneEnabled) {
+        // Still highlight the card even if tone is off
+        document.querySelectorAll(".card").forEach(c => {
+          if (c.dataset.name === ch.name) {
+            c.classList.add("playing");
+            c.style.background = ch.active;
+          } else {
+            c.classList.remove("playing");
+            const original = CHAKRAS.find(x => x.name === c.dataset.name);
+            if (original) c.style.background = original.color;
+          }
+        });
+        activeName = ch.name;
+        return;
+      }
+
       ensureAudio();
       stopTone();
 
@@ -480,7 +581,6 @@
       gain.connect(audioCtx.destination);
       osc.start();
 
-      // Long duration so tone continues until another chakra is selected
       gain.gain.setValueAtTime(volume, audioCtx.currentTime + duration - 1);
       gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
       osc.stop(audioCtx.currentTime + duration + 0.05);
@@ -505,12 +605,14 @@
     function getNextAffirmation(ch) {
       const idx = affirmationIndex[ch.name] || 0;
       const text = ch.affirmations[idx];
+      const number = idx + 1; // 1-based for display
       affirmationIndex[ch.name] = (idx + 1) % 5;
-      return text;
+      return { text, number };
     }
 
-    function showAffirmation(ch, text) {
+    function showAffirmation(ch, text, number) {
       affirmLabel.style.display = "block";
+      affirmLabel.textContent = `Affirmation ${number} of 5`;
       affirmText.textContent = text;
       affirmPanel.classList.remove("empty");
       affirmPanel.style.background = ch.color + "33";
@@ -532,22 +634,17 @@
       setStatus("");
     }
 
-    // ---------- Main interaction (SPEAKS IMMEDIATELY) ----------
+    // ---------- Main interaction ----------
     function handleCardTap(ch) {
       if (isPlayingAll) stopPlayAll();
 
       stopVoice();
 
-      const affirmation = getNextAffirmation(ch);
+      const { text, number } = getNextAffirmation(ch);
 
-      // Show text
-      showAffirmation(ch, affirmation);
-
-      // Start tone
+      showAffirmation(ch, text, number);
       playTone(ch);
-
-      // Speak immediately (same reliable method as the working test)
-      speakWithElevenLabs(affirmation);
+      speakWithElevenLabs(text);
     }
 
     // ---------- Play All ----------
@@ -567,14 +664,13 @@
       }
 
       const ch = CHAKRAS[currentPlayAllIndex];
-      const affirmation = getNextAffirmation(ch);
+      const { text, number } = getNextAffirmation(ch);
 
-      showAffirmation(ch, affirmation);
-      playTone(ch, 40);
+      showAffirmation(ch, text, number);
+      playTone(ch, 45);
 
-      await speakWithElevenLabs(affirmation);
+      await speakWithElevenLabs(text);
 
-      // Short pause after voice finishes
       await new Promise(r => setTimeout(r, 900));
 
       currentPlayAllIndex++;
@@ -594,18 +690,32 @@
 
     stopBtn.addEventListener("click", stopPlayAll);
 
-    // Volume controls both tone and voice
+    // Controls
     volumeSlider.addEventListener("input", (e) => {
       volume = parseFloat(e.target.value);
-      if (currentGain && audioCtx) {
-        currentGain.gain.setTargetAtTime(volume, audioCtx.currentTime, 0.05);
+      if (currentGain && audioCtx && toneEnabled) {
+        // Only set full volume if not currently speaking
+        if (!currentAudio) {
+          currentGain.gain.setTargetAtTime(volume, audioCtx.currentTime, 0.05);
+        }
       }
       if (currentAudio) {
         currentAudio.volume = volume;
       }
     });
 
-    // Unlock audio on first interaction
+    toneToggle.addEventListener("change", (e) => {
+      toneEnabled = e.target.checked;
+      if (!toneEnabled) {
+        stopTone();
+      }
+    });
+
+    voiceSelect.addEventListener("change", (e) => {
+      VOICE_ID = e.target.value;
+    });
+
+    // Unlock audio
     document.body.addEventListener("touchstart", ensureAudio, { once: true });
     document.body.addEventListener("click", ensureAudio, { once: true });
 
