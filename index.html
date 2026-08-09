@@ -357,7 +357,6 @@
     let currentGain = null;
     let activeName = null;
     let volume = 0.4;
-    let loop = false;
     let isPlayingAll = false;
     let playAllTimeout = null;
     let currentPlayAllIndex = 0;
@@ -369,7 +368,6 @@
 
     const grid = document.getElementById("chakraGrid");
     const volumeSlider = document.getElementById("volume");
-    const loopToggle = document.getElementById("loopToggle");
     const stopBtn = document.getElementById("stopAll");
     const playAllBtn = document.getElementById("playAll");
     const affirmPanel = document.getElementById("affirmationPanel");
@@ -396,7 +394,6 @@
       statusEl.textContent = msg || "";
     }
 
-    // ========== ElevenLabs Voice ==========
     async function speakWithElevenLabs(text) {
       try {
         setStatus("Generating voice...");
@@ -478,7 +475,7 @@
         affirmPanel.classList.remove("empty");
         affirmPanel.style.background = ch.color + "33";
         affirmText.style.opacity = "1";
-      }, 150);
+      }, 120);
 
       const card = document.querySelector(`.card[data-name="${ch.name}"]`);
       if (card) {
@@ -488,7 +485,7 @@
           setTimeout(() => {
             el.textContent = text;
             el.style.opacity = "1";
-          }, 120);
+          }, 100);
         }
       }
     }
@@ -519,7 +516,7 @@
         try {
           currentOsc.stop();
           currentOsc.disconnect();
-          currentGain.disconnect();
+          if (currentGain) currentGain.disconnect();
         } catch(e) {}
         currentOsc = null;
         currentGain = null;
@@ -532,7 +529,7 @@
       });
     }
 
-    function playTone(ch, duration = null) {
+    function playTone(ch, duration = 300) {
       ensureAudio();
       stopTone();
 
@@ -543,19 +540,16 @@
       osc.frequency.value = ch.freq;
 
       gain.gain.setValueAtTime(0, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.1);
+      gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.15);
 
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start();
 
-      const playDuration = duration || (loop ? null : 14); // longer so it covers the delayed voice
-
-      if (playDuration) {
-        gain.gain.setValueAtTime(volume, audioCtx.currentTime + playDuration - 0.5);
-        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + playDuration);
-        osc.stop(audioCtx.currentTime + playDuration + 0.05);
-      }
+      // Long duration so it feels continuous
+      gain.gain.setValueAtTime(volume, audioCtx.currentTime + duration - 0.8);
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + duration + 0.05);
 
       currentOsc = osc;
       currentGain = gain;
@@ -576,17 +570,19 @@
     function handleCardTap(ch) {
       if (isPlayingAll) stopPlayAll();
 
-      // Clear any previous delayed affirmation
       clearTimeout(affirmationTimeout);
 
+      // Get the next affirmation (cycles through the 5)
       const affirmation = getNextAffirmation(ch);
 
-      // Start tone immediately
+      // 1. Show the affirmation text immediately
+      showAffirmation(ch, affirmation);
+
+      // 2. Start the tone immediately (keeps playing until another chakra is selected)
       playTone(ch);
 
-      // After 6 seconds → show text + play voice
+      // 3. After 6 seconds → speak the affirmation
       affirmationTimeout = setTimeout(() => {
-        showAffirmation(ch, affirmation);
         speakWithElevenLabs(affirmation);
       }, 6000);
     }
@@ -610,17 +606,15 @@
       const ch = CHAKRAS[currentPlayAllIndex];
       const affirmation = getNextAffirmation(ch);
 
-      // Start tone right away
+      showAffirmation(ch, affirmation);
       playTone(ch, 11);
 
-      // Voice starts after 6 seconds
       affirmationTimeout = setTimeout(() => {
-        showAffirmation(ch, affirmation);
         speakWithElevenLabs(affirmation);
       }, 6000);
 
       currentPlayAllIndex++;
-      playAllTimeout = setTimeout(playAllSequence, 11000); // total 11 seconds per chakra
+      playAllTimeout = setTimeout(playAllSequence, 11000);
     }
 
     playAllBtn.addEventListener("click", () => {
@@ -638,17 +632,19 @@
 
     volumeSlider.addEventListener("input", (e) => {
       volume = parseFloat(e.target.value);
-      if (currentGain) {
+      if (currentGain && audioCtx) {
         currentGain.gain.setTargetAtTime(volume, audioCtx.currentTime, 0.05);
       }
     });
 
-    loopToggle.addEventListener("change", (e) => {
-      loop = e.target.checked;
-    });
-
     document.body.addEventListener("touchstart", ensureAudio, { once: true });
     document.body.addEventListener("click", ensureAudio, { once: true });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        ensureAudio();
+      }
+    });
   </script>
 </body>
 </html>
