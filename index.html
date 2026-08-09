@@ -464,4 +464,191 @@
     }
 
     function getNextAffirmation(ch) {
-      const
+      const idx = affirmationIndex[ch.name];
+      const text = ch.affirmations[idx];
+      affirmationIndex[ch.name] = (idx + 1) % ch.affirmations.length;
+      return text;
+    }
+
+    function showAffirmation(ch, text) {
+      affirmText.style.opacity = "0";
+      setTimeout(() => {
+        affirmLabel.style.display = "block";
+        affirmText.textContent = text;
+        affirmPanel.classList.remove("empty");
+        affirmPanel.style.background = ch.color + "33";
+        affirmText.style.opacity = "1";
+      }, 150);
+
+      const card = document.querySelector(`.card[data-name="${ch.name}"]`);
+      if (card) {
+        const el = card.querySelector("[data-affirm]");
+        if (el) {
+          el.style.opacity = "0";
+          setTimeout(() => {
+            el.textContent = text;
+            el.style.opacity = "1";
+          }, 120);
+        }
+      }
+    }
+
+    function clearAffirmation() {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+      speechSynthesis.cancel();
+      clearTimeout(affirmationTimeout);
+      
+      affirmText.style.opacity = "0";
+      setTimeout(() => {
+        affirmLabel.style.display = "none";
+        affirmText.textContent = "Select a chakra to begin";
+        affirmPanel.classList.add("empty");
+        affirmPanel.style.background = "#1a1a22";
+        affirmText.style.opacity = "1";
+      }, 150);
+
+      document.querySelectorAll("[data-affirm]").forEach(el => el.textContent = "");
+      setStatus("");
+    }
+
+    function stopTone() {
+      if (currentOsc) {
+        try {
+          currentOsc.stop();
+          currentOsc.disconnect();
+          currentGain.disconnect();
+        } catch(e) {}
+        currentOsc = null;
+        currentGain = null;
+      }
+      activeName = null;
+      document.querySelectorAll(".card").forEach(c => {
+        c.classList.remove("playing");
+        const original = CHAKRAS.find(x => x.name === c.dataset.name);
+        if (original) c.style.background = original.color;
+      });
+    }
+
+    function playTone(ch, duration = null) {
+      ensureAudio();
+      stopTone();
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.value = ch.freq;
+
+      gain.gain.setValueAtTime(0, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.1);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+
+      const playDuration = duration || (loop ? null : 14); // longer so it covers the delayed voice
+
+      if (playDuration) {
+        gain.gain.setValueAtTime(volume, audioCtx.currentTime + playDuration - 0.5);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + playDuration);
+        osc.stop(audioCtx.currentTime + playDuration + 0.05);
+      }
+
+      currentOsc = osc;
+      currentGain = gain;
+      activeName = ch.name;
+
+      document.querySelectorAll(".card").forEach(c => {
+        if (c.dataset.name === ch.name) {
+          c.classList.add("playing");
+          c.style.background = ch.active;
+        } else {
+          c.classList.remove("playing");
+          const original = CHAKRAS.find(x => x.name === c.dataset.name);
+          if (original) c.style.background = original.color;
+        }
+      });
+    }
+
+    function handleCardTap(ch) {
+      if (isPlayingAll) stopPlayAll();
+
+      // Clear any previous delayed affirmation
+      clearTimeout(affirmationTimeout);
+
+      const affirmation = getNextAffirmation(ch);
+
+      // Start tone immediately
+      playTone(ch);
+
+      // After 6 seconds → show text + play voice
+      affirmationTimeout = setTimeout(() => {
+        showAffirmation(ch, affirmation);
+        speakWithElevenLabs(affirmation);
+      }, 6000);
+    }
+
+    function stopPlayAll() {
+      isPlayingAll = false;
+      currentPlayAllIndex = 0;
+      clearTimeout(playAllTimeout);
+      clearTimeout(affirmationTimeout);
+      playAllBtn.textContent = "Play All (11s each)";
+      stopTone();
+      clearAffirmation();
+    }
+
+    function playAllSequence() {
+      if (currentPlayAllIndex >= CHAKRAS.length) {
+        stopPlayAll();
+        return;
+      }
+
+      const ch = CHAKRAS[currentPlayAllIndex];
+      const affirmation = getNextAffirmation(ch);
+
+      // Start tone right away
+      playTone(ch, 11);
+
+      // Voice starts after 6 seconds
+      affirmationTimeout = setTimeout(() => {
+        showAffirmation(ch, affirmation);
+        speakWithElevenLabs(affirmation);
+      }, 6000);
+
+      currentPlayAllIndex++;
+      playAllTimeout = setTimeout(playAllSequence, 11000); // total 11 seconds per chakra
+    }
+
+    playAllBtn.addEventListener("click", () => {
+      if (isPlayingAll) {
+        stopPlayAll();
+        return;
+      }
+      isPlayingAll = true;
+      currentPlayAllIndex = 0;
+      playAllBtn.textContent = "Stop Journey";
+      playAllSequence();
+    });
+
+    stopBtn.addEventListener("click", stopPlayAll);
+
+    volumeSlider.addEventListener("input", (e) => {
+      volume = parseFloat(e.target.value);
+      if (currentGain) {
+        currentGain.gain.setTargetAtTime(volume, audioCtx.currentTime, 0.05);
+      }
+    });
+
+    loopToggle.addEventListener("change", (e) => {
+      loop = e.target.checked;
+    });
+
+    document.body.addEventListener("touchstart", ensureAudio, { once: true });
+    document.body.addEventListener("click", ensureAudio, { once: true });
+  </script>
+</body>
+</html>
