@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
@@ -20,10 +21,10 @@
       --panel: #1a1a20;
       --text: #ffffff;
       --muted: #a0a0b0;
-      --card-radius: 16px;
       --good: #67e08a;
       --warn: #ffd166;
       --bad: #ff6b6b;
+      --card-radius: 16px;
     }
 
     * {
@@ -56,6 +57,7 @@
       padding-bottom: max(24px, env(safe-area-inset-bottom));
 
       -webkit-font-smoothing: antialiased;
+
       overscroll-behavior: none;
     }
 
@@ -76,12 +78,9 @@
       font-size: 0.9rem;
     }
 
-    /* =========================================================
-       API STATUS
-       ========================================================= */
-
     .api-banner {
       max-width: 480px;
+
       margin: 0 auto 12px;
 
       padding: 10px 12px;
@@ -94,6 +93,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+
       gap: 10px;
 
       font-size: 0.82rem;
@@ -133,28 +133,25 @@
 
     .api-indicator.good {
       color: var(--good);
-      background: rgba(103,224,138,0.1);
+      background: rgba(103, 224, 138, 0.1);
     }
 
     .api-indicator.warn {
       color: var(--warn);
-      background: rgba(255,209,102,0.1);
+      background: rgba(255, 209, 102, 0.1);
     }
 
     .api-indicator.bad {
       color: var(--bad);
-      background: rgba(255,107,107,0.1);
+      background: rgba(255, 107, 107, 0.1);
     }
-
-    /* =========================================================
-       CHAKRA CARDS
-       ========================================================= */
 
     .grid {
       display: grid;
       gap: 10px;
 
       max-width: 480px;
+
       margin: 0 auto 14px;
     }
 
@@ -198,16 +195,13 @@
     }
 
     @keyframes breatheCard {
-
-      0%,
-      100% {
+      0%, 100% {
         transform: scale(1);
       }
 
       50% {
         transform: scale(1.012);
       }
-
     }
 
     .card-name {
@@ -233,12 +227,9 @@
       min-height: 1.2em;
     }
 
-    /* =========================================================
-       AFFIRMATION PANEL
-       ========================================================= */
-
     .affirmation-panel {
       max-width: 480px;
+
       margin: 0 auto 14px;
 
       background: #1a1a22;
@@ -255,8 +246,7 @@
       flex-direction: column;
       justify-content: center;
 
-      transition:
-        background 0.3s ease;
+      transition: background 0.3s ease;
     }
 
     .affirmation-panel.empty {
@@ -283,10 +273,6 @@
       line-height: 1.4;
     }
 
-    /* =========================================================
-       CONTROLS
-       ========================================================= */
-
     .controls {
       max-width: 480px;
 
@@ -301,7 +287,6 @@
 
     .control-row {
       display: flex;
-
       align-items: center;
 
       gap: 12px;
@@ -379,10 +364,6 @@
       font-size: 0.9rem;
     }
 
-    /* =========================================================
-       SWITCH
-       ========================================================= */
-
     .switch {
       position: relative;
 
@@ -394,7 +375,6 @@
 
     .switch input {
       opacity: 0;
-
       width: 0;
       height: 0;
     }
@@ -441,12 +421,9 @@
 
     .switch-description {
       color: var(--muted);
+
       font-size: 0.88rem;
     }
-
-    /* =========================================================
-       BUTTONS
-       ========================================================= */
 
     .btn-row {
       display: grid;
@@ -473,8 +450,7 @@
 
       color: white;
 
-      -webkit-tap-highlight-color:
-        transparent;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .btn-playall {
@@ -496,13 +472,8 @@
     .btn:active {
       opacity: 0.85;
 
-      transform:
-        scale(0.985);
+      transform: scale(0.985);
     }
-
-    /* =========================================================
-       STATUS
-       ========================================================= */
 
     .status {
       text-align: center;
@@ -529,13 +500,10 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-
       .card.playing {
         animation: none;
       }
-
     }
-
   </style>
 </head>
 
@@ -548,15 +516,11 @@
     </h1>
 
     <p>
-      ElevenLabs natural voice • Enhanced meditation tones
+      ElevenLabs natural voice • Smooth meditation tones
     </p>
 
   </div>
 
-
-  <!-- =======================================================
-       ELEVENLABS STATUS
-       ======================================================= -->
 
   <div class="api-banner">
 
@@ -573,11 +537,10 @@
         class="api-detail"
         id="apiDetail"
       >
-        Tap Check API or select a voice
+        Checking selected voice…
       </div>
 
     </div>
-
 
     <div
       class="api-indicator"
@@ -589,19 +552,11 @@
   </div>
 
 
-  <!-- =======================================================
-       CHAKRAS
-       ======================================================= -->
-
   <div
     class="grid"
     id="chakraGrid"
   ></div>
 
-
-  <!-- =======================================================
-       AFFIRMATION
-       ======================================================= -->
 
   <div
     class="affirmation-panel empty"
@@ -616,7 +571,6 @@
       Current Affirmation
     </div>
 
-
     <div
       class="affirmation-text"
       id="affirmText"
@@ -627,14 +581,7 @@
   </div>
 
 
-  <!-- =======================================================
-       CONTROLS
-       ======================================================= -->
-
   <div class="controls">
-
-
-    <!-- VOICE SELECT -->
 
     <div class="control-row">
 
@@ -669,8 +616,6 @@
     </div>
 
 
-    <!-- API CHECK -->
-
     <div class="control-row">
 
       <label class="control-label">
@@ -693,8 +638,6 @@
 
     </div>
 
-
-    <!-- VOICE VOLUME -->
 
     <div class="control-row">
 
@@ -721,8 +664,6 @@
     </div>
 
 
-    <!-- TONE VOLUME -->
-
     <div class="control-row">
 
       <label class="control-label">
@@ -748,8 +689,6 @@
     </div>
 
 
-    <!-- TONE SWITCH -->
-
     <div class="control-row">
 
       <label class="control-label">
@@ -774,8 +713,6 @@
 
     </div>
 
-
-    <!-- BUTTONS -->
 
     <div class="btn-row">
 
@@ -805,7 +742,7 @@
 
 
   <div class="footer">
-    Solfeggio frequencies + verified ElevenLabs voice
+    Solfeggio frequencies + ElevenLabs voice
   </div>
 
 
@@ -816,18 +753,6 @@
 
 // ============================================================
 // ELEVENLABS CONFIGURATION
-// ============================================================
-//
-// IMPORTANT:
-//
-// This keeps the API key in the HTML because you asked for
-// a single-file application.
-//
-// Anyone who can view this HTML can see the API key.
-//
-// For a public application, move the ElevenLabs API call
-// to a server.
-//
 // ============================================================
 
 const ELEVENLABS_API_KEY =
@@ -850,10 +775,6 @@ let verifiedVoiceName =
   "";
 
 
-let verifiedModel =
-  false;
-
-
 let apiCheckPromise =
   null;
 
@@ -865,23 +786,12 @@ let apiCheckPromise =
 const CHAKRAS = [
 
   {
-    name:
-      "Root",
-
-    sanskrit:
-      "Muladhara",
-
-    freq:
-      396,
-
-    color:
-      "#8B0000",
-
-    active:
-      "#FF1A1A",
-
-    note:
-      "C",
+    name: "Root",
+    sanskrit: "Muladhara",
+    freq: 396,
+    color: "#8B0000",
+    active: "#FF1A1A",
+    note: "C",
 
     affirmations: [
 
@@ -896,28 +806,16 @@ const CHAKRAS = [
       "Abundance flows to me as I remain stable and centered."
 
     ]
-
   },
 
 
   {
-    name:
-      "Sacral",
-
-    sanskrit:
-      "Svadhisthana",
-
-    freq:
-      417,
-
-    color:
-      "#E65100",
-
-    active:
-      "#FF9100",
-
-    note:
-      "D",
+    name: "Sacral",
+    sanskrit: "Svadhisthana",
+    freq: 417,
+    color: "#E65100",
+    active: "#FF9100",
+    note: "D",
 
     affirmations: [
 
@@ -932,28 +830,16 @@ const CHAKRAS = [
       "Creativity moves through me effortlessly."
 
     ]
-
   },
 
 
   {
-    name:
-      "Solar Plexus",
-
-    sanskrit:
-      "Manipura",
-
-    freq:
-      528,
-
-    color:
-      "#F9A825",
-
-    active:
-      "#FFEB3B",
-
-    note:
-      "E",
+    name: "Solar Plexus",
+    sanskrit: "Manipura",
+    freq: 528,
+    color: "#F9A825",
+    active: "#FFEB3B",
+    note: "E",
 
     affirmations: [
 
@@ -968,28 +854,16 @@ const CHAKRAS = [
       "I am worthy of success and respect."
 
     ]
-
   },
 
 
   {
-    name:
-      "Heart",
-
-    sanskrit:
-      "Anahata",
-
-    freq:
-      639,
-
-    color:
-      "#2E7D32",
-
-    active:
-      "#4CAF50",
-
-    note:
-      "F",
+    name: "Heart",
+    sanskrit: "Anahata",
+    freq: 639,
+    color: "#2E7D32",
+    active: "#4CAF50",
+    note: "F",
 
     affirmations: [
 
@@ -1004,28 +878,16 @@ const CHAKRAS = [
       "I am deeply connected to all living beings."
 
     ]
-
   },
 
 
   {
-    name:
-      "Throat",
-
-    sanskrit:
-      "Vishuddha",
-
-    freq:
-      741,
-
-    color:
-      "#0277BD",
-
-    active:
-      "#29B6F6",
-
-    note:
-      "G",
+    name: "Throat",
+    sanskrit: "Vishuddha",
+    freq: 741,
+    color: "#0277BD",
+    active: "#29B6F6",
+    note: "G",
 
     affirmations: [
 
@@ -1040,28 +902,16 @@ const CHAKRAS = [
       "I am heard, understood, and respected."
 
     ]
-
   },
 
 
   {
-    name:
-      "Third Eye",
-
-    sanskrit:
-      "Ajna",
-
-    freq:
-      852,
-
-    color:
-      "#283593",
-
-    active:
-      "#5C6BC0",
-
-    note:
-      "A",
+    name: "Third Eye",
+    sanskrit: "Ajna",
+    freq: 852,
+    color: "#283593",
+    active: "#5C6BC0",
+    note: "A",
 
     affirmations: [
 
@@ -1076,28 +926,16 @@ const CHAKRAS = [
       "I am connected to my higher guidance."
 
     ]
-
   },
 
 
   {
-    name:
-      "Crown",
-
-    sanskrit:
-      "Sahasrara",
-
-    freq:
-      963,
-
-    color:
-      "#6A1B9A",
-
-    active:
-      "#AB47BC",
-
-    note:
-      "B",
+    name: "Crown",
+    sanskrit: "Sahasrara",
+    freq: 963,
+    color: "#6A1B9A",
+    active: "#AB47BC",
+    note: "B",
 
     affirmations: [
 
@@ -1112,7 +950,6 @@ const CHAKRAS = [
       "I surrender to the highest good and trust the universe."
 
     ]
-
   }
 
 ];
@@ -1146,19 +983,19 @@ let activeName =
   null;
 
 
-let currentAudio =
-  null;
-
-
-let currentAudioUrl =
-  null;
-
-
 let speechController =
   null;
 
 
 let speechResolver =
+  null;
+
+
+let currentVoiceSource =
+  null;
+
+
+let currentVoiceGain =
   null;
 
 
@@ -1310,15 +1147,88 @@ const apiMiniStatus =
 
 
 // ============================================================
-// STATUS
+// GENERAL HELPERS
 // ============================================================
 
 function setStatus(
-  msg
+  message
 ) {
 
   statusEl.textContent =
-    msg || "";
+    message || "";
+
+}
+
+
+function wait(
+  milliseconds
+) {
+
+  return new Promise(
+    resolve => {
+
+      setTimeout(
+        resolve,
+        milliseconds
+      );
+
+    }
+  );
+
+}
+
+
+// ============================================================
+// SAFE GAIN HELPER
+// ============================================================
+//
+// cancelAndHoldAtTime is ideal because it prevents a sudden
+// discontinuity in a gain parameter.
+//
+// Older Safari versions may not support it, so there is a
+// fallback.
+//
+// ============================================================
+
+function holdGain(
+  audioParam,
+  time
+) {
+
+  try {
+
+    if (
+      typeof audioParam.cancelAndHoldAtTime ===
+      "function"
+    ) {
+
+      audioParam.cancelAndHoldAtTime(
+        time
+      );
+
+    }
+
+    else {
+
+      const value =
+        audioParam.value;
+
+
+      audioParam.cancelScheduledValues(
+        time
+      );
+
+
+      audioParam.setValueAtTime(
+        value,
+        time
+      );
+
+    }
+
+  }
+
+  catch (_) {}
 
 }
 
@@ -1345,6 +1255,7 @@ function setApiState(
       "good"
     );
 
+
     apiIndicator.textContent =
       "ELEVENLABS ✓";
 
@@ -1368,6 +1279,7 @@ function setApiState(
       "warn"
     );
 
+
     apiIndicator.textContent =
       "CHECKING…";
 
@@ -1390,6 +1302,7 @@ function setApiState(
     apiIndicator.classList.add(
       "bad"
     );
+
 
     apiIndicator.textContent =
       "FAILED";
@@ -1522,17 +1435,18 @@ async function checkElevenLabsAPI(
         "";
 
 
-      verifiedModel =
-        false;
-
-
       setApiState(
+
         "checking",
-        "Checking API key, model and selected voice…"
+
+        "Checking selected ElevenLabs voice…"
+
       );
 
 
-      if (showStatus) {
+      if (
+        showStatus
+      ) {
 
         setStatus(
           "Checking ElevenLabs API…"
@@ -1543,11 +1457,7 @@ async function checkElevenLabsAPI(
 
       try {
 
-        // ====================================================
-        // VERIFY SELECTED VOICE + API KEY
-        // ====================================================
-
-        const voiceResponse =
+        const response =
           await fetch(
 
             `https://api.elevenlabs.io/v1/voices/${encodeURIComponent(VOICE_ID)}`,
@@ -1570,65 +1480,71 @@ async function checkElevenLabsAPI(
 
 
         if (
-          !voiceResponse.ok
+          !response.ok
         ) {
 
-          const body =
-            await voiceResponse.text();
+          const errorBody =
+            await response.text();
 
 
           console.error(
-            "ElevenLabs voice/API check failed:",
-            voiceResponse.status,
-            body
+
+            "ElevenLabs API check failed:",
+
+            response.status,
+
+            errorBody
+
           );
 
 
           if (
-            voiceResponse.status ===
+            response.status ===
             401
           ) {
 
             throw new Error(
-              "API key rejected (401)"
+              "API key rejected"
             );
 
           }
 
 
           if (
-            voiceResponse.status ===
+            response.status ===
             403
           ) {
 
             throw new Error(
-              "API key lacks permission (403)"
+              "API key does not have permission"
             );
 
           }
 
 
           if (
-            voiceResponse.status ===
+            response.status ===
             404
           ) {
 
             throw new Error(
-              "Selected voice is unavailable"
+              "Selected voice unavailable"
             );
 
           }
 
 
           throw new Error(
-            `Voice/API check failed (${voiceResponse.status})`
+
+            `ElevenLabs error ${response.status}`
+
           );
 
         }
 
 
         const voice =
-          await voiceResponse.json();
+          await response.json();
 
 
         verifiedVoiceName =
@@ -1636,92 +1552,12 @@ async function checkElevenLabsAPI(
           "ElevenLabs Voice";
 
 
-        // ====================================================
-        // VERIFY MODEL
-        // ====================================================
-
-        const modelsResponse =
-          await fetch(
-
-            "https://api.elevenlabs.io/v1/models",
-
-            {
-
-              method:
-                "GET",
-
-              headers: {
-
-                "xi-api-key":
-                  ELEVENLABS_API_KEY
-
-              }
-
-            }
-
-          );
-
-
-        if (
-          modelsResponse.ok
-        ) {
-
-          const models =
-            await modelsResponse.json();
-
-
-          const model =
-            Array.isArray(
-              models
-            )
-              ?
-                models.find(
-                  m =>
-                    m.model_id ===
-                    ELEVENLABS_MODEL
-                )
-              :
-                null;
-
-
-          verifiedModel =
-            !!model &&
-            model.can_do_text_to_speech !==
-              false;
-
-
-          if (
-            !verifiedModel
-          ) {
-
-            throw new Error(
-              `TTS model ${ELEVENLABS_MODEL} unavailable`
-            );
-
-          }
-
-        }
-
-        else {
-
-          console.warn(
-            "Could not verify models endpoint:",
-            modelsResponse.status
-          );
-
-
-          // Voice authentication succeeded,
-          // so do not fail solely because
-          // models endpoint could not be checked.
-
-          verifiedModel =
-            true;
-
-        }
-
-
         elevenLabsAvailable =
           true;
+
+
+        apiTitle.textContent =
+          "ElevenLabs connected";
 
 
         setApiState(
@@ -1733,14 +1569,14 @@ async function checkElevenLabsAPI(
         );
 
 
-        apiTitle.textContent =
-          "ElevenLabs connected";
-
-
-        if (showStatus) {
+        if (
+          showStatus
+        ) {
 
           setStatus(
+
             `✓ ElevenLabs verified: ${verifiedVoiceName}`
+
           );
 
 
@@ -1758,27 +1594,10 @@ async function checkElevenLabsAPI(
 
             },
 
-            3500
+            3000
           );
 
         }
-
-
-        console.log(
-          "ElevenLabs verified:",
-          {
-
-            voiceId:
-              VOICE_ID,
-
-            voiceName:
-              verifiedVoiceName,
-
-            model:
-              ELEVENLABS_MODEL
-
-          }
-        );
 
 
         return true;
@@ -1793,28 +1612,27 @@ async function checkElevenLabsAPI(
           false;
 
 
+        apiTitle.textContent =
+          "ElevenLabs unavailable";
+
+
         setApiState(
 
           "bad",
 
           error.message ||
-          "ElevenLabs connection failed"
+          "API check failed"
 
         );
 
 
-        apiTitle.textContent =
-          "ElevenLabs unavailable";
-
-
-        if (showStatus) {
+        if (
+          showStatus
+        ) {
 
           setStatus(
 
-            `⚠ ${
-              error.message ||
-              "ElevenLabs check failed"
-            }`
+            `⚠ ${error.message}`
 
           );
 
@@ -1822,7 +1640,6 @@ async function checkElevenLabsAPI(
 
 
         console.error(
-          "ElevenLabs API check failed:",
           error
         );
 
@@ -1852,7 +1669,9 @@ async function checkElevenLabsAPI(
 
 function ensureAudio() {
 
-  if (!audioCtx) {
+  if (
+    !audioCtx
+  ) {
 
     audioCtx =
       new (
@@ -1902,9 +1721,11 @@ function highlightCard(
 
         const original =
           CHAKRAS.find(
+
             x =>
               x.name ===
               card.dataset.name
+
           );
 
 
@@ -1930,7 +1751,9 @@ function highlightCard(
           );
 
 
-          if (original) {
+          if (
+            original
+          ) {
 
             card.style.background =
               original.color;
@@ -1946,7 +1769,7 @@ function highlightCard(
 
 
 // ============================================================
-// CLEAR HIGHLIGHT
+// CLEAR CARD HIGHLIGHT
 // ============================================================
 
 function clearCardHighlight() {
@@ -1969,13 +1792,17 @@ function clearCardHighlight() {
 
         const original =
           CHAKRAS.find(
+
             x =>
               x.name ===
               card.dataset.name
+
           );
 
 
-        if (original) {
+        if (
+          original
+        ) {
 
           card.style.background =
             original.color;
@@ -1989,7 +1816,20 @@ function clearCardHighlight() {
 
 
 // ============================================================
-// ENHANCED TONE ENGINE
+// SMOOTH TONE ENGINE
+// ============================================================
+//
+// IMPORTANT CLICK FIX:
+//
+// volumeGain controls the user's volume.
+//
+// breatheGain handles the slow breathing effect.
+//
+// duckGain handles lowering the tone while speech plays.
+//
+// These are separate gain nodes so they do not fight each
+// other on one AudioParam.
+//
 // ============================================================
 
 function playTone(
@@ -2022,49 +1862,86 @@ function playTone(
     audioCtx.currentTime;
 
 
-  // ==========================================================
-  // MASTER GAIN
-  // ==========================================================
-
-  const masterGain =
+  const mixGain =
     audioCtx.createGain();
 
 
-  masterGain.gain.setValueAtTime(
-    0,
-    now
-  );
+  const breatheGain =
+    audioCtx.createGain();
 
 
-  // ==========================================================
-  // COMPRESSOR
-  // ==========================================================
+  const volumeGain =
+    audioCtx.createGain();
+
+
+  const duckGain =
+    audioCtx.createGain();
+
 
   const compressor =
     audioCtx.createDynamicsCompressor();
 
 
+  mixGain.gain.setValueAtTime(
+    1,
+    now
+  );
+
+
+  breatheGain.gain.setValueAtTime(
+    1,
+    now
+  );
+
+
+  volumeGain.gain.setValueAtTime(
+    0.0001,
+    now
+  );
+
+
+  duckGain.gain.setValueAtTime(
+    1,
+    now
+  );
+
+
   compressor.threshold.value =
-    -22;
+    -24;
 
 
   compressor.knee.value =
-    20;
+    24;
 
 
   compressor.ratio.value =
-    3;
+    2.5;
 
 
   compressor.attack.value =
-    0.02;
+    0.025;
 
 
   compressor.release.value =
-    0.7;
+    0.8;
 
 
-  masterGain.connect(
+  mixGain.connect(
+    breatheGain
+  );
+
+
+  breatheGain.connect(
+    volumeGain
+  );
+
+
+  volumeGain.connect(
+    duckGain
+  );
+
+
+  duckGain.connect(
     compressor
   );
 
@@ -2074,10 +1951,6 @@ function playTone(
   );
 
 
-  // ==========================================================
-  // SOUND LAYERS
-  // ==========================================================
-
   const layers = [
 
     {
@@ -2085,7 +1958,7 @@ function playTone(
         ch.freq,
 
       gain:
-        0.52,
+        0.48,
 
       detune:
         0
@@ -2097,7 +1970,7 @@ function playTone(
         ch.freq / 2,
 
       gain:
-        0.22,
+        0.20,
 
       detune:
         0
@@ -2109,7 +1982,7 @@ function playTone(
         ch.freq * 2,
 
       gain:
-        0.055,
+        0.045,
 
       detune:
         0
@@ -2121,10 +1994,10 @@ function playTone(
         ch.freq,
 
       gain:
-        0.13,
+        0.11,
 
       detune:
-        4
+        3.5
     },
 
 
@@ -2133,10 +2006,10 @@ function playTone(
         ch.freq,
 
       gain:
-        0.13,
+        0.11,
 
       detune:
-        -4
+        -3.5
     }
 
   ];
@@ -2162,20 +2035,29 @@ function playTone(
 
 
       oscillator.frequency.setValueAtTime(
+
         layer.frequency,
+
         now
+
       );
 
 
       oscillator.detune.setValueAtTime(
+
         layer.detune,
+
         now
+
       );
 
 
       layerGain.gain.setValueAtTime(
+
         layer.gain,
+
         now
+
       );
 
 
@@ -2185,7 +2067,7 @@ function playTone(
 
 
       layerGain.connect(
-        masterGain
+        mixGain
       );
 
 
@@ -2198,6 +2080,7 @@ function playTone(
         {
 
           oscillator,
+
           layerGain
 
         }
@@ -2208,7 +2091,7 @@ function playTone(
 
 
   // ==========================================================
-  // BREATHING LFO
+  // BREATHING MODULATION
   // ==========================================================
 
   const lfo =
@@ -2219,13 +2102,19 @@ function playTone(
     audioCtx.createGain();
 
 
-  lfo.frequency.value =
-    0.10;
+  lfo.frequency.setValueAtTime(
+    0.10,
+    now
+  );
 
 
-  lfoGain.gain.value =
-    toneVolume *
-    0.055;
+  // Only ±4% movement.
+  // This never goes near zero.
+
+  lfoGain.gain.setValueAtTime(
+    0.04,
+    now
+  );
 
 
   lfo.connect(
@@ -2234,7 +2123,7 @@ function playTone(
 
 
   lfoGain.connect(
-    masterGain.gain
+    breatheGain.gain
   );
 
 
@@ -2244,22 +2133,31 @@ function playTone(
 
 
   // ==========================================================
-  // FADE IN
+  // LONG SMOOTH FADE-IN
   // ==========================================================
 
-  masterGain.gain
-    .linearRampToValueAtTime(
+  volumeGain.gain
+    .exponentialRampToValueAtTime(
 
-      toneVolume,
+      Math.max(
+        0.0001,
+        toneVolume
+      ),
 
-      now + 1.1
+      now + 0.85
 
     );
 
 
   currentTone = {
 
-    masterGain,
+    mixGain,
+
+    breatheGain,
+
+    volumeGain,
+
+    duckGain,
 
     compressor,
 
@@ -2275,7 +2173,7 @@ function playTone(
 
 
 // ============================================================
-// STOP TONE
+// STOP TONE WITHOUT POP
 // ============================================================
 
 function stopTone(
@@ -2301,20 +2199,18 @@ function stopTone(
 
     try {
 
-      tone.masterGain.gain
-        .cancelScheduledValues(
-          now
-        );
+      holdGain(
+        tone.volumeGain.gain,
+        now
+      );
 
 
-      tone.masterGain.gain
-        .setTargetAtTime(
+      tone.volumeGain.gain
+        .exponentialRampToValueAtTime(
 
-          0,
+          0.0001,
 
-          now,
-
-          0.06
+          now + 0.22
 
         );
 
@@ -2389,7 +2285,34 @@ function stopTone(
 
         try {
 
-          tone.masterGain.disconnect();
+          tone.mixGain.disconnect();
+
+        }
+
+        catch (_) {}
+
+
+        try {
+
+          tone.breatheGain.disconnect();
+
+        }
+
+        catch (_) {}
+
+
+        try {
+
+          tone.volumeGain.disconnect();
+
+        }
+
+        catch (_) {}
+
+
+        try {
+
+          tone.duckGain.disconnect();
 
         }
 
@@ -2406,7 +2329,7 @@ function stopTone(
 
       },
 
-      350
+      300
     );
 
   }
@@ -2424,12 +2347,12 @@ function stopTone(
 
 
 // ============================================================
-// TONE VOLUME
+// USER TONE VOLUME
 // ============================================================
 
 function updateToneVolume(
   target,
-  speed = 0.08
+  seconds = 0.12
 ) {
 
   if (
@@ -2447,32 +2370,28 @@ function updateToneVolume(
     audioCtx.currentTime;
 
 
-  currentTone.masterGain.gain
-    .cancelScheduledValues(
-      now
+  const safeTarget =
+    Math.max(
+      0.0001,
+      target
     );
 
 
-  currentTone.masterGain.gain
-    .setTargetAtTime(
+  holdGain(
 
-      target,
+    currentTone.volumeGain.gain,
 
-      now,
+    now
 
-      speed
-
-    );
+  );
 
 
-  currentTone.lfoGain.gain
-    .setTargetAtTime(
+  currentTone.volumeGain.gain
+    .linearRampToValueAtTime(
 
-      target * 0.055,
+      safeTarget,
 
-      now,
-
-      speed
+      now + seconds
 
     );
 
@@ -2480,49 +2399,85 @@ function updateToneVolume(
 
 
 // ============================================================
-// DUCK TONE WHILE SPEAKING
+// SMOOTH DUCK BEFORE VOICE
 // ============================================================
 
 function fadeToneForSpeech() {
 
   if (
-    currentTone &&
-    toneEnabled
+    !currentTone ||
+    !audioCtx ||
+    !toneEnabled
   ) {
 
-    updateToneVolume(
-
-      toneVolume * 0.24,
-
-      0.18
-
-    );
+    return;
 
   }
+
+
+  const now =
+    audioCtx.currentTime;
+
+
+  holdGain(
+
+    currentTone.duckGain.gain,
+
+    now
+
+  );
+
+
+  currentTone.duckGain.gain
+    .linearRampToValueAtTime(
+
+      0.22,
+
+      now + 0.11
+
+    );
 
 }
 
 
 // ============================================================
-// RESTORE TONE
+// SMOOTH RESTORE AFTER VOICE
 // ============================================================
 
 function restoreToneVolume() {
 
   if (
-    currentTone &&
-    toneEnabled
+    !currentTone ||
+    !audioCtx ||
+    !toneEnabled
   ) {
 
-    updateToneVolume(
-
-      toneVolume,
-
-      0.35
-
-    );
+    return;
 
   }
+
+
+  const now =
+    audioCtx.currentTime;
+
+
+  holdGain(
+
+    currentTone.duckGain.gain,
+
+    now
+
+  );
+
+
+  currentTone.duckGain.gain
+    .linearRampToValueAtTime(
+
+      1.0,
+
+      now + 0.42
+
+    );
 
 }
 
@@ -2534,25 +2489,6 @@ function restoreToneVolume() {
 function stopVoice(
   restoreTone = true
 ) {
-
-  if (
-    speechResolver
-  ) {
-
-    const resolver =
-      speechResolver;
-
-
-    speechResolver =
-      null;
-
-
-    resolver(
-      false
-    );
-
-  }
-
 
   if (
     speechController
@@ -2574,52 +2510,127 @@ function stopVoice(
 
 
   if (
-    currentAudio
+    currentVoiceGain &&
+    audioCtx
   ) {
 
-    currentAudio.onended =
-      null;
-
-
-    currentAudio.onerror =
-      null;
+    const now =
+      audioCtx.currentTime;
 
 
     try {
 
-      currentAudio.pause();
+      holdGain(
 
-      currentAudio.currentTime =
-        0;
+        currentVoiceGain.gain,
+
+        now
+
+      );
+
+
+      currentVoiceGain.gain
+        .linearRampToValueAtTime(
+
+          0.0001,
+
+          now + 0.035
+
+        );
 
     }
 
     catch (_) {}
-
-
-    currentAudio =
-      null;
 
   }
 
 
   if (
-    currentAudioUrl
+    currentVoiceSource
   ) {
 
-    try {
-
-      URL.revokeObjectURL(
-        currentAudioUrl
-      );
-
-    }
-
-    catch (_) {}
+    const source =
+      currentVoiceSource;
 
 
-    currentAudioUrl =
+    currentVoiceSource =
       null;
+
+
+    setTimeout(
+      () => {
+
+        try {
+
+          source.stop();
+
+        }
+
+        catch (_) {}
+
+
+        try {
+
+          source.disconnect();
+
+        }
+
+        catch (_) {}
+
+      },
+
+      45
+    );
+
+  }
+
+
+  if (
+    currentVoiceGain
+  ) {
+
+    const gain =
+      currentVoiceGain;
+
+
+    currentVoiceGain =
+      null;
+
+
+    setTimeout(
+      () => {
+
+        try {
+
+          gain.disconnect();
+
+        }
+
+        catch (_) {}
+
+      },
+
+      60
+    );
+
+  }
+
+
+  if (
+    speechResolver
+  ) {
+
+    const resolver =
+      speechResolver;
+
+
+    speechResolver =
+      null;
+
+
+    resolver(
+      false
+    );
 
   }
 
@@ -2704,12 +2715,12 @@ function speakWithDeviceVoice(
         voiceVolume;
 
 
-      speechResolver =
-        resolve;
-
-
       isSpeaking =
         true;
+
+
+      speechResolver =
+        resolve;
 
 
       fadeToneForSpeech();
@@ -2719,13 +2730,15 @@ function speakWithDeviceVoice(
 
         "bad",
 
-        "Using iPhone/device speech — ElevenLabs did not generate this voice"
+        "Device speech fallback"
 
       );
 
 
       setStatus(
+
         "⚠ DEVICE VOICE — ElevenLabs unavailable"
+
       );
 
 
@@ -2757,17 +2770,6 @@ function speakWithDeviceVoice(
           restoreToneVolume();
 
 
-          if (
-            !isPlayingAll
-          ) {
-
-            setStatus(
-              "⚠ Device voice was used"
-            );
-
-          }
-
-
           resolve(
             success
           );
@@ -2795,10 +2797,307 @@ function speakWithDeviceVoice(
         };
 
 
+      // Give the tone duck time to complete.
+      setTimeout(
+        () => {
+
+          try {
+
+            speechSynthesis.speak(
+              utterance
+            );
+
+          }
+
+          catch (
+            error
+          ) {
+
+            console.error(
+              error
+            );
+
+
+            finish(
+              false
+            );
+
+          }
+
+        },
+
+        130
+      );
+
+    }
+  );
+
+}
+
+
+// ============================================================
+// DECODE AUDIO HELPER
+// ============================================================
+
+async function decodeAudio(
+  arrayBuffer
+) {
+
+  ensureAudio();
+
+
+  const copiedBuffer =
+    arrayBuffer.slice(
+      0
+    );
+
+
+  return await audioCtx.decodeAudioData(
+    copiedBuffer
+  );
+
+}
+
+
+// ============================================================
+// PLAY ELEVENLABS BUFFER
+// ============================================================
+//
+// IMPORTANT CLICK FIX:
+//
+// We no longer play the MP3 through new Audio(...).
+//
+// It is decoded into Web Audio.
+//
+// A voice gain node starts nearly silent, fades in over 45 ms,
+// and fades out over 70 ms.
+//
+// This removes the abrupt waveform edge that can cause a click.
+//
+// ============================================================
+
+async function playVoiceBuffer(
+  buffer
+) {
+
+  ensureAudio();
+
+
+  fadeToneForSpeech();
+
+
+  // Allow tone ducking to finish before voice begins.
+  await wait(
+    125
+  );
+
+
+  const now =
+    audioCtx.currentTime;
+
+
+  const source =
+    audioCtx.createBufferSource();
+
+
+  const voiceGain =
+    audioCtx.createGain();
+
+
+  source.buffer =
+    buffer;
+
+
+  source.connect(
+    voiceGain
+  );
+
+
+  voiceGain.connect(
+    audioCtx.destination
+  );
+
+
+  currentVoiceSource =
+    source;
+
+
+  currentVoiceGain =
+    voiceGain;
+
+
+  isSpeaking =
+    true;
+
+
+  const fadeIn =
+    0.045;
+
+
+  const fadeOut =
+    0.070;
+
+
+  const targetVolume =
+    Math.max(
+      0.0001,
+      voiceVolume
+    );
+
+
+  voiceGain.gain.setValueAtTime(
+    0.0001,
+    now
+  );
+
+
+  voiceGain.gain
+    .linearRampToValueAtTime(
+
+      targetVolume,
+
+      now + fadeIn
+
+    );
+
+
+  const fadeOutStart =
+    Math.max(
+
+      now + fadeIn,
+
+      now +
+      buffer.duration -
+      fadeOut
+
+    );
+
+
+  voiceGain.gain.setValueAtTime(
+
+    targetVolume,
+
+    fadeOutStart
+
+  );
+
+
+  voiceGain.gain
+    .linearRampToValueAtTime(
+
+      0.0001,
+
+      now + buffer.duration
+
+    );
+
+
+  return new Promise(
+    resolve => {
+
+      speechResolver =
+        resolve;
+
+
+      let finished =
+        false;
+
+
+      const finish =
+        success => {
+
+          if (
+            finished
+          ) {
+
+            return;
+
+          }
+
+
+          finished =
+            true;
+
+
+          if (
+            speechResolver ===
+            resolve
+          ) {
+
+            speechResolver =
+              null;
+
+          }
+
+
+          if (
+            currentVoiceSource ===
+            source
+          ) {
+
+            currentVoiceSource =
+              null;
+
+          }
+
+
+          if (
+            currentVoiceGain ===
+            voiceGain
+          ) {
+
+            currentVoiceGain =
+              null;
+
+          }
+
+
+          try {
+
+            source.disconnect();
+
+          }
+
+          catch (_) {}
+
+
+          try {
+
+            voiceGain.disconnect();
+
+          }
+
+          catch (_) {}
+
+
+          isSpeaking =
+            false;
+
+
+          restoreToneVolume();
+
+
+          resolve(
+            success
+          );
+
+        };
+
+
+      source.onended =
+        () => {
+
+          finish(
+            true
+          );
+
+        };
+
+
       try {
 
-        speechSynthesis.speak(
-          utterance
+        source.start(
+          now
         );
 
       }
@@ -2808,7 +3107,11 @@ function speakWithDeviceVoice(
       ) {
 
         console.error(
+
+          "Voice buffer playback failed:",
+
           error
+
         );
 
 
@@ -2836,10 +3139,6 @@ async function speakWithElevenLabs(
     false
   );
 
-
-  // ==========================================================
-  // VERIFY ELEVENLABS FIRST
-  // ==========================================================
 
   if (
     !elevenLabsAvailable
@@ -2872,15 +3171,6 @@ async function speakWithElevenLabs(
     controller;
 
 
-  setApiState(
-
-    "good",
-
-    `${verifiedVoiceName || "ElevenLabs"} • generating`
-
-  );
-
-
   setStatus(
 
     `Generating ${verifiedVoiceName || "ElevenLabs"}…`
@@ -2889,10 +3179,6 @@ async function speakWithElevenLabs(
 
 
   try {
-
-    // ========================================================
-    // ELEVENLABS TTS REQUEST
-    // ========================================================
 
     const response =
       await fetch(
@@ -2990,12 +3276,8 @@ async function speakWithElevenLabs(
     }
 
 
-    // ========================================================
-    // GET AUDIO
-    // ========================================================
-
-    const blob =
-      await response.blob();
+    const arrayBuffer =
+      await response.arrayBuffer();
 
 
     if (
@@ -3008,9 +3290,8 @@ async function speakWithElevenLabs(
 
 
     if (
-      !blob ||
-      blob.size ===
-        0
+      arrayBuffer.byteLength ===
+      0
     ) {
 
       throw new Error(
@@ -3020,195 +3301,50 @@ async function speakWithElevenLabs(
     }
 
 
-    currentAudioUrl =
-      URL.createObjectURL(
-        blob
+    setStatus(
+      "Preparing smooth voice…"
+    );
+
+
+    const decoded =
+      await decodeAudio(
+        arrayBuffer
       );
 
 
-    currentAudio =
-      new Audio(
-        currentAudioUrl
-      );
+    if (
+      controller.signal.aborted
+    ) {
 
+      return false;
 
-    currentAudio.volume =
-      voiceVolume;
+    }
 
-
-    currentAudio.preload =
-      "auto";
-
-
-    isSpeaking =
-      true;
-
-
-    fadeToneForSpeech();
-
-
-    // ========================================================
-    // NOW WE KNOW ELEVENLABS GENERATED THE AUDIO
-    // ========================================================
 
     setApiState(
 
       "good",
 
-      `Playing ElevenLabs: ${verifiedVoiceName || VOICE_ID}`
+      `Playing ElevenLabs: ${verifiedVoiceName}`
 
     );
 
 
     setStatus(
 
-      `ELEVENLABS ✓ • ${verifiedVoiceName || "voice"}`
+      `ELEVENLABS ✓ • ${verifiedVoiceName}`
 
     );
-
-
-    // ========================================================
-    // WAIT FOR ENTIRE AUDIO TO FINISH
-    // ========================================================
-
-    const completed =
-      await new Promise(
-        resolve => {
-
-          speechResolver =
-            resolve;
-
-
-          const finish =
-            success => {
-
-              if (
-                speechResolver !==
-                resolve
-              ) {
-
-                return;
-
-              }
-
-
-              speechResolver =
-                null;
-
-
-              resolve(
-                success
-              );
-
-            };
-
-
-          currentAudio.onended =
-            () => {
-
-              finish(
-                true
-              );
-
-            };
-
-
-          currentAudio.onerror =
-            error => {
-
-              console.error(
-
-                "Audio playback error:",
-
-                error
-
-              );
-
-
-              finish(
-                false
-              );
-
-            };
-
-
-          currentAudio.play()
-            .catch(
-              error => {
-
-                console.error(
-
-                  "Audio play error:",
-
-                  error
-
-                );
-
-
-                finish(
-                  false
-                );
-
-              }
-            );
-
-        }
-      );
-
-
-    // ========================================================
-    // CLEAN UP AUDIO
-    // ========================================================
-
-    if (
-      currentAudio
-    ) {
-
-      try {
-
-        currentAudio.pause();
-
-      }
-
-      catch (_) {}
-
-
-      currentAudio =
-        null;
-
-    }
-
-
-    if (
-      currentAudioUrl
-    ) {
-
-      try {
-
-        URL.revokeObjectURL(
-          currentAudioUrl
-        );
-
-      }
-
-      catch (_) {}
-
-
-      currentAudioUrl =
-        null;
-
-    }
 
 
     speechController =
       null;
 
 
-    isSpeaking =
-      false;
-
-
-    restoreToneVolume();
+    const completed =
+      await playVoiceBuffer(
+        decoded
+      );
 
 
     if (
@@ -3243,26 +3379,17 @@ async function speakWithElevenLabs(
     error
   ) {
 
-    // ========================================================
-    // ABORT IS NORMAL WHEN STOP IS PRESSED
-    // ========================================================
-
     if (
       error.name ===
       "AbortError"
     ) {
 
+      speechController =
+        null;
+
+
       isSpeaking =
         false;
-
-
-      if (
-        !isPlayingAll
-      ) {
-
-        setStatus("");
-
-      }
 
 
       return false;
@@ -3279,6 +3406,10 @@ async function speakWithElevenLabs(
     );
 
 
+    speechController =
+      null;
+
+
     elevenLabsAvailable =
       false;
 
@@ -3287,21 +3418,17 @@ async function speakWithElevenLabs(
 
       "bad",
 
-      `${error.message} — using device speech`
+      `${error.message} • device fallback`
 
     );
 
 
     setStatus(
 
-      "⚠ ElevenLabs failed — switching to DEVICE VOICE"
+      "⚠ ElevenLabs failed — using device voice"
 
     );
 
-
-    // ========================================================
-    // DEVICE FALLBACK
-    // ========================================================
 
     return await speakWithDeviceVoice(
       text
@@ -3460,7 +3587,7 @@ function clearAffirmation() {
 
 
 // ============================================================
-// SINGLE CHAKRA TAP
+// SINGLE CHAKRA
 // ============================================================
 
 async function handleCardTap(
@@ -3516,31 +3643,6 @@ async function handleCardTap(
 
   await speakWithElevenLabs(
     text
-  );
-
-}
-
-
-// ============================================================
-// WAIT
-// ============================================================
-
-function wait(
-  milliseconds
-) {
-
-  return new Promise(
-    resolve => {
-
-      setTimeout(
-
-        resolve,
-
-        milliseconds
-
-      );
-
-    }
   );
 
 }
@@ -3651,24 +3753,15 @@ async function playAllSequence() {
 
     setStatus(
 
-      `Chakra ${currentPlayAllIndex + 1} of ${CHAKRAS.length} • generating voice`
+      `Chakra ${currentPlayAllIndex + 1} of ${CHAKRAS.length}`
 
     );
 
 
-    // ========================================================
-    // WAIT FOR THE ENTIRE AFFIRMATION
-    // ========================================================
+    await speakWithElevenLabs(
+      text
+    );
 
-    const completed =
-      await speakWithElevenLabs(
-        text
-      );
-
-
-    // ========================================================
-    // STOP CHECK
-    // ========================================================
 
     if (
 
@@ -3683,24 +3776,6 @@ async function playAllSequence() {
 
     }
 
-
-    if (
-      !completed
-    ) {
-
-      console.warn(
-        "Speech did not report successful completion."
-      );
-
-    }
-
-
-    restoreToneVolume();
-
-
-    // ========================================================
-    // MEDITATION PAUSE
-    // ========================================================
 
     setStatus(
 
@@ -3732,10 +3807,6 @@ async function playAllSequence() {
 
   }
 
-
-  // ==========================================================
-  // COMPLETE
-  // ==========================================================
 
   if (
 
@@ -3833,10 +3904,6 @@ playAllBtn.addEventListener(
       "Stop Journey";
 
 
-    // ========================================================
-    // VERIFY ELEVENLABS FIRST
-    // ========================================================
-
     if (
       !elevenLabsAvailable
     ) {
@@ -3930,11 +3997,34 @@ voiceVolumeSlider.addEventListener(
 
 
     if (
-      currentAudio
+      currentVoiceGain &&
+      audioCtx
     ) {
 
-      currentAudio.volume =
-        voiceVolume;
+      const now =
+        audioCtx.currentTime;
+
+
+      holdGain(
+
+        currentVoiceGain.gain,
+
+        now
+
+      );
+
+
+      currentVoiceGain.gain
+        .linearRampToValueAtTime(
+
+          Math.max(
+            0.0001,
+            voiceVolume
+          ),
+
+          now + 0.08
+
+        );
 
     }
 
@@ -3974,31 +4064,13 @@ toneVolumeSlider.addEventListener(
 
     ) {
 
-      if (
-        isSpeaking
-      ) {
+      updateToneVolume(
 
-        updateToneVolume(
+        toneVolume,
 
-          toneVolume * 0.24,
+        0.08
 
-          0.05
-
-        );
-
-      }
-
-      else {
-
-        updateToneVolume(
-
-          toneVolume,
-
-          0.05
-
-        );
-
-      }
+      );
 
     }
 
@@ -4008,7 +4080,7 @@ toneVolumeSlider.addEventListener(
 
 
 // ============================================================
-// TONE ON / OFF
+// TONE TOGGLE
 // ============================================================
 
 toneToggle.addEventListener(
@@ -4091,10 +4163,6 @@ voiceSelect.addEventListener(
 
     verifiedVoiceName =
       "";
-
-
-    verifiedModel =
-      false;
 
 
     setApiState(
@@ -4183,11 +4251,6 @@ document.addEventListener(
 // ============================================================
 // INITIAL API CHECK
 // ============================================================
-//
-// This checks ElevenLabs shortly after the page loads.
-// It does NOT play audio.
-//
-// ============================================================
 
 window.addEventListener(
 
@@ -4206,7 +4269,6 @@ window.addEventListener(
       },
 
       350
-
     );
 
   }
