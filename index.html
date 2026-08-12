@@ -1,1864 +1,4983 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Chakra Tones">
-  <meta name="theme-color" content="#0f0f12">
-  <title>Chakra Tone Player</title>
-  <style>
-    :root {
-      --bg: #0f0f12;
-      --card-radius: 16px;
-      --text: #ffffff;
-      --muted: #a0a0b0;
-      --panel: #1a1a20;
-    }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    html {
-      background: var(--bg);
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100dvh;
-      padding: 16px;
-      padding-top: max(16px, env(safe-area-inset-top));
-      padding-bottom: max(24px, env(safe-area-inset-bottom));
-      -webkit-font-smoothing: antialiased;
-      overscroll-behavior: none;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 18px;
-    }
-    .header h1 {
-      font-size: 1.55rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-bottom: 4px;
-    }
-    .header p {
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-    .grid {
-      display: grid;
-      gap: 10px;
-      max-width: 480px;
-      margin: 0 auto 14px;
-    }
-    .card {
-      border-radius: var(--card-radius);
-      padding: 13px 15px;
-      cursor: pointer;
-      transition: transform 0.15s ease, filter 0.2s ease, box-shadow 0.3s ease;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      border: 2px solid transparent;
-    }
-    .card:active {
-      transform: scale(0.98);
-    }
-    .card.playing {
-      border-color: rgba(255,255,255,0.78);
-      filter: brightness(1.20) saturate(1.06);
-      box-shadow:
-        0 0 14px rgba(255,255,255,0.15),
-        0 0 30px rgba(255,255,255,0.08);
-      animation: breatheCard 5s ease-in-out infinite;
-    }
-    @keyframes breatheCard {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.012); }
-    }
-    .card-name {
-      font-size: 1.08rem;
-      font-weight: 650;
-      margin-bottom: 2px;
-    }
-    .card-meta {
-      font-size: 0.78rem;
-      opacity: 0.85;
-      margin-bottom: 3px;
-    }
-    .card-affirmation {
-      font-size: 0.86rem;
-      font-style: italic;
-      opacity: 0.95;
-      line-height: 1.35;
-      min-height: 1.2em;
-    }
-    .affirmation-panel {
-      max-width: 480px;
-      margin: 0 auto 14px;
-      background: #1a1a22;
-      border-radius: 14px;
-      padding: 14px 16px;
-      text-align: center;
-      min-height: 78px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      transition: background 0.3s ease;
-    }
-    .affirmation-panel.empty {
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
-    .affirmation-label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
-    .affirmation-text {
-      font-size: 1.02rem;
-      font-weight: 500;
-      line-height: 1.4;
-    }
-    .controls {
-      max-width: 480px;
-      margin: 0 auto;
-      background: var(--panel);
-      border-radius: 16px;
-      padding: 14px 16px;
-    }
-    .control-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 13px;
-    }
-    .control-row:last-of-type {
-      margin-bottom: 8px;
-    }
-    .control-label {
-      font-size: 0.88rem;
-      color: var(--muted);
-      min-width: 76px;
-    }
-    .volume-value {
-      min-width: 40px;
-      text-align: right;
-      color: #c6c6d0;
-      font-size: 0.78rem;
-      font-variant-numeric: tabular-nums;
-    }
-    input[type="range"] {
-      flex: 1;
-      height: 6px;
-      -webkit-appearance: none;
-      appearance: none;
-      background: #333;
-      border-radius: 3px;
-      outline: none;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 21px;
-      height: 21px;
-      border-radius: 50%;
-      background: #fff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-    }
-    select {
-      flex: 1;
-      background: #2a2a32;
-      color: white;
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 0.9rem;
-      min-width: 0;
-    }
-    .switch {
-      position: relative;
-      width: 46px;
-      height: 26px;
-      flex: 0 0 auto;
-    }
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      inset: 0;
-      background: #333;
-      border-radius: 26px;
-      transition: 0.2s;
-    }
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 20px;
-      width: 20px;
-      left: 3px;
-      bottom: 3px;
-      background: white;
-      border-radius: 50%;
-      transition: 0.2s;
-    }
-    input:checked + .slider {
-      background: #4caf50;
-    }
-    input:checked + .slider:before {
-      transform: translateX(20px);
-    }
-    .switch-description {
-      color: var(--muted);
-      font-size: 0.88rem;
-    }
-    .btn-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 6px;
-    }
-    .btn {
-      padding: 12px 10px;
-      border: none;
-      border-radius: 12px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      color: white;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .btn-playall {
-      background: #1565c0;
-    }
-    .btn-stop {
-      background: #b71c1c;
-    }
-    .btn:active {
-      opacity: 0.85;
-      transform: scale(0.985);
-    }
-    .status {
-      text-align: center;
-      font-size: 0.84rem;
-      color: #aaa;
-      margin-top: 10px;
-      min-height: 1.3em;
-    }
-    .footer {
-      text-align: center;
-      margin-top: 18px;
-      font-size: 0.76rem;
-      color: #555;
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .card.playing {
-        animation: none;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chakra Tones">
+<meta name="theme-color" content="#0f0f12">
+
+<title>Chakra Tone Player</title>
+
+<style>
+
+:root {
+  --bg: #0f0f12;
+  --panel: #1a1a20;
+  --panel2: #222229;
+  --text: #ffffff;
+  --muted: #a0a0b0;
+  --good: #67e08a;
+  --warn: #ffd166;
+  --bad: #ff6b6b;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+
+  background: var(--bg);
+  color: var(--text);
+
+  min-height: 100dvh;
+
+  padding: 16px;
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(30px, env(safe-area-inset-bottom));
+
+  -webkit-font-smoothing: antialiased;
+
+  overscroll-behavior: none;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.header {
+  max-width: 520px;
+  margin: 0 auto 14px;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 1.55rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.header p {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+/* =========================================================
+   API STATUS
+   ========================================================= */
+
+.api-banner {
+  max-width: 520px;
+
+  margin: 0 auto 12px;
+
+  padding: 10px 12px;
+
+  border-radius: 12px;
+
+  background: #191920;
+  border: 1px solid #303038;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+.api-left {
+  min-width: 0;
+}
+
+.api-title {
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.api-detail {
+  margin-top: 2px;
+
+  color: var(--muted);
+
+  font-size: 0.74rem;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.api-indicator {
+  flex: 0 0 auto;
+
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  background: #2a2a32;
+
+  color: #bbb;
+
+  font-size: 0.69rem;
+  font-weight: 700;
+}
+
+.api-indicator.good {
+  color: var(--good);
+}
+
+.api-indicator.warn {
+  color: var(--warn);
+}
+
+.api-indicator.bad {
+  color: var(--bad);
+}
+
+/* =========================================================
+   CHAKRA CARDS
+   ========================================================= */
+
+.grid {
+  max-width: 520px;
+
+  margin: 0 auto 14px;
+
+  display: grid;
+
+  gap: 10px;
+}
+
+.card {
+  padding: 13px 15px;
+
+  border-radius: 16px;
+
+  border: 2px solid transparent;
+
+  cursor: pointer;
+
+  user-select: none;
+  -webkit-user-select: none;
+
+  -webkit-tap-highlight-color: transparent;
+
+  transition:
+    transform 0.15s ease,
+    filter 0.2s ease,
+    box-shadow 0.3s ease;
+}
+
+.card:active {
+  transform: scale(0.985);
+}
+
+.card.playing {
+  border-color: rgba(255,255,255,0.82);
+
+  filter:
+    brightness(1.22)
+    saturate(1.08);
+
+  box-shadow:
+    0 0 16px rgba(255,255,255,0.14),
+    0 0 32px rgba(255,255,255,0.07);
+
+  animation:
+    breatheCard 5s ease-in-out infinite;
+}
+
+@keyframes breatheCard {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.012);
+  }
+}
+
+.card-name {
+  font-size: 1.07rem;
+  font-weight: 650;
+}
+
+.card-meta {
+  margin-top: 2px;
+
+  font-size: 0.77rem;
+
+  opacity: 0.86;
+}
+
+.card-affirmation {
+  margin-top: 5px;
+
+  font-size: 0.85rem;
+  font-style: italic;
+
+  line-height: 1.35;
+}
+
+/* =========================================================
+   AFFIRMATION PANEL
+   ========================================================= */
+
+.affirmation-panel {
+  max-width: 520px;
+
+  margin: 0 auto 14px;
+
+  min-height: 92px;
+
+  padding: 14px 16px;
+
+  border-radius: 14px;
+
+  background: #1a1a22;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  text-align: center;
+}
+
+.affirmation-panel.empty {
+  color: var(--muted);
+}
+
+.affirmation-label {
+  margin-bottom: 5px;
+
+  color: var(--muted);
+
+  font-size: 0.69rem;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.05em;
+}
+
+.affirmation-text {
+  font-size: 1.02rem;
+
+  line-height: 1.4;
+}
+
+/* =========================================================
+   PANELS
+   ========================================================= */
+
+.panel {
+  max-width: 520px;
+
+  margin: 0 auto 12px;
+
+  padding: 14px 16px;
+
+  border-radius: 16px;
+
+  background: var(--panel);
+}
+
+.panel-title {
+  margin-bottom: 12px;
+
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.panel-subtitle {
+  margin-top: -7px;
+  margin-bottom: 13px;
+
+  color: var(--muted);
+
+  font-size: 0.75rem;
+
+  line-height: 1.35;
+}
+
+/* =========================================================
+   CONTROLS
+   ========================================================= */
+
+.control-row {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  margin-bottom: 13px;
+}
+
+.control-row:last-child {
+  margin-bottom: 0;
+}
+
+.control-label {
+  min-width: 80px;
+
+  color: var(--muted);
+
+  font-size: 0.87rem;
+}
+
+select {
+  flex: 1;
+
+  min-width: 0;
+
+  padding: 8px 10px;
+
+  border: 1px solid #444;
+
+  border-radius: 8px;
+
+  background: #2a2a32;
+
+  color: white;
+
+  font-size: 0.88rem;
+}
+
+input[type="range"] {
+  flex: 1;
+
+  height: 6px;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  background: #333;
+
+  border-radius: 3px;
+
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  width: 21px;
+  height: 21px;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  border-radius: 50%;
+
+  background: #fff;
+}
+
+.value {
+  min-width: 42px;
+
+  text-align: right;
+
+  color: #ccc;
+
+  font-size: 0.77rem;
+}
+
+/* =========================================================
+   SWITCH
+   ========================================================= */
+
+.switch {
+  position: relative;
+
+  flex: 0 0 auto;
+
+  width: 46px;
+  height: 26px;
+}
+
+.switch input {
+  width: 0;
+  height: 0;
+
+  opacity: 0;
+}
+
+.slider {
+  position: absolute;
+
+  inset: 0;
+
+  border-radius: 26px;
+
+  background: #333;
+
+  transition: 0.2s;
+}
+
+.slider:before {
+  content: "";
+
+  position: absolute;
+
+  width: 20px;
+  height: 20px;
+
+  left: 3px;
+  bottom: 3px;
+
+  border-radius: 50%;
+
+  background: #fff;
+
+  transition: 0.2s;
+}
+
+input:checked + .slider {
+  background: #4caf50;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.switch-description {
+  color: var(--muted);
+
+  font-size: 0.86rem;
+}
+
+/* =========================================================
+   JOURNEY SETTINGS
+   ========================================================= */
+
+.journey-header {
+  display: grid;
+
+  grid-template-columns:
+    1fr 74px 74px;
+
+  gap: 8px;
+
+  padding: 0 6px 6px;
+
+  color: var(--muted);
+
+  font-size: 0.66rem;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.04em;
+}
+
+.journey-row {
+  display: grid;
+
+  grid-template-columns:
+    1fr 74px 74px;
+
+  gap: 8px;
+
+  align-items: center;
+
+  padding: 8px 6px;
+
+  border-top:
+    1px solid rgba(255,255,255,0.055);
+}
+
+.journey-name {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.number-input {
+  width: 100%;
+
+  padding: 7px 5px;
+
+  border: 1px solid #41414b;
+
+  border-radius: 8px;
+
+  background: #292930;
+
+  color: white;
+
+  font-size: 0.85rem;
+
+  text-align: center;
+
+  outline: none;
+}
+
+.number-input:focus {
+  border-color: #777;
+}
+
+.settings-note {
+  margin-top: 10px;
+
+  color: #777;
+
+  font-size: 0.70rem;
+
+  line-height: 1.35;
+}
+
+/* =========================================================
+   PROGRESS
+   ========================================================= */
+
+.progress-wrap {
+  max-width: 520px;
+
+  margin: 0 auto 12px;
+
+  display: none;
+}
+
+.progress-wrap.show {
+  display: block;
+}
+
+.progress-track {
+  height: 6px;
+
+  border-radius: 999px;
+
+  overflow: hidden;
+
+  background: #292930;
+}
+
+.progress-bar {
+  width: 0%;
+  height: 100%;
+
+  border-radius: 999px;
+
+  background: #eee;
+
+  transition: width 0.25s linear;
+}
+
+.progress-text {
+  margin-top: 5px;
+
+  color: var(--muted);
+
+  font-size: 0.7rem;
+
+  text-align: center;
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.btn {
+  padding: 11px 10px;
+
+  border: none;
+
+  border-radius: 12px;
+
+  color: white;
+
+  cursor: pointer;
+
+  font-size: 0.93rem;
+  font-weight: 600;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active {
+  opacity: 0.84;
+
+  transform: scale(0.99);
+}
+
+.btn-check {
+  flex: 1;
+
+  padding: 9px;
+
+  background: #3a3a44;
+}
+
+.btn-row {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 10px;
+
+  margin-top: 8px;
+}
+
+.btn-play {
+  background: #1565c0;
+}
+
+.btn-stop {
+  background: #b71c1c;
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.status {
+  min-height: 1.4em;
+
+  margin-top: 10px;
+
+  color: #aaa;
+
+  font-size: 0.82rem;
+
+  text-align: center;
+}
+
+.footer {
+  margin-top: 18px;
+
+  color: #555;
+
+  font-size: 0.74rem;
+
+  text-align: center;
+}
+
+</style>
+
 </head>
+
 <body>
-  <div class="header">
-    <h1>Chakra Tone Player</h1>
-    <p>ElevenLabs natural voice • Smooth meditation tones</p>
+
+
+<div class="header">
+
+  <h1>
+    Chakra Tone Player
+  </h1>
+
+  <p>
+    Custom timed journey • randomized affirmations • ElevenLabs
+  </p>
+
+</div>
+
+
+<!-- =======================================================
+     API STATUS
+     ======================================================= -->
+
+<div class="api-banner">
+
+  <div class="api-left">
+
+    <div
+      id="apiTitle"
+      class="api-title"
+    >
+      ElevenLabs API
+    </div>
+
+    <div
+      id="apiDetail"
+      class="api-detail"
+    >
+      Checking selected voice…
+    </div>
+
   </div>
-  <div class="grid" id="chakraGrid"></div>
-  <div class="affirmation-panel empty" id="affirmationPanel">
-    <div class="affirmation-label" id="affirmLabel" style="display:none;">
-      Current Affirmation
-    </div>
-    <div class="affirmation-text" id="affirmText">
-      Select a chakra to begin
-    </div>
+
+  <div
+    id="apiIndicator"
+    class="api-indicator warn"
+  >
+    CHECKING
   </div>
-  <div class="controls">
-    <div class="control-row">
-      <label class="control-label" for="voiceSelect">Voice</label>
-      <select id="voiceSelect">
-        <option value="EXAVITQu4vr4xnSDxMaL">Sarah – Mature & Reassuring</option>
-        <option value="cgSgspJ2msm6clMCkdW9">Jessica – Bright & Warm</option>
-        <option value="pFZP5JQG7iQjIQuC4Bku">Lily – Soft & Velvety</option>
-        <option value="nPczCjzI2devNBz1zQrb">Brian – Deep & Resonant</option>
-        <option value="JBFqnCBsd6RMkjVDRZzb">George – Warm Storyteller</option>
-      </select>
+
+</div>
+
+
+<!-- =======================================================
+     CHAKRA CARDS
+     ======================================================= -->
+
+<div
+  id="chakraGrid"
+  class="grid"
+></div>
+
+
+<!-- =======================================================
+     AFFIRMATION
+     ======================================================= -->
+
+<div
+  id="affirmationPanel"
+  class="affirmation-panel empty"
+>
+
+  <div
+    id="affirmLabel"
+    class="affirmation-label"
+    style="display:none;"
+  ></div>
+
+  <div
+    id="affirmText"
+    class="affirmation-text"
+  >
+    Select a chakra to begin
+  </div>
+
+</div>
+
+
+<!-- =======================================================
+     JOURNEY PROGRESS
+     ======================================================= -->
+
+<div
+  id="progressWrap"
+  class="progress-wrap"
+>
+
+  <div class="progress-track">
+
+    <div
+      id="progressBar"
+      class="progress-bar"
+    ></div>
+
+  </div>
+
+  <div
+    id="progressText"
+    class="progress-text"
+  ></div>
+
+</div>
+
+
+<!-- =======================================================
+     AUDIO CONTROLS
+     ======================================================= -->
+
+<div class="panel">
+
+  <div class="panel-title">
+    Audio
+  </div>
+
+
+  <div class="control-row">
+
+    <div class="control-label">
+      Voice
     </div>
-    <div class="control-row">
-      <label class="control-label" for="voiceVolume">Voice</label>
+
+    <select id="voiceSelect">
+
+      <option value="EXAVITQu4vr4xnSDxMaL">
+        Sarah – Mature & Reassuring
+      </option>
+
+      <option value="cgSgspJ2msm6clMCkdW9">
+        Jessica – Bright & Warm
+      </option>
+
+      <option value="pFZP5JQG7iQjIQuC4Bku">
+        Lily – Soft & Velvety
+      </option>
+
+      <option value="nPczCjzI2devNBz1zQrb">
+        Brian – Deep & Resonant
+      </option>
+
+      <option value="JBFqnCBsd6RMkjVDRZzb">
+        George – Warm Storyteller
+      </option>
+
+    </select>
+
+  </div>
+
+
+  <div class="control-row">
+
+    <div class="control-label">
+      API
+    </div>
+
+    <button
+      id="checkApi"
+      class="btn btn-check"
+    >
+      Check ElevenLabs
+    </button>
+
+  </div>
+
+
+  <div class="control-row">
+
+    <div class="control-label">
+      Voice
+    </div>
+
+    <input
+      id="voiceVolume"
+      type="range"
+      min="0"
+      max="1"
+      step="0.01"
+      value="0.80"
+    >
+
+    <div
+      id="voiceVolumeValue"
+      class="value"
+    >
+      80%
+    </div>
+
+  </div>
+
+
+  <div class="control-row">
+
+    <div class="control-label">
+      Tone
+    </div>
+
+    <input
+      id="toneVolume"
+      type="range"
+      min="0"
+      max="1"
+      step="0.01"
+      value="0.30"
+    >
+
+    <div
+      id="toneVolumeValue"
+      class="value"
+    >
+      30%
+    </div>
+
+  </div>
+
+
+  <div class="control-row">
+
+    <div class="control-label">
+      Tone
+    </div>
+
+    <label class="switch">
+
       <input
-        type="range"
-        id="voiceVolume"
-        min="0"
-        max="1"
-        step="0.01"
-        value="0.80"
-      />
-      <span class="volume-value" id="voiceVolumeValue">80%</span>
+        id="toneToggle"
+        type="checkbox"
+        checked
+      >
+
+      <span class="slider"></span>
+
+    </label>
+
+    <span class="switch-description">
+      Enhanced chakra tone
+    </span>
+
+  </div>
+
+</div>
+
+
+<!-- =======================================================
+     JOURNEY SETTINGS
+     ======================================================= -->
+
+<div class="panel">
+
+  <div class="panel-title">
+    Journey Settings
+  </div>
+
+  <div class="panel-subtitle">
+    Set the minimum time and number of affirmations independently for each chakra.
+  </div>
+
+
+  <div class="control-row">
+
+    <div class="control-label">
+      Random
     </div>
-    <div class="control-row">
-      <label class="control-label" for="toneVolume">Tone</label>
+
+    <label class="switch">
+
       <input
-        type="range"
-        id="toneVolume"
-        min="0"
-        max="1"
-        step="0.01"
-        value="0.28"
-      />
-      <span class="volume-value" id="toneVolumeValue">28%</span>
-    </div>
-    <div class="control-row">
-      <span class="control-label">Tone</span>
-      <label class="switch">
-        <input type="checkbox" id="toneToggle" checked />
-        <span class="slider"></span>
-      </label>
-      <span class="switch-description">Play enhanced tone</span>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-playall" id="playAll" type="button">
-        Play All
-      </button>
-      <button class="btn btn-stop" id="stopAll" type="button">
-        Stop
-      </button>
-    </div>
+        id="randomToggle"
+        type="checkbox"
+        checked
+      >
+
+      <span class="slider"></span>
+
+    </label>
+
+    <span class="switch-description">
+      Randomize affirmations
+    </span>
+
   </div>
-  <div class="status" id="status" aria-live="polite"></div>
-  <div class="footer">
-    Solfeggio frequencies + ElevenLabs voice
+
+
+  <div class="journey-header">
+
+    <div>
+      Chakra
+    </div>
+
+    <div style="text-align:center;">
+      Seconds
+    </div>
+
+    <div style="text-align:center;">
+      Mantras
+    </div>
+
   </div>
-  <script>
-    "use strict";
-    // ============================================================
-    // ELEVENLABS API KEY
-    // ============================================================
-    const ELEVENLABS_API_KEY =
-      "sk_e9322bc962e4375aa8656bae5caf6a5ddf3fb744e54167aa";
-    let VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
-    // ============================================================
-    // CHAKRAS
-    // ============================================================
-    const CHAKRAS = [
-      {
-        name: "Root",
-        sanskrit: "Muladhara",
-        freq: 396,
-        color: "#8B0000",
-        active: "#FF1A1A",
-        note: "C",
-        affirmations: [
-          "I am safe, grounded, and secure in my body.",
-          "I trust the process of life and feel deeply rooted.",
-          "My foundation is strong; I belong here.",
-          "I release fear and stand firmly in the present moment.",
-          "Abundance flows to me as I remain stable and centered."
-        ]
-      },
-      {
-        name: "Sacral",
-        sanskrit: "Svadhisthana",
-        freq: 417,
-        color: "#E65100",
-        active: "#FF9100",
-        note: "D",
-        affirmations: [
-          "I embrace pleasure and creativity with ease.",
-          "My emotions flow freely and healthily.",
-          "I honor my desires and allow joy into my life.",
-          "I am open to change and the beauty of transformation.",
-          "Creativity moves through me effortlessly."
-        ]
-      },
-      {
-        name: "Solar Plexus",
-        sanskrit: "Manipura",
-        freq: 528,
-        color: "#F9A825",
-        active: "#FFEB3B",
-        note: "E",
-        affirmations: [
-          "I am confident, powerful, and in control of my life.",
-          "I trust my inner wisdom and take decisive action.",
-          "My personal power shines brightly.",
-          "I release self-doubt and step into my strength.",
-          "I am worthy of success and respect."
-        ]
-      },
-      {
-        name: "Heart",
-        sanskrit: "Anahata",
-        freq: 639,
-        color: "#2E7D32",
-        active: "#4CAF50",
-        note: "F",
-        affirmations: [
-          "I give and receive love freely and unconditionally.",
-          "My heart is open, compassionate, and full of gratitude.",
-          "I forgive myself and others with ease.",
-          "Love is my true nature and guides every action.",
-          "I am deeply connected to all living beings."
-        ]
-      },
-      {
-        name: "Throat",
-        sanskrit: "Vishuddha",
-        freq: 741,
-        color: "#0277BD",
-        active: "#29B6F6",
-        note: "G",
-        affirmations: [
-          "I speak my truth with clarity and confidence.",
-          "My voice is powerful and my words create positive change.",
-          "I express myself authentically and listen deeply.",
-          "Communication flows easily between me and others.",
-          "I am heard, understood, and respected."
-        ]
-      },
-      {
-        name: "Third Eye",
-        sanskrit: "Ajna",
-        freq: 852,
-        color: "#283593",
-        active: "#5C6BC0",
-        note: "A",
-        affirmations: [
-          "I trust my intuition and inner vision.",
-          "Clarity and insight guide my path.",
-          "I see beyond illusion and perceive the truth.",
-          "My mind is clear, focused, and open to wisdom.",
-          "I am connected to my higher guidance."
-        ]
-      },
-      {
-        name: "Crown",
-        sanskrit: "Sahasrara",
-        freq: 963,
-        color: "#6A1B9A",
-        active: "#AB47BC",
-        note: "B",
-        affirmations: [
-          "I am one with the divine and infinite consciousness.",
-          "Divine wisdom flows through me effortlessly.",
-          "I am connected to pure awareness and universal love.",
-          "My spirit is free, expansive, and luminous.",
-          "I surrender to the highest good and trust the universe."
-        ]
-      }
-    ];
-    // ============================================================
-    // STATE
-    // ============================================================
-    let audioCtx = null;
-    let toneEnabled = true;
-    let toneVolume = 0.28;
-    let voiceVolume = 0.80;
-    let currentTone = null;
-    let activeName = null;
-    let currentVoiceSource = null;
-    let currentVoiceGain = null;
-    let currentVoiceResolve = null;
-    let speechController = null;
-    let currentUtterance = null;
-    let isSpeaking = false;
-    let isPlayingAll = false;
-    let journeyToken = 0;
-    const affirmationIndex = {};
-    CHAKRAS.forEach(ch => {
-      affirmationIndex[ch.name] = 0;
-    });
-    // ============================================================
-    // DOM
-    // ============================================================
-    const grid =
-      document.getElementById("chakraGrid");
-    const voiceVolumeSlider =
-      document.getElementById("voiceVolume");
-    const toneVolumeSlider =
-      document.getElementById("toneVolume");
-    const voiceVolumeValue =
-      document.getElementById("voiceVolumeValue");
-    const toneVolumeValue =
-      document.getElementById("toneVolumeValue");
-    const toneToggle =
-      document.getElementById("toneToggle");
-    const voiceSelect =
-      document.getElementById("voiceSelect");
-    const stopBtn =
-      document.getElementById("stopAll");
-    const playAllBtn =
-      document.getElementById("playAll");
-    const affirmPanel =
-      document.getElementById("affirmationPanel");
-    const affirmLabel =
-      document.getElementById("affirmLabel");
-    const affirmText =
-      document.getElementById("affirmText");
-    const statusEl =
-      document.getElementById("status");
-    // ============================================================
-    // BUILD CARDS
-    // ============================================================
-    CHAKRAS.forEach(ch => {
-      const card =
-        document.createElement("div");
-      card.className =
-        "card";
-      card.style.background =
-        ch.color;
-      card.dataset.name =
-        ch.name;
-      card.setAttribute(
-        "role",
-        "button"
+
+
+  <div id="journeySettings"></div>
+
+
+  <div class="settings-note">
+    Time is the minimum duration for that chakra. The app will never cut off an affirmation just because its timer expires.
+  </div>
+
+
+  <div class="btn-row">
+
+    <button
+      id="playAll"
+      class="btn btn-play"
+    >
+      Start Journey
+    </button>
+
+    <button
+      id="stopAll"
+      class="btn btn-stop"
+    >
+      Stop
+    </button>
+
+  </div>
+
+</div>
+
+
+<div
+  id="status"
+  class="status"
+></div>
+
+
+<div class="footer">
+  Solfeggio tones + ElevenLabs affirmations
+</div>
+
+
+
+<script>
+
+"use strict";
+
+
+// ============================================================
+// ELEVENLABS
+// ============================================================
+//
+// This is kept inside the HTML because this is a single-file
+// application.
+//
+// For a public website, move this API key to a server.
+// ============================================================
+
+
+const ELEVENLABS_API_KEY =
+  "sk_e9322bc962e4375aa8656bae5caf6a5ddf3fb744e54167aa";
+
+
+const ELEVENLABS_MODEL =
+  "eleven_multilingual_v2";
+
+
+let VOICE_ID =
+  "EXAVITQu4vr4xnSDxMaL";
+
+
+let elevenLabsOK =
+  false;
+
+
+let verifiedVoiceName =
+  "";
+
+
+// ============================================================
+// CHAKRA DATA
+// ============================================================
+
+
+const CHAKRAS = [
+
+  {
+    name: "Root",
+    sanskrit: "Muladhara",
+    freq: 396,
+    note: "C",
+    color: "#8B0000",
+    active: "#FF1A1A",
+
+    journeySeconds: 60,
+    journeyAffirmations: 2,
+
+    affirmations: [
+
+      "I am safe, grounded, and secure in my body.",
+
+      "I trust the process of life and feel deeply rooted.",
+
+      "My foundation is strong; I belong here.",
+
+      "I release fear and stand firmly in the present moment.",
+
+      "Abundance flows to me as I remain stable and centered."
+
+    ]
+  },
+
+
+  {
+    name: "Sacral",
+    sanskrit: "Svadhisthana",
+    freq: 417,
+    note: "D",
+    color: "#E65100",
+    active: "#FF9100",
+
+    journeySeconds: 60,
+    journeyAffirmations: 2,
+
+    affirmations: [
+
+      "I embrace pleasure and creativity with ease.",
+
+      "My emotions flow freely and healthily.",
+
+      "I honor my desires and allow joy into my life.",
+
+      "I am open to change and the beauty of transformation.",
+
+      "Creativity moves through me effortlessly."
+
+    ]
+  },
+
+
+  {
+    name: "Solar Plexus",
+    sanskrit: "Manipura",
+    freq: 528,
+    note: "E",
+    color: "#F9A825",
+    active: "#FFEB3B",
+
+    journeySeconds: 60,
+    journeyAffirmations: 2,
+
+    affirmations: [
+
+      "I am confident, powerful, and in control of my life.",
+
+      "I trust my inner wisdom and take decisive action.",
+
+      "My personal power shines brightly.",
+
+      "I release self-doubt and step into my strength.",
+
+      "I am worthy of success and respect."
+
+    ]
+  },
+
+
+  {
+    name: "Heart",
+    sanskrit: "Anahata",
+    freq: 639,
+    note: "F",
+    color: "#2E7D32",
+    active: "#4CAF50",
+
+    journeySeconds: 60,
+    journeyAffirmations: 2,
+
+    affirmations: [
+
+      "I give and receive love freely and unconditionally.",
+
+      "My heart is open, compassionate, and full of gratitude.",
+
+      "I forgive myself and others with ease.",
+
+      "Love is my true nature and guides every action.",
+
+      "I am deeply connected to all living beings."
+
+    ]
+  },
+
+
+  {
+    name: "Throat",
+    sanskrit: "Vishuddha",
+    freq: 741,
+    note: "G",
+    color: "#0277BD",
+    active: "#29B6F6",
+
+    journeySeconds: 60,
+    journeyAffirmations: 2,
+
+    affirmations: [
+
+      "I speak my truth with clarity and confidence.",
+
+      "My voice is powerful and my words create positive change.",
+
+      "I express myself authentically and listen deeply.",
+
+      "Communication flows easily between me and others.",
+
+      "I am heard, understood, and respected."
+
+    ]
+  },
+
+
+  {
+    name: "Third Eye",
+    sanskrit: "Ajna",
+    freq: 852,
+    note: "A",
+    color: "#283593",
+    active: "#5C6BC0",
+
+    journeySeconds: 60,
+    journeyAffirmations: 2,
+
+    affirmations: [
+
+      "I trust my intuition and inner vision.",
+
+      "Clarity and insight guide my path.",
+
+      "I see beyond illusion and perceive the truth.",
+
+      "My mind is clear, focused, and open to wisdom.",
+
+      "I am connected to my higher guidance."
+
+    ]
+  },
+
+
+  {
+    name: "Crown",
+    sanskrit: "Sahasrara",
+    freq: 963,
+    note: "B",
+    color: "#6A1B9A",
+    active: "#AB47BC",
+
+    journeySeconds: 60,
+    journeyAffirmations: 2,
+
+    affirmations: [
+
+      "I am one with the divine and infinite consciousness.",
+
+      "Divine wisdom flows through me effortlessly.",
+
+      "I am connected to pure awareness and universal love.",
+
+      "My spirit is free, expansive, and luminous.",
+
+      "I surrender to the highest good and trust the universe."
+
+    ]
+  }
+
+];
+
+
+// ============================================================
+// STATE
+// ============================================================
+
+
+let audioCtx =
+  null;
+
+
+let toneEnabled =
+  true;
+
+
+let toneVolume =
+  0.30;
+
+
+let voiceVolume =
+  0.80;
+
+
+let randomizeAffirmations =
+  true;
+
+
+let currentTone =
+  null;
+
+
+let currentVoiceSource =
+  null;
+
+
+let currentVoiceGain =
+  null;
+
+
+let currentFetchController =
+  null;
+
+
+let currentUtterance =
+  null;
+
+
+let activeName =
+  null;
+
+
+let isSpeaking =
+  false;
+
+
+let isPlayingAll =
+  false;
+
+
+let speechToken =
+  0;
+
+
+let journeyToken =
+  0;
+
+
+const sequentialIndexes =
+  {};
+
+
+CHAKRAS.forEach(
+  chakra => {
+
+    sequentialIndexes[
+      chakra.name
+    ] = 0;
+
+  }
+);
+
+
+// ============================================================
+// DOM
+// ============================================================
+
+
+const grid =
+  document.getElementById(
+    "chakraGrid"
+  );
+
+
+const journeySettings =
+  document.getElementById(
+    "journeySettings"
+  );
+
+
+const affirmPanel =
+  document.getElementById(
+    "affirmationPanel"
+  );
+
+
+const affirmLabel =
+  document.getElementById(
+    "affirmLabel"
+  );
+
+
+const affirmText =
+  document.getElementById(
+    "affirmText"
+  );
+
+
+const statusEl =
+  document.getElementById(
+    "status"
+  );
+
+
+const voiceSelect =
+  document.getElementById(
+    "voiceSelect"
+  );
+
+
+const voiceVolumeSlider =
+  document.getElementById(
+    "voiceVolume"
+  );
+
+
+const voiceVolumeValue =
+  document.getElementById(
+    "voiceVolumeValue"
+  );
+
+
+const toneVolumeSlider =
+  document.getElementById(
+    "toneVolume"
+  );
+
+
+const toneVolumeValue =
+  document.getElementById(
+    "toneVolumeValue"
+  );
+
+
+const toneToggle =
+  document.getElementById(
+    "toneToggle"
+  );
+
+
+const randomToggle =
+  document.getElementById(
+    "randomToggle"
+  );
+
+
+const playAllButton =
+  document.getElementById(
+    "playAll"
+  );
+
+
+const stopButton =
+  document.getElementById(
+    "stopAll"
+  );
+
+
+const checkApiButton =
+  document.getElementById(
+    "checkApi"
+  );
+
+
+const apiTitle =
+  document.getElementById(
+    "apiTitle"
+  );
+
+
+const apiDetail =
+  document.getElementById(
+    "apiDetail"
+  );
+
+
+const apiIndicator =
+  document.getElementById(
+    "apiIndicator"
+  );
+
+
+const progressWrap =
+  document.getElementById(
+    "progressWrap"
+  );
+
+
+const progressBar =
+  document.getElementById(
+    "progressBar"
+  );
+
+
+const progressText =
+  document.getElementById(
+    "progressText"
+  );
+
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+
+function setStatus(
+  text
+) {
+
+  statusEl.textContent =
+    text || "";
+
+}
+
+
+function wait(
+  milliseconds
+) {
+
+  return new Promise(
+    resolve => {
+
+      setTimeout(
+        resolve,
+        milliseconds
       );
-      card.setAttribute(
-        "tabindex",
-        "0"
-      );
-      card.setAttribute(
-        "aria-label",
-        `${ch.name} chakra, ${ch.freq} hertz`
-      );
-      card.innerHTML = `
-        <div class="card-name">
-          ${ch.name} • ${ch.freq} Hz
-        </div>
-        <div class="card-meta">
-          ${ch.sanskrit} (${ch.note})
-        </div>
-        <div
-          class="card-affirmation"
-          data-affirm
-        ></div>
-      `;
-      card.addEventListener(
-        "click",
-        () => handleCardTap(ch)
-      );
-      card.addEventListener(
-        "keydown",
-        event => {
-          if (
-            event.key === "Enter" ||
-            event.key === " "
-          ) {
-            event.preventDefault();
-            handleCardTap(ch);
-          }
-        }
-      );
-      grid.appendChild(card);
-    });
-    // ============================================================
-    // BASIC HELPERS
-    // ============================================================
-    function setStatus(message) {
-      statusEl.textContent =
-        message || "";
+
     }
-    function wait(ms) {
-      return new Promise(
-        resolve => setTimeout(
-          resolve,
-          ms
-        )
-      );
-    }
-    function ensureAudio() {
-      if (!audioCtx) {
-        audioCtx =
-          new (
-            window.AudioContext ||
-            window.webkitAudioContext
-          )({
-            latencyHint: "interactive"
-          });
-      }
-      if (
-        audioCtx.state ===
-        "suspended"
-      ) {
-        audioCtx.resume()
-          .catch(() => {});
-      }
-      return audioCtx;
-    }
-    function setParamSmooth(
-      param,
-      target,
-      timeConstant = 0.08
+  );
+
+}
+
+
+// ============================================================
+// CANCELLABLE WAIT
+// ============================================================
+
+
+async function waitForJourney(
+  milliseconds,
+  token
+) {
+
+  const end =
+    performance.now() +
+    milliseconds;
+
+
+  while (
+    performance.now() <
+    end
+  ) {
+
+    if (
+      !isPlayingAll ||
+      token !== journeyToken
     ) {
-      if (
-        !audioCtx ||
-        !param
-      ) {
-        return;
-      }
-      const now =
-        audioCtx.currentTime;
-      try {
-        if (
-          typeof param.cancelAndHoldAtTime ===
-          "function"
-        ) {
-          param.cancelAndHoldAtTime(
-            now
-          );
-        } else {
-          const current =
-            param.value;
-          param.cancelScheduledValues(
-            now
-          );
-          param.setValueAtTime(
-            current,
-            now
-          );
-        }
-      } catch (_) {
-        try {
-          param.cancelScheduledValues(
-            now
-          );
-          param.setValueAtTime(
-            param.value,
-            now
-          );
-        } catch (_) {}
-      }
-      param.setTargetAtTime(
+
+      return false;
+
+    }
+
+
+    const remaining =
+      end -
+      performance.now();
+
+
+    await wait(
+
+      Math.min(
+        150,
         Math.max(
-          0.0001,
-          target
-        ),
-        now,
-        timeConstant
+          10,
+          remaining
+        )
+      )
+
+    );
+
+  }
+
+
+  return (
+    isPlayingAll &&
+    token === journeyToken
+  );
+
+}
+
+
+// ============================================================
+// AUDIO CONTEXT
+// ============================================================
+
+
+function ensureAudio() {
+
+  if (
+    !audioCtx
+  ) {
+
+    audioCtx =
+      new (
+        window.AudioContext ||
+        window.webkitAudioContext
+      )();
+
+  }
+
+
+  if (
+    audioCtx.state ===
+    "suspended"
+  ) {
+
+    audioCtx
+      .resume()
+      .catch(
+        () => {}
       );
+
+  }
+
+
+  return audioCtx;
+
+}
+
+
+// ============================================================
+// SMOOTH GAIN
+// ============================================================
+
+
+function smoothGain(
+  param,
+  target,
+  seconds
+) {
+
+  if (
+    !audioCtx ||
+    !param
+  ) {
+
+    return;
+
+  }
+
+
+  const now =
+    audioCtx.currentTime;
+
+
+  try {
+
+    if (
+      typeof param.cancelAndHoldAtTime ===
+      "function"
+    ) {
+
+      param.cancelAndHoldAtTime(
+        now
+      );
+
     }
-    // ============================================================
-    // CARD VISUALS
-    // ============================================================
-    function highlightCard(ch) {
-      activeName =
-        ch.name;
-      document
-        .querySelectorAll(".card")
-        .forEach(card => {
-          const original =
-            CHAKRAS.find(
-              item =>
-                item.name ===
-                card.dataset.name
-            );
-          if (
-            card.dataset.name ===
-            ch.name
-          ) {
-            card.classList.add(
-              "playing"
-            );
-            card.style.background =
-              ch.active;
-          } else {
-            card.classList.remove(
-              "playing"
-            );
-            if (original) {
-              card.style.background =
-                original.color;
-            }
+
+    else {
+
+      const value =
+        param.value;
+
+
+      param.cancelScheduledValues(
+        now
+      );
+
+
+      param.setValueAtTime(
+        value,
+        now
+      );
+
+    }
+
+
+    param.linearRampToValueAtTime(
+
+      target,
+
+      now + seconds
+
+    );
+
+  }
+
+  catch (
+    error
+  ) {
+
+    console.warn(
+      "Gain adjustment:",
+      error
+    );
+
+  }
+
+}
+
+
+// ============================================================
+// API STATUS
+// ============================================================
+
+
+function setApiStatus(
+  state,
+  detail
+) {
+
+  apiIndicator.className =
+    "api-indicator";
+
+
+  if (
+    state ===
+    "good"
+  ) {
+
+    apiIndicator.classList.add(
+      "good"
+    );
+
+
+    apiIndicator.textContent =
+      "ELEVENLABS ✓";
+
+  }
+
+  else if (
+    state ===
+    "bad"
+  ) {
+
+    apiIndicator.classList.add(
+      "bad"
+    );
+
+
+    apiIndicator.textContent =
+      "FAILED";
+
+  }
+
+  else {
+
+    apiIndicator.classList.add(
+      "warn"
+    );
+
+
+    apiIndicator.textContent =
+      "CHECKING";
+
+  }
+
+
+  if (
+    detail
+  ) {
+
+    apiDetail.textContent =
+      detail;
+
+  }
+
+}
+
+
+// ============================================================
+// CHECK ELEVENLABS
+// ============================================================
+
+
+async function checkElevenLabsAPI(
+  showStatus = true
+) {
+
+  setApiStatus(
+    "checking",
+    "Checking selected voice…"
+  );
+
+
+  if (
+    showStatus
+  ) {
+
+    setStatus(
+      "Checking ElevenLabs…"
+    );
+
+  }
+
+
+  try {
+
+    const response =
+      await fetch(
+
+        `https://api.elevenlabs.io/v1/voices/${encodeURIComponent(VOICE_ID)}`,
+
+        {
+
+          headers: {
+
+            "xi-api-key":
+              ELEVENLABS_API_KEY
+
           }
-        });
+
+        }
+
+      );
+
+
+    if (
+      !response.ok
+    ) {
+
+      throw new Error(
+
+        `API error ${response.status}`
+
+      );
+
     }
-    function clearCardHighlight() {
-      activeName =
-        null;
-      document
-        .querySelectorAll(".card")
-        .forEach(card => {
+
+
+    const voice =
+      await response.json();
+
+
+    verifiedVoiceName =
+      voice.name ||
+      "ElevenLabs Voice";
+
+
+    elevenLabsOK =
+      true;
+
+
+    apiTitle.textContent =
+      "ElevenLabs connected";
+
+
+    setApiStatus(
+
+      "good",
+
+      `${verifiedVoiceName} • ${ELEVENLABS_MODEL}`
+
+    );
+
+
+    if (
+      showStatus
+    ) {
+
+      setStatus(
+
+        `✓ Voice verified: ${verifiedVoiceName}`
+
+      );
+
+
+      setTimeout(
+        () => {
+
+          if (
+            !isSpeaking &&
+            !isPlayingAll
+          ) {
+
+            setStatus("");
+
+          }
+
+        },
+
+        2500
+      );
+
+    }
+
+
+    return true;
+
+  }
+
+  catch (
+    error
+  ) {
+
+    elevenLabsOK =
+      false;
+
+
+    apiTitle.textContent =
+      "ElevenLabs unavailable";
+
+
+    setApiStatus(
+      "bad",
+      error.message
+    );
+
+
+    if (
+      showStatus
+    ) {
+
+      setStatus(
+
+        `⚠ ${error.message}`
+
+      );
+
+    }
+
+
+    console.error(
+      error
+    );
+
+
+    return false;
+
+  }
+
+}
+
+
+// ============================================================
+// BUILD CHAKRA CARDS
+// ============================================================
+
+
+CHAKRAS.forEach(
+  chakra => {
+
+    const card =
+      document.createElement(
+        "div"
+      );
+
+
+    card.className =
+      "card";
+
+
+    card.dataset.name =
+      chakra.name;
+
+
+    card.style.background =
+      chakra.color;
+
+
+    card.innerHTML = `
+
+      <div class="card-name">
+
+        ${chakra.name}
+        •
+        ${chakra.freq} Hz
+
+      </div>
+
+      <div class="card-meta">
+
+        ${chakra.sanskrit}
+        (${chakra.note})
+
+      </div>
+
+      <div
+        class="card-affirmation"
+        data-affirm
+      ></div>
+
+    `;
+
+
+    card.addEventListener(
+      "click",
+      () => {
+
+        playSingleChakra(
+          chakra
+        );
+
+      }
+    );
+
+
+    grid.appendChild(
+      card
+    );
+
+  }
+);
+
+
+// ============================================================
+// BUILD JOURNEY SETTINGS
+// ============================================================
+
+
+CHAKRAS.forEach(
+  (chakra, index) => {
+
+    const row =
+      document.createElement(
+        "div"
+      );
+
+
+    row.className =
+      "journey-row";
+
+
+    row.innerHTML = `
+
+      <div class="journey-name">
+
+        ${chakra.name}
+
+      </div>
+
+
+      <input
+
+        class="number-input"
+
+        id="seconds-${index}"
+
+        type="number"
+
+        min="10"
+
+        max="1800"
+
+        step="5"
+
+        value="${chakra.journeySeconds}"
+
+        aria-label="${chakra.name} seconds"
+
+      >
+
+
+      <input
+
+        class="number-input"
+
+        id="affirmations-${index}"
+
+        type="number"
+
+        min="1"
+
+        max="20"
+
+        step="1"
+
+        value="${chakra.journeyAffirmations}"
+
+        aria-label="${chakra.name} affirmations"
+
+      >
+
+    `;
+
+
+    journeySettings.appendChild(
+      row
+    );
+
+
+    const secondsInput =
+      row.querySelector(
+        `#seconds-${index}`
+      );
+
+
+    const affirmationInput =
+      row.querySelector(
+        `#affirmations-${index}`
+      );
+
+
+    secondsInput.addEventListener(
+      "change",
+      () => {
+
+        chakra.journeySeconds =
+          clamp(
+
+            Number(
+              secondsInput.value
+            ),
+
+            10,
+
+            1800
+
+          );
+
+
+        secondsInput.value =
+          chakra.journeySeconds;
+
+      }
+    );
+
+
+    affirmationInput.addEventListener(
+      "change",
+      () => {
+
+        chakra.journeyAffirmations =
+          clamp(
+
+            Math.round(
+              Number(
+                affirmationInput.value
+              )
+            ),
+
+            1,
+
+            20
+
+          );
+
+
+        affirmationInput.value =
+          chakra.journeyAffirmations;
+
+      }
+    );
+
+  }
+);
+
+
+// ============================================================
+// CLAMP
+// ============================================================
+
+
+function clamp(
+  value,
+  min,
+  max
+) {
+
+  if (
+    !Number.isFinite(
+      value
+    )
+  ) {
+
+    return min;
+
+  }
+
+
+  return Math.min(
+
+    max,
+
+    Math.max(
+      min,
+      value
+    )
+
+  );
+
+}
+
+
+// ============================================================
+// CARD HIGHLIGHT
+// ============================================================
+
+
+function highlightCard(
+  chakra
+) {
+
+  activeName =
+    chakra.name;
+
+
+  document
+    .querySelectorAll(
+      ".card"
+    )
+    .forEach(
+      card => {
+
+        const data =
+          CHAKRAS.find(
+
+            item =>
+              item.name ===
+              card.dataset.name
+
+          );
+
+
+        if (
+          card.dataset.name ===
+          chakra.name
+        ) {
+
+          card.classList.add(
+            "playing"
+          );
+
+
+          card.style.background =
+            chakra.active;
+
+        }
+
+        else {
+
           card.classList.remove(
             "playing"
           );
-          const original =
-            CHAKRAS.find(
-              item =>
-                item.name ===
-                card.dataset.name
-            );
-          if (original) {
+
+
+          if (
+            data
+          ) {
+
             card.style.background =
-              original.color;
+              data.color;
+
           }
-        });
+
+        }
+
+      }
+    );
+
+}
+
+
+// ============================================================
+// CLEAR HIGHLIGHT
+// ============================================================
+
+
+function clearHighlight() {
+
+  activeName =
+    null;
+
+
+  document
+    .querySelectorAll(
+      ".card"
+    )
+    .forEach(
+      card => {
+
+        card.classList.remove(
+          "playing"
+        );
+
+
+        const chakra =
+          CHAKRAS.find(
+
+            item =>
+              item.name ===
+              card.dataset.name
+
+          );
+
+
+        if (
+          chakra
+        ) {
+
+          card.style.background =
+            chakra.color;
+
+        }
+
+      }
+    );
+
+}
+
+
+// ============================================================
+// TONE ENGINE
+// ============================================================
+
+
+function playTone(
+  chakra
+) {
+
+  highlightCard(
+    chakra
+  );
+
+
+  if (
+    !toneEnabled
+  ) {
+
+    return;
+
+  }
+
+
+  ensureAudio();
+
+
+  stopTone(
+    false
+  );
+
+
+  const now =
+    audioCtx.currentTime;
+
+
+  const mixGain =
+    audioCtx.createGain();
+
+
+  const volumeGain =
+    audioCtx.createGain();
+
+
+  const duckGain =
+    audioCtx.createGain();
+
+
+  const breatheGain =
+    audioCtx.createGain();
+
+
+  const compressor =
+    audioCtx.createDynamicsCompressor();
+
+
+  volumeGain.gain.setValueAtTime(
+    0.0001,
+    now
+  );
+
+
+  duckGain.gain.setValueAtTime(
+    1,
+    now
+  );
+
+
+  breatheGain.gain.setValueAtTime(
+    1,
+    now
+  );
+
+
+  compressor.threshold.value =
+    -24;
+
+
+  compressor.knee.value =
+    24;
+
+
+  compressor.ratio.value =
+    2.5;
+
+
+  compressor.attack.value =
+    0.025;
+
+
+  compressor.release.value =
+    0.8;
+
+
+  mixGain.connect(
+    breatheGain
+  );
+
+
+  breatheGain.connect(
+    volumeGain
+  );
+
+
+  volumeGain.connect(
+    duckGain
+  );
+
+
+  duckGain.connect(
+    compressor
+  );
+
+
+  compressor.connect(
+    audioCtx.destination
+  );
+
+
+  const layers = [
+
+    {
+      freq: chakra.freq,
+      gain: 0.48,
+      detune: 0
+    },
+
+    {
+      freq: chakra.freq / 2,
+      gain: 0.19,
+      detune: 0
+    },
+
+    {
+      freq: chakra.freq * 2,
+      gain: 0.04,
+      detune: 0
+    },
+
+    {
+      freq: chakra.freq,
+      gain: 0.11,
+      detune: 3
+    },
+
+    {
+      freq: chakra.freq,
+      gain: 0.11,
+      detune: -3
     }
-    // ============================================================
-    // TONE ENGINE
-    // ============================================================
-    function createTone(ch) {
-      ensureAudio();
-      const now =
-        audioCtx.currentTime;
-      const masterGain =
+
+  ];
+
+
+  const oscillators =
+    [];
+
+
+  layers.forEach(
+    layer => {
+
+      const osc =
+        audioCtx.createOscillator();
+
+
+      const gain =
         audioCtx.createGain();
-      const compressor =
-        audioCtx.createDynamicsCompressor();
-      masterGain.gain.setValueAtTime(
-        0.0001,
+
+
+      osc.type =
+        "sine";
+
+
+      osc.frequency.setValueAtTime(
+        layer.freq,
         now
       );
-      compressor.threshold.value =
-        -24;
-      compressor.knee.value =
-        18;
-      compressor.ratio.value =
-        2.5;
-      compressor.attack.value =
-        0.03;
-      compressor.release.value =
-        0.7;
-      masterGain.connect(
-        compressor
+
+
+      osc.detune.setValueAtTime(
+        layer.detune,
+        now
       );
-      compressor.connect(
-        audioCtx.destination
+
+
+      gain.gain.setValueAtTime(
+        layer.gain,
+        now
       );
-      const layers = [
+
+
+      osc.connect(
+        gain
+      );
+
+
+      gain.connect(
+        mixGain
+      );
+
+
+      osc.start(
+        now
+      );
+
+
+      oscillators.push(
         {
-          frequency: ch.freq,
-          gain: 0.50,
-          detune: 0
-        },
-        {
-          frequency: ch.freq / 2,
-          gain: 0.22,
-          detune: 0
-        },
-        {
-          frequency: ch.freq * 2,
-          gain: 0.045,
-          detune: 0
-        },
-        {
-          frequency: ch.freq,
-          gain: 0.105,
-          detune: 3.5
-        },
-        {
-          frequency: ch.freq,
-          gain: 0.105,
-          detune: -3.5
-        }
-      ];
-      const oscillatorNodes =
-        [];
-      for (
-        const layer of layers
-      ) {
-        const osc =
-          audioCtx.createOscillator();
-        const gain =
-          audioCtx.createGain();
-        osc.type =
-          "sine";
-        osc.frequency.setValueAtTime(
-          layer.frequency,
-          now
-        );
-        osc.detune.setValueAtTime(
-          layer.detune,
-          now
-        );
-        gain.gain.setValueAtTime(
-          layer.gain,
-          now
-        );
-        osc.connect(
-          gain
-        );
-        gain.connect(
-          masterGain
-        );
-        osc.start(
-          now
-        );
-        oscillatorNodes.push({
           osc,
           gain
-        });
-      }
-      // Slow breathing modulation
-      const lfo =
-        audioCtx.createOscillator();
-      const lfoGain =
-        audioCtx.createGain();
-      lfo.frequency.setValueAtTime(
-        0.085,
-        now
-      );
-      lfoGain.gain.setValueAtTime(
-        toneVolume * 0.035,
-        now
-      );
-      lfo.connect(
-        lfoGain
-      );
-      lfoGain.connect(
-        masterGain.gain
-      );
-      lfo.start(
-        now
-      );
-      return {
-        ch,
-        masterGain,
-        compressor,
-        oscillatorNodes,
-        lfo,
-        lfoGain,
-        disposed: false
-      };
-    }
-    function disposeTone(
-      tone
-    ) {
-      if (
-        !tone ||
-        tone.disposed
-      ) {
-        return;
-      }
-      tone.disposed =
-        true;
-      for (
-        const item of
-        tone.oscillatorNodes
-      ) {
-        try {
-          item.osc.stop();
-        } catch (_) {}
-        try {
-          item.osc.disconnect();
-        } catch (_) {}
-        try {
-          item.gain.disconnect();
-        } catch (_) {}
-      }
-      try {
-        tone.lfo.stop();
-      } catch (_) {}
-      try {
-        tone.lfo.disconnect();
-      } catch (_) {}
-      try {
-        tone.lfoGain.disconnect();
-      } catch (_) {}
-      try {
-        tone.masterGain.disconnect();
-      } catch (_) {}
-      try {
-        tone.compressor.disconnect();
-      } catch (_) {}
-    }
-    function fadeOutTone(
-      tone,
-      seconds = 0.45
-    ) {
-      if (
-        !tone ||
-        !audioCtx ||
-        tone.disposed
-      ) {
-        return;
-      }
-      const now =
-        audioCtx.currentTime;
-      try {
-        if (
-          typeof tone.masterGain.gain.cancelAndHoldAtTime ===
-          "function"
-        ) {
-          tone.masterGain.gain.cancelAndHoldAtTime(
-            now
-          );
-        } else {
-          const current =
-            tone.masterGain.gain.value;
-          tone.masterGain.gain.cancelScheduledValues(
-            now
-          );
-          tone.masterGain.gain.setValueAtTime(
-            current,
-            now
-          );
         }
-        tone.masterGain.gain.exponentialRampToValueAtTime(
-          0.0001,
-          now + seconds
-        );
-      } catch (_) {
-        setParamSmooth(
-          tone.masterGain.gain,
-          0.0001,
-          0.08
-        );
-      }
-      window.setTimeout(
-        () => disposeTone(tone),
-        Math.ceil(
-          (seconds + 0.15) * 1000
-        )
       );
+
     }
-    function desiredToneLevel() {
-      if (!toneEnabled) {
-        return 0.0001;
+  );
+
+
+  // Gentle breathing modulation
+
+  const lfo =
+    audioCtx.createOscillator();
+
+
+  const lfoGain =
+    audioCtx.createGain();
+
+
+  lfo.frequency.setValueAtTime(
+    0.10,
+    now
+  );
+
+
+  lfoGain.gain.setValueAtTime(
+    0.035,
+    now
+  );
+
+
+  lfo.connect(
+    lfoGain
+  );
+
+
+  lfoGain.connect(
+    breatheGain.gain
+  );
+
+
+  lfo.start(
+    now
+  );
+
+
+  volumeGain.gain.exponentialRampToValueAtTime(
+
+    Math.max(
+      0.0001,
+      toneVolume
+    ),
+
+    now + 0.75
+
+  );
+
+
+  currentTone = {
+
+    mixGain,
+
+    breatheGain,
+
+    volumeGain,
+
+    duckGain,
+
+    compressor,
+
+    oscillators,
+
+    lfo,
+
+    lfoGain
+
+  };
+
+}
+
+
+// ============================================================
+// STOP TONE
+// ============================================================
+
+
+function stopTone(
+  clearVisual = true
+) {
+
+  if (
+    currentTone &&
+    audioCtx
+  ) {
+
+    const tone =
+      currentTone;
+
+
+    currentTone =
+      null;
+
+
+    smoothGain(
+
+      tone.volumeGain.gain,
+
+      0.0001,
+
+      0.18
+
+    );
+
+
+    setTimeout(
+      () => {
+
+        tone.oscillators.forEach(
+          item => {
+
+            try {
+              item.osc.stop();
+            }
+            catch (_) {}
+
+
+            try {
+              item.osc.disconnect();
+            }
+            catch (_) {}
+
+
+            try {
+              item.gain.disconnect();
+            }
+            catch (_) {}
+
+          }
+        );
+
+
+        try {
+          tone.lfo.stop();
+        }
+        catch (_) {}
+
+
+        try {
+          tone.lfo.disconnect();
+        }
+        catch (_) {}
+
+
+        try {
+          tone.lfoGain.disconnect();
+        }
+        catch (_) {}
+
+
+        try {
+          tone.mixGain.disconnect();
+        }
+        catch (_) {}
+
+
+        try {
+          tone.breatheGain.disconnect();
+        }
+        catch (_) {}
+
+
+        try {
+          tone.volumeGain.disconnect();
+        }
+        catch (_) {}
+
+
+        try {
+          tone.duckGain.disconnect();
+        }
+        catch (_) {}
+
+
+        try {
+          tone.compressor.disconnect();
+        }
+        catch (_) {}
+
+      },
+
+      260
+    );
+
+  }
+
+
+  if (
+    clearVisual
+  ) {
+
+    clearHighlight();
+
+  }
+
+}
+
+
+// ============================================================
+// DUCK / RESTORE TONE
+// ============================================================
+
+
+function duckTone() {
+
+  if (
+    currentTone &&
+    toneEnabled
+  ) {
+
+    smoothGain(
+
+      currentTone.duckGain.gain,
+
+      0.20,
+
+      0.14
+
+    );
+
+  }
+
+}
+
+
+function restoreTone() {
+
+  if (
+    currentTone &&
+    toneEnabled
+  ) {
+
+    smoothGain(
+
+      currentTone.duckGain.gain,
+
+      1,
+
+      0.40
+
+    );
+
+  }
+
+}
+
+
+// ============================================================
+// STOP SPEECH
+// ============================================================
+
+
+function stopSpeech() {
+
+  speechToken++;
+
+
+  if (
+    currentFetchController
+  ) {
+
+    try {
+      currentFetchController.abort();
+    }
+    catch (_) {}
+
+
+    currentFetchController =
+      null;
+
+  }
+
+
+  if (
+    currentVoiceGain
+  ) {
+
+    smoothGain(
+
+      currentVoiceGain.gain,
+
+      0.0001,
+
+      0.035
+
+    );
+
+  }
+
+
+  if (
+    currentVoiceSource
+  ) {
+
+    const source =
+      currentVoiceSource;
+
+
+    currentVoiceSource =
+      null;
+
+
+    setTimeout(
+      () => {
+
+        try {
+          source.stop();
+        }
+        catch (_) {}
+
+      },
+
+      45
+    );
+
+  }
+
+
+  currentVoiceGain =
+    null;
+
+
+  if (
+    currentUtterance
+  ) {
+
+    currentUtterance.onend =
+      null;
+
+
+    currentUtterance.onerror =
+      null;
+
+
+    currentUtterance =
+      null;
+
+  }
+
+
+  try {
+    speechSynthesis.cancel();
+  }
+  catch (_) {}
+
+
+  isSpeaking =
+    false;
+
+}
+
+
+// ============================================================
+// PLAY DECODED ELEVENLABS AUDIO
+// ============================================================
+
+
+async function playDecodedVoice(
+  audioBuffer,
+  mySpeechToken
+) {
+
+  ensureAudio();
+
+
+  if (
+    mySpeechToken !==
+    speechToken
+  ) {
+
+    return false;
+
+  }
+
+
+  duckTone();
+
+
+  // Allow tone to duck before speech begins.
+
+  await wait(
+    150
+  );
+
+
+  if (
+    mySpeechToken !==
+    speechToken
+  ) {
+
+    return false;
+
+  }
+
+
+  const source =
+    audioCtx.createBufferSource();
+
+
+  const gain =
+    audioCtx.createGain();
+
+
+  source.buffer =
+    audioBuffer;
+
+
+  source.connect(
+    gain
+  );
+
+
+  gain.connect(
+    audioCtx.destination
+  );
+
+
+  currentVoiceSource =
+    source;
+
+
+  currentVoiceGain =
+    gain;
+
+
+  isSpeaking =
+    true;
+
+
+  const now =
+    audioCtx.currentTime;
+
+
+  const target =
+    Math.max(
+      0.0001,
+      voiceVolume
+    );
+
+
+  const fadeIn =
+    0.055;
+
+
+  const fadeOut =
+    0.085;
+
+
+  gain.gain.setValueAtTime(
+    0.0001,
+    now
+  );
+
+
+  gain.gain.linearRampToValueAtTime(
+
+    target,
+
+    now + fadeIn
+
+  );
+
+
+  const fadeOutStart =
+    Math.max(
+
+      now + fadeIn,
+
+      now +
+      audioBuffer.duration -
+      fadeOut
+
+    );
+
+
+  gain.gain.setValueAtTime(
+
+    target,
+
+    fadeOutStart
+
+  );
+
+
+  gain.gain.linearRampToValueAtTime(
+
+    0.0001,
+
+    now +
+    audioBuffer.duration
+
+  );
+
+
+  return await new Promise(
+    resolve => {
+
+      let finished =
+        false;
+
+
+      function finish(
+        success
+      ) {
+
+        if (
+          finished
+        ) {
+
+          return;
+
+        }
+
+
+        finished =
+          true;
+
+
+        if (
+          currentVoiceSource ===
+          source
+        ) {
+
+          currentVoiceSource =
+            null;
+
+        }
+
+
+        if (
+          currentVoiceGain ===
+          gain
+        ) {
+
+          currentVoiceGain =
+            null;
+
+        }
+
+
+        try {
+          source.disconnect();
+        }
+        catch (_) {}
+
+
+        try {
+          gain.disconnect();
+        }
+        catch (_) {}
+
+
+        isSpeaking =
+          false;
+
+
+        if (
+          mySpeechToken ===
+          speechToken
+        ) {
+
+          restoreTone();
+
+        }
+
+
+        resolve(
+
+          success &&
+          mySpeechToken ===
+          speechToken
+
+        );
+
       }
-      return isSpeaking
-        ? Math.max(
-            0.0001,
-            toneVolume * 0.23
-          )
-        : Math.max(
-            0.0001,
-            toneVolume
+
+
+      source.onended =
+        () => {
+
+          finish(
+            true
           );
-    }
-    function playTone(ch) {
-      highlightCard(ch);
-      if (!toneEnabled) {
-        return;
-      }
-      ensureAudio();
-      const previousTone =
-        currentTone;
-      const nextTone =
-        createTone(ch);
-      currentTone =
-        nextTone;
-      const now =
-        audioCtx.currentTime;
-      const target =
-        desiredToneLevel();
+
+        };
+
+
       try {
-        nextTone.masterGain.gain.setValueAtTime(
-          0.0001,
+
+        source.start(
           now
         );
-        nextTone.masterGain.gain.exponentialRampToValueAtTime(
-          target,
-          now + 0.75
-        );
-      } catch (_) {
-        setParamSmooth(
-          nextTone.masterGain.gain,
-          target,
-          0.16
-        );
+
       }
-      if (
-        previousTone &&
-        previousTone !== nextTone
+
+      catch (
+        error
       ) {
-        fadeOutTone(
-          previousTone,
-          0.55
+
+        console.error(
+          error
         );
-      }
-    }
-    function stopTone(
-      clearVisual = true
-    ) {
-      if (currentTone) {
-        const oldTone =
-          currentTone;
-        currentTone =
-          null;
-        fadeOutTone(
-          oldTone,
-          0.40
+
+
+        finish(
+          false
         );
+
       }
-      if (clearVisual) {
-        clearCardHighlight();
-      }
+
     }
-    function applyToneVolume() {
+  );
+
+}
+
+
+// ============================================================
+// DEVICE SPEECH FALLBACK
+// ============================================================
+
+
+function speakDevice(
+  text,
+  mySpeechToken
+) {
+
+  return new Promise(
+    resolve => {
+
       if (
-        !currentTone ||
-        !toneEnabled
+        mySpeechToken !==
+        speechToken
       ) {
+
+        resolve(
+          false
+        );
+
+
         return;
+
       }
-      setParamSmooth(
-        currentTone.masterGain.gain,
-        desiredToneLevel(),
-        isSpeaking
-          ? 0.16
-          : 0.28
-      );
-      setParamSmooth(
-        currentTone.lfoGain.gain,
-        Math.max(
-          0.0001,
-          toneVolume * 0.035
-        ),
-        0.20
-      );
-    }
-    function fadeToneForSpeech() {
+
+
+      duckTone();
+
+
+      const utterance =
+        new SpeechSynthesisUtterance(
+          text
+        );
+
+
+      currentUtterance =
+        utterance;
+
+
+      utterance.rate =
+        0.88;
+
+
+      utterance.pitch =
+        1;
+
+
+      utterance.volume =
+        voiceVolume;
+
+
       isSpeaking =
         true;
-      applyToneVolume();
-    }
-    function restoreToneVolume() {
-      isSpeaking =
-        false;
-      applyToneVolume();
-    }
-    // ============================================================
-    // VOICE ENGINE
-    // ============================================================
-    function resolveCurrentVoice(
-      result
-    ) {
-      if (
-        !currentVoiceResolve
-      ) {
-        return;
-      }
-      const resolve =
-        currentVoiceResolve;
-      currentVoiceResolve =
-        null;
-      resolve(
-        result
-      );
-    }
-    function cleanupVoiceNodes() {
-      if (currentVoiceSource) {
-        currentVoiceSource.onended =
-          null;
-        try {
-          currentVoiceSource.disconnect();
-        } catch (_) {}
-        currentVoiceSource =
-          null;
-      }
-      if (currentVoiceGain) {
-        try {
-          currentVoiceGain.disconnect();
-        } catch (_) {}
-        currentVoiceGain =
-          null;
-      }
-    }
-    function stopVoice(
-      restoreTone = true
-    ) {
-      if (speechController) {
-        try {
-          speechController.abort();
-        } catch (_) {}
-        speechController =
-          null;
-      }
-      if (
-        currentVoiceSource &&
-        audioCtx
-      ) {
-        const source =
-          currentVoiceSource;
-        const gain =
-          currentVoiceGain;
-        const now =
-          audioCtx.currentTime;
-        if (gain) {
-          try {
-            if (
-              typeof gain.gain.cancelAndHoldAtTime ===
-              "function"
-            ) {
-              gain.gain.cancelAndHoldAtTime(
-                now
-              );
-            } else {
-              const current =
-                gain.gain.value;
-              gain.gain.cancelScheduledValues(
-                now
-              );
-              gain.gain.setValueAtTime(
-                current,
-                now
-              );
-            }
-            gain.gain.exponentialRampToValueAtTime(
-              0.0001,
-              now + 0.045
-            );
-          } catch (_) {}
-        }
-        source.onended =
-          null;
-        window.setTimeout(
-          () => {
-            try {
-              source.stop();
-            } catch (_) {}
-            try {
-              source.disconnect();
-            } catch (_) {}
-            try {
-              if (gain) {
-                gain.disconnect();
-              }
-            } catch (_) {}
-          },
-          55
-        );
-        currentVoiceSource =
-          null;
-        currentVoiceGain =
-          null;
-      }
-      if (currentUtterance) {
-        currentUtterance.onend =
-          null;
-        currentUtterance.onerror =
-          null;
-        currentUtterance =
-          null;
-      }
-      try {
-        speechSynthesis.cancel();
-      } catch (_) {}
-      resolveCurrentVoice(
-        false
-      );
-      isSpeaking =
-        false;
-      if (restoreTone) {
-        restoreToneVolume();
-      }
-    }
-    async function decodeAudioBlob(
-      blob
-    ) {
-      ensureAudio();
-      const arrayBuffer =
-        await blob.arrayBuffer();
-      return await new Promise(
-        (resolve, reject) => {
-          const copy =
-            arrayBuffer.slice(0);
-          const result =
-            audioCtx.decodeAudioData(
-              copy,
-              decoded =>
-                resolve(decoded),
-              error =>
-                reject(error)
-            );
+
+
+      const finish =
+        success => {
+
           if (
-            result &&
-            typeof result.then ===
-            "function"
+            currentUtterance ===
+            utterance
           ) {
-            result
-              .then(resolve)
-              .catch(reject);
-          }
-        }
-      );
-    }
-    function playDecodedVoice(
-      buffer
-    ) {
-      return new Promise(
-        resolve => {
-          ensureAudio();
-          const source =
-            audioCtx.createBufferSource();
-          const gain =
-            audioCtx.createGain();
-          const now =
-            audioCtx.currentTime;
-          const fadeIn =
-            Math.min(
-              0.055,
-              Math.max(
-                0.015,
-                buffer.duration * 0.05
-              )
-            );
-          const fadeOut =
-            Math.min(
-              0.095,
-              Math.max(
-                0.035,
-                buffer.duration * 0.08
-              )
-            );
-          source.buffer =
-            buffer;
-          gain.gain.setValueAtTime(
-            0.0001,
-            now
-          );
-          try {
-            gain.gain.exponentialRampToValueAtTime(
-              Math.max(
-                0.0001,
-                voiceVolume
-              ),
-              now + fadeIn
-            );
-            if (
-              buffer.duration >
-              fadeIn +
-              fadeOut +
-              0.03
-            ) {
-              const fadeOutStart =
-                now +
-                Math.max(
-                  fadeIn,
-                  buffer.duration -
-                  fadeOut
-                );
-              gain.gain.setValueAtTime(
-                Math.max(
-                  0.0001,
-                  voiceVolume
-                ),
-                fadeOutStart
-              );
-              gain.gain.exponentialRampToValueAtTime(
-                0.0001,
-                now +
-                buffer.duration
-              );
-            }
-          } catch (_) {
-            gain.gain.value =
-              voiceVolume;
-          }
-          source.connect(
-            gain
-          );
-          gain.connect(
-            audioCtx.destination
-          );
-          currentVoiceSource =
-            source;
-          currentVoiceGain =
-            gain;
-          currentVoiceResolve =
-            resolve;
-          fadeToneForSpeech();
-          source.onended =
-            () => {
-              if (
-                currentVoiceSource !==
-                source
-              ) {
-                return;
-              }
-              cleanupVoiceNodes();
-              currentVoiceResolve =
-                null;
-              restoreToneVolume();
-              setStatus("");
-              resolve(
-                true
-              );
-            };
-          try {
-            source.start(
-              now
-            );
-          } catch (error) {
-            console.error(
-              "Voice start error:",
-              error
-            );
-            cleanupVoiceNodes();
-            currentVoiceResolve =
+
+            currentUtterance =
               null;
-            restoreToneVolume();
-            resolve(
-              false
-            );
+
           }
-        }
-      );
-    }
-    function speakWithDeviceVoice(
-      text
-    ) {
-      return new Promise(
-        resolve => {
-          stopVoice(
-            false
+
+
+          isSpeaking =
+            false;
+
+
+          if (
+            mySpeechToken ===
+            speechToken
+          ) {
+
+            restoreTone();
+
+          }
+
+
+          resolve(
+            success
           );
-          const utterance =
-            new SpeechSynthesisUtterance(
-              text
-            );
-          currentUtterance =
-            utterance;
-          currentVoiceResolve =
-            resolve;
-          utterance.rate =
-            0.88;
-          utterance.pitch =
-            1.0;
-          utterance.volume =
-            voiceVolume;
-          fadeToneForSpeech();
-          setStatus(
-            "Using device voice..."
-          );
-          const finish =
-            success => {
-              if (
-                currentUtterance !==
-                utterance
-              ) {
-                return;
-              }
-              currentUtterance =
-                null;
-              currentVoiceResolve =
-                null;
-              restoreToneVolume();
-              setStatus("");
-              resolve(
-                success
-              );
-            };
-          utterance.onend =
-            () => finish(true);
-          utterance.onerror =
-            () => finish(false);
-          try {
-            speechSynthesis.speak(
-              utterance
-            );
-          } catch (error) {
-            console.error(
-              "Device speech error:",
-              error
-            );
+
+        };
+
+
+      utterance.onend =
+        () => finish(true);
+
+
+      utterance.onerror =
+        () => finish(false);
+
+
+      setTimeout(
+        () => {
+
+          if (
+            mySpeechToken !==
+            speechToken
+          ) {
+
             finish(
               false
             );
+
+
+            return;
+
           }
-        }
+
+
+          try {
+
+            speechSynthesis.speak(
+              utterance
+            );
+
+          }
+
+          catch (
+            error
+          ) {
+
+            console.error(
+              error
+            );
+
+
+            finish(
+              false
+            );
+
+          }
+
+        },
+
+        150
       );
+
     }
-    async function speakWithElevenLabs(
-      text,
-      statusPrefix = ""
-    ) {
-      stopVoice(
+  );
+
+}
+
+
+// ============================================================
+// ELEVENLABS SPEECH
+// ============================================================
+
+
+async function speakText(
+  text
+) {
+
+  ensureAudio();
+
+
+  const mySpeechToken =
+    ++speechToken;
+
+
+  if (
+    !elevenLabsOK
+  ) {
+
+    const okay =
+      await checkElevenLabsAPI(
         false
       );
-      ensureAudio();
-      const controller =
-        new AbortController();
-      speechController =
-        controller;
+
+
+    if (
+      mySpeechToken !==
+      speechToken
+    ) {
+
+      return false;
+
+    }
+
+
+    if (
+      !okay
+    ) {
+
       setStatus(
-        statusPrefix
-          ? `${statusPrefix} • Generating voice...`
-          : "Generating voice..."
+        "Using device voice"
       );
-      try {
-        const response =
-          await fetch(
-            `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
-            {
-              method:
-                "POST",
-              signal:
-                controller.signal,
-              headers: {
-                "Accept":
-                  "audio/mpeg",
-                "Content-Type":
-                  "application/json",
-                "xi-api-key":
-                  ELEVENLABS_API_KEY
-              },
-              body:
-                JSON.stringify({
-                  text,
-                  model_id:
-                    "eleven_multilingual_v2",
-                  voice_settings: {
-                    stability:
-                      0.50,
-                    similarity_boost:
-                      0.75
-                  }
-                })
-            }
-          );
-        if (!response.ok) {
-          const body =
-            await response.text();
-          console.error(
-            "ElevenLabs error:",
-            response.status,
-            body
-          );
-          throw new Error(
-            `ElevenLabs API error ${response.status}`
-          );
-        }
-        const blob =
-          await response.blob();
-        if (
-          controller.signal.aborted
-        ) {
-          return false;
-        }
-        const buffer =
-          await decodeAudioBlob(
-            blob
-          );
-        if (
-          controller.signal.aborted
-        ) {
-          return false;
-        }
-        speechController =
-          null;
-        setStatus(
-          statusPrefix
-            ? `${statusPrefix} • Speaking...`
-            : "Speaking..."
-        );
-        return await playDecodedVoice(
-          buffer
-        );
-      } catch (error) {
-        if (
-          error.name ===
-            "AbortError" ||
-          controller.signal.aborted
-        ) {
-          setStatus("");
-          return false;
-        }
-        console.error(
-          "ElevenLabs failed:",
-          error
-        );
-        speechController =
-          null;
-        return await speakWithDeviceVoice(
-          text
-        );
-      }
-    }
-    // ============================================================
-    // AFFIRMATIONS
-    // ============================================================
-    function getNextAffirmation(
-      ch
-    ) {
-      const idx =
-        affirmationIndex[
-          ch.name
-        ] || 0;
-      const text =
-        ch.affirmations[
-          idx
-        ];
-      const number =
-        idx + 1;
-      affirmationIndex[
-        ch.name
-      ] =
-        (
-          idx + 1
-        ) %
-        ch.affirmations.length;
-      return {
+
+
+      return await speakDevice(
+
         text,
-        number
-      };
-    }
-    function showAffirmation(
-      ch,
-      text,
-      number
-    ) {
-      affirmLabel.style.display =
-        "block";
-      affirmLabel.textContent =
-        `Affirmation ${number} of ${ch.affirmations.length}`;
-      affirmText.textContent =
-        text;
-      affirmPanel.classList.remove(
-        "empty"
+
+        mySpeechToken
+
       );
-      affirmPanel.style.background =
-        ch.color + "33";
-      const card =
-        document.querySelector(
-          `.card[data-name="${ch.name}"]`
-        );
-      if (card) {
-        const element =
-          card.querySelector(
-            "[data-affirm]"
-          );
-        if (element) {
-          element.textContent =
-            text;
+
+    }
+
+  }
+
+
+  const controller =
+    new AbortController();
+
+
+  currentFetchController =
+    controller;
+
+
+  try {
+
+    setStatus(
+
+      `Generating ${verifiedVoiceName || "voice"}…`
+
+    );
+
+
+    const response =
+      await fetch(
+
+        `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(VOICE_ID)}?output_format=mp3_44100_128`,
+
+        {
+
+          method:
+            "POST",
+
+          signal:
+            controller.signal,
+
+          headers: {
+
+            "Accept":
+              "audio/mpeg",
+
+            "Content-Type":
+              "application/json",
+
+            "xi-api-key":
+              ELEVENLABS_API_KEY
+
+          },
+
+          body:
+            JSON.stringify({
+
+              text,
+
+              model_id:
+                ELEVENLABS_MODEL,
+
+              voice_settings: {
+
+                stability:
+                  0.42,
+
+                similarity_boost:
+                  0.82,
+
+                style:
+                  0.18,
+
+                use_speaker_boost:
+                  true,
+
+                speed:
+                  0.90
+
+              }
+
+            })
+
         }
-      }
-    }
-    function clearAffirmation() {
-      affirmLabel.style.display =
-        "none";
-      affirmText.textContent =
-        "Select a chakra to begin";
-      affirmPanel.classList.add(
-        "empty"
+
       );
-      affirmPanel.style.background =
-        "#1a1a22";
-      document
-        .querySelectorAll(
-          "[data-affirm]"
-        )
-        .forEach(
-          element => {
-            element.textContent =
-              "";
-          }
-        );
-    }
-    // ============================================================
-    // SINGLE CHAKRA
-    // ============================================================
-    async function handleCardTap(
-      ch
+
+
+    if (
+      mySpeechToken !==
+      speechToken
     ) {
-      ensureAudio();
-      if (isPlayingAll) {
-        stopPlayAll(
-          false
-        );
-      }
-      stopVoice(
-        false
-      );
-      const {
-        text,
-        number
-      } =
-        getNextAffirmation(
-          ch
-        );
-      showAffirmation(
-        ch,
-        text,
-        number
-      );
-      playTone(
-        ch
-      );
-      await speakWithElevenLabs(
-        text
-      );
+
+      return false;
+
     }
-    // ============================================================
-    // PLAY ALL
-    // ============================================================
-    function stopPlayAll(
-      clearPanel = true
+
+
+    if (
+      !response.ok
     ) {
-      journeyToken++;
-      isPlayingAll =
+
+      const errorText =
+        await response.text();
+
+
+      console.error(
+
+        "ElevenLabs:",
+
+        response.status,
+
+        errorText
+
+      );
+
+
+      elevenLabsOK =
         false;
-      playAllBtn.textContent =
-        "Play All";
-      stopVoice(
-        false
+
+
+      throw new Error(
+
+        `TTS error ${response.status}`
+
       );
-      stopTone(
-        true
-      );
-      if (clearPanel) {
-        clearAffirmation();
-      }
-      setStatus("");
+
     }
-    async function playAllSequence(
-      token
+
+
+    const bytes =
+      await response.arrayBuffer();
+
+
+    if (
+      mySpeechToken !==
+      speechToken
     ) {
-      for (
-        let index = 0;
-        index < CHAKRAS.length;
-        index++
+
+      return false;
+
+    }
+
+
+    setStatus(
+      "Preparing voice…"
+    );
+
+
+    const audioBuffer =
+      await audioCtx.decodeAudioData(
+
+        bytes.slice(
+          0
+        )
+
+      );
+
+
+    if (
+      mySpeechToken !==
+      speechToken
+    ) {
+
+      return false;
+
+    }
+
+
+    currentFetchController =
+      null;
+
+
+    setStatus(
+
+      `ELEVENLABS ✓ • ${verifiedVoiceName}`
+
+    );
+
+
+    return await playDecodedVoice(
+
+      audioBuffer,
+
+      mySpeechToken
+
+    );
+
+  }
+
+  catch (
+    error
+  ) {
+
+    currentFetchController =
+      null;
+
+
+    if (
+      error.name ===
+      "AbortError"
+    ) {
+
+      return false;
+
+    }
+
+
+    console.error(
+      error
+    );
+
+
+    elevenLabsOK =
+      false;
+
+
+    setApiStatus(
+
+      "bad",
+
+      "TTS failed • device fallback"
+
+    );
+
+
+    setStatus(
+      "Using device voice"
+    );
+
+
+    if (
+      mySpeechToken !==
+      speechToken
+    ) {
+
+      return false;
+
+    }
+
+
+    return await speakDevice(
+
+      text,
+
+      mySpeechToken
+
+    );
+
+  }
+
+}
+
+
+// ============================================================
+// SHUFFLE
+// ============================================================
+
+
+function shuffledCopy(
+  array
+) {
+
+  const result =
+    array.slice();
+
+
+  for (
+    let i =
+      result.length - 1;
+
+    i > 0;
+
+    i--
+  ) {
+
+    const j =
+      Math.floor(
+
+        Math.random() *
+        (i + 1)
+
+      );
+
+
+    [
+      result[i],
+      result[j]
+    ] = [
+      result[j],
+      result[i]
+    ];
+
+  }
+
+
+  return result;
+
+}
+
+
+// ============================================================
+// SELECT JOURNEY AFFIRMATIONS
+// ============================================================
+
+
+function getJourneyAffirmations(
+  chakra,
+  count
+) {
+
+  const result =
+    [];
+
+
+  if (
+    randomizeAffirmations
+  ) {
+
+    let pool =
+      [];
+
+
+    while (
+      result.length <
+      count
+    ) {
+
+      if (
+        pool.length ===
+        0
       ) {
-        if (
-          !isPlayingAll ||
-          token !==
-            journeyToken
-        ) {
-          return;
-        }
-        const ch =
-          CHAKRAS[
-            index
-          ];
-        const {
-          text,
-          number
-        } =
-          getNextAffirmation(
-            ch
+
+        pool =
+          shuffledCopy(
+            chakra.affirmations
           );
-        showAffirmation(
-          ch,
-          text,
-          number
-        );
-        playTone(
-          ch
-        );
-        const label =
-          `Chakra ${index + 1} of ${CHAKRAS.length}`;
-        const completed =
-          await speakWithElevenLabs(
-            text,
-            label
-          );
-        if (
-          !isPlayingAll ||
-          token !==
-            journeyToken
-        ) {
-          return;
-        }
-        if (!completed) {
-          return;
-        }
-        setStatus(
-          `${label} • Pause`
-        );
-        await wait(
-          1300
-        );
-        if (
-          !isPlayingAll ||
-          token !==
-            journeyToken
-        ) {
-          return;
-        }
+
       }
+
+
+      result.push(
+        pool.shift()
+      );
+
+    }
+
+  }
+
+  else {
+
+    let index =
+      sequentialIndexes[
+        chakra.name
+      ] || 0;
+
+
+    while (
+      result.length <
+      count
+    ) {
+
+      result.push(
+
+        chakra.affirmations[
+          index %
+          chakra.affirmations.length
+        ]
+
+      );
+
+
+      index++;
+
+    }
+
+
+    sequentialIndexes[
+      chakra.name
+    ] =
+      index %
+      chakra.affirmations.length;
+
+  }
+
+
+  return result;
+
+}
+
+
+// ============================================================
+// SINGLE AFFIRMATION
+// ============================================================
+
+
+function getSingleAffirmation(
+  chakra
+) {
+
+  if (
+    randomizeAffirmations
+  ) {
+
+    return chakra.affirmations[
+
+      Math.floor(
+
+        Math.random() *
+        chakra.affirmations.length
+
+      )
+
+    ];
+
+  }
+
+
+  const index =
+    sequentialIndexes[
+      chakra.name
+    ] || 0;
+
+
+  const text =
+    chakra.affirmations[
+      index
+    ];
+
+
+  sequentialIndexes[
+    chakra.name
+  ] =
+    (
+      index + 1
+    ) %
+    chakra.affirmations.length;
+
+
+  return text;
+
+}
+
+
+// ============================================================
+// SHOW AFFIRMATION
+// ============================================================
+
+
+function showAffirmation(
+  chakra,
+  text,
+  number,
+  total
+) {
+
+  affirmPanel.classList.remove(
+    "empty"
+  );
+
+
+  affirmPanel.style.background =
+    chakra.color +
+    "33";
+
+
+  affirmLabel.style.display =
+    "block";
+
+
+  affirmLabel.textContent =
+
+    `${chakra.name} • Affirmation ${number} of ${total}`;
+
+
+  affirmText.textContent =
+    text;
+
+
+  const card =
+    document.querySelector(
+
+      `.card[data-name="${chakra.name}"]`
+
+    );
+
+
+  if (
+    card
+  ) {
+
+    const line =
+      card.querySelector(
+        "[data-affirm]"
+      );
+
+
+    if (
+      line
+    ) {
+
+      line.textContent =
+        text;
+
+    }
+
+  }
+
+}
+
+
+// ============================================================
+// SINGLE CARD TAP
+// ============================================================
+
+
+async function playSingleChakra(
+  chakra
+) {
+
+  ensureAudio();
+
+
+  if (
+    isPlayingAll
+  ) {
+
+    stopEverything(
+      false
+    );
+
+  }
+
+
+  stopSpeech();
+
+
+  const text =
+    getSingleAffirmation(
+      chakra
+    );
+
+
+  showAffirmation(
+
+    chakra,
+
+    text,
+
+    1,
+
+    1
+
+  );
+
+
+  playTone(
+    chakra
+  );
+
+
+  await wait(
+    280
+  );
+
+
+  await speakText(
+    text
+  );
+
+}
+
+
+// ============================================================
+// UPDATE PROGRESS
+// ============================================================
+
+
+function updateJourneyProgress(
+  chakraIndex,
+  chakra,
+  elapsedMs,
+  totalMs
+) {
+
+  const chakraPercent =
+    Math.min(
+
+      1,
+
+      elapsedMs /
+      Math.max(
+        1,
+        totalMs
+      )
+
+    );
+
+
+  const overall =
+    (
+
+      chakraIndex +
+      chakraPercent
+
+    ) /
+    CHAKRAS.length;
+
+
+  progressBar.style.width =
+
+    `${Math.round(
+      overall *
+      100
+    )}%`;
+
+
+  const elapsedSeconds =
+    Math.floor(
+      elapsedMs /
+      1000
+    );
+
+
+  const configuredSeconds =
+    Math.round(
+      totalMs /
+      1000
+    );
+
+
+  progressText.textContent =
+
+    `${chakra.name} • ${elapsedSeconds}s / ${configuredSeconds}s`;
+
+}
+
+
+// ============================================================
+// WAIT REMAINING CHAKRA TIME
+// ============================================================
+
+
+async function waitRemainingChakraTime(
+  chakraIndex,
+  chakra,
+  startTime,
+  totalMilliseconds,
+  token
+) {
+
+  while (
+    true
+  ) {
+
+    if (
+      !isPlayingAll ||
+      token !== journeyToken
+    ) {
+
+      return false;
+
+    }
+
+
+    const elapsed =
+      performance.now() -
+      startTime;
+
+
+    updateJourneyProgress(
+
+      chakraIndex,
+
+      chakra,
+
+      elapsed,
+
+      totalMilliseconds
+
+    );
+
+
+    const remaining =
+      totalMilliseconds -
+      elapsed;
+
+
+    if (
+      remaining <=
+      0
+    ) {
+
+      return true;
+
+    }
+
+
+    setStatus(
+
+      `${chakra.name} • meditation • ${Math.ceil(remaining / 1000)}s remaining`
+
+    );
+
+
+    await wait(
+
+      Math.min(
+        250,
+        remaining
+      )
+
+    );
+
+  }
+
+}
+
+
+// ============================================================
+// JOURNEY
+// ============================================================
+
+
+async function playJourney() {
+
+  ensureAudio();
+
+
+  const token =
+    ++journeyToken;
+
+
+  isPlayingAll =
+    true;
+
+
+  playAllButton.textContent =
+    "Stop Journey";
+
+
+  progressWrap.classList.add(
+    "show"
+  );
+
+
+  progressBar.style.width =
+    "0%";
+
+
+  for (
+    let chakraIndex = 0;
+
+    chakraIndex <
+    CHAKRAS.length;
+
+    chakraIndex++
+  ) {
+
+    if (
+      !isPlayingAll ||
+      token !== journeyToken
+    ) {
+
+      return;
+
+    }
+
+
+    const chakra =
+      CHAKRAS[
+        chakraIndex
+      ];
+
+
+    // Read values directly from controls so latest changes
+    // are always used.
+
+    const secondsInput =
+      document.getElementById(
+
+        `seconds-${chakraIndex}`
+
+      );
+
+
+    const affirmationsInput =
+      document.getElementById(
+
+        `affirmations-${chakraIndex}`
+
+      );
+
+
+    const durationSeconds =
+      clamp(
+
+        Number(
+          secondsInput.value
+        ),
+
+        10,
+
+        1800
+
+      );
+
+
+    const affirmationCount =
+      clamp(
+
+        Math.round(
+          Number(
+            affirmationsInput.value
+          )
+        ),
+
+        1,
+
+        20
+
+      );
+
+
+    chakra.journeySeconds =
+      durationSeconds;
+
+
+    chakra.journeyAffirmations =
+      affirmationCount;
+
+
+    secondsInput.value =
+      durationSeconds;
+
+
+    affirmationsInput.value =
+      affirmationCount;
+
+
+    const chakraStart =
+      performance.now();
+
+
+    const chakraDuration =
+      durationSeconds *
+      1000;
+
+
+    const mantras =
+      getJourneyAffirmations(
+
+        chakra,
+
+        affirmationCount
+
+      );
+
+
+    playTone(
+      chakra
+    );
+
+
+    updateJourneyProgress(
+
+      chakraIndex,
+
+      chakra,
+
+      0,
+
+      chakraDuration
+
+    );
+
+
+    // Let tone fade in first.
+
+    const ready =
+      await waitForJourney(
+
+        350,
+
+        token
+
+      );
+
+
+    if (
+      !ready
+    ) {
+
+      return;
+
+    }
+
+
+    // ========================================================
+    // SPEAK ALL SELECTED AFFIRMATIONS
+    // ========================================================
+
+    for (
+      let affirmationIndex = 0;
+
+      affirmationIndex <
+      mantras.length;
+
+      affirmationIndex++
+    ) {
+
       if (
         !isPlayingAll ||
-        token !==
-          journeyToken
+        token !== journeyToken
       ) {
+
         return;
+
       }
-      isPlayingAll =
-        false;
-      playAllBtn.textContent =
-        "Play All";
-      stopVoice(
-        false
+
+
+      const text =
+        mantras[
+          affirmationIndex
+        ];
+
+
+      showAffirmation(
+
+        chakra,
+
+        text,
+
+        affirmationIndex + 1,
+
+        mantras.length
+
       );
-      stopTone(
+
+
+      setStatus(
+
+        `${chakra.name} • affirmation ${affirmationIndex + 1} of ${mantras.length}`
+
+      );
+
+
+      const spoken =
+        await speakText(
+          text
+        );
+
+
+      if (
+        !isPlayingAll ||
+        token !== journeyToken
+      ) {
+
+        return;
+
+      }
+
+
+      if (
+        !spoken
+      ) {
+
+        console.warn(
+
+          "Affirmation playback ended early:",
+
+          text
+
+        );
+
+      }
+
+
+      updateJourneyProgress(
+
+        chakraIndex,
+
+        chakra,
+
+        performance.now() -
+        chakraStart,
+
+        chakraDuration
+
+      );
+
+
+      // A natural pause between multiple affirmations.
+
+      if (
+        affirmationIndex <
+        mantras.length - 1
+      ) {
+
+        const okay =
+          await waitForJourney(
+
+            900,
+
+            token
+
+          );
+
+
+        if (
+          !okay
+        ) {
+
+          return;
+
+        }
+
+      }
+
+    }
+
+
+    // ========================================================
+    // KEEP THE CHAKRA TONE PLAYING UNTIL ITS SET TIME
+    // ========================================================
+
+    const completed =
+      await waitRemainingChakraTime(
+
+        chakraIndex,
+
+        chakra,
+
+        chakraStart,
+
+        chakraDuration,
+
+        token
+
+      );
+
+
+    if (
+      !completed
+    ) {
+
+      return;
+
+    }
+
+
+    // Small smooth transition before next chakra.
+
+    stopTone(
+      false
+    );
+
+
+    const transitionOkay =
+      await waitForJourney(
+
+        300,
+
+        token
+
+      );
+
+
+    if (
+      !transitionOkay
+    ) {
+
+      return;
+
+    }
+
+  }
+
+
+  // ==========================================================
+  // JOURNEY COMPLETE
+  // ==========================================================
+
+
+  if (
+    token === journeyToken &&
+    isPlayingAll
+  ) {
+
+    isPlayingAll =
+      false;
+
+
+    playAllButton.textContent =
+      "Start Journey";
+
+
+    stopSpeech();
+
+
+    stopTone(
+      true
+    );
+
+
+    progressBar.style.width =
+      "100%";
+
+
+    progressText.textContent =
+      "Journey complete";
+
+
+    setStatus(
+      "Journey complete"
+    );
+
+
+    setTimeout(
+      () => {
+
+        if (
+          !isPlayingAll
+        ) {
+
+          setStatus("");
+
+        }
+
+      },
+
+      3500
+    );
+
+  }
+
+}
+
+
+// ============================================================
+// STOP EVERYTHING
+// ============================================================
+
+
+function stopEverything(
+  clearAffirmation = true
+) {
+
+  isPlayingAll =
+    false;
+
+
+  journeyToken++;
+
+
+  playAllButton.textContent =
+    "Start Journey";
+
+
+  stopSpeech();
+
+
+  stopTone(
+    true
+  );
+
+
+  progressWrap.classList.remove(
+    "show"
+  );
+
+
+  progressBar.style.width =
+    "0%";
+
+
+  progressText.textContent =
+    "";
+
+
+  if (
+    clearAffirmation
+  ) {
+
+    affirmPanel.classList.add(
+      "empty"
+    );
+
+
+    affirmPanel.style.background =
+      "#1a1a22";
+
+
+    affirmLabel.style.display =
+      "none";
+
+
+    affirmText.textContent =
+      "Select a chakra to begin";
+
+
+    document
+      .querySelectorAll(
+        "[data-affirm]"
+      )
+      .forEach(
+        element => {
+
+          element.textContent =
+            "";
+
+        }
+      );
+
+  }
+
+
+  setStatus("");
+
+}
+
+
+// ============================================================
+// START / STOP JOURNEY BUTTON
+// ============================================================
+
+
+playAllButton.addEventListener(
+
+  "click",
+
+  async () => {
+
+    ensureAudio();
+
+
+    if (
+      isPlayingAll
+    ) {
+
+      stopEverything(
         true
       );
-      setStatus(
-        "Journey complete"
-      );
-      const completedToken =
-        journeyToken;
-      window.setTimeout(
-        () => {
-          if (
-            !isPlayingAll &&
-            journeyToken ===
-              completedToken
-          ) {
-            setStatus("");
-          }
-        },
-        3000
-      );
+
+
+      return;
+
     }
-    // ============================================================
-    // PLAY ALL BUTTON
-    // ============================================================
-    playAllBtn.addEventListener(
-      "click",
+
+
+    stopSpeech();
+
+
+    stopTone(
+      true
+    );
+
+
+    const apiOkay =
+      await checkElevenLabsAPI(
+        true
+      );
+
+
+    // The journey can still use device speech if ElevenLabs
+    // becomes unavailable later.
+
+    if (
+      !apiOkay
+    ) {
+
+      setStatus(
+        "ElevenLabs unavailable • device voice will be used"
+      );
+
+
+      await wait(
+        700
+      );
+
+    }
+
+
+    await playJourney();
+
+  }
+
+);
+
+
+// ============================================================
+// STOP BUTTON
+// ============================================================
+
+
+stopButton.addEventListener(
+
+  "click",
+
+  () => {
+
+    stopEverything(
+      true
+    );
+
+  }
+
+);
+
+
+// ============================================================
+// API BUTTON
+// ============================================================
+
+
+checkApiButton.addEventListener(
+
+  "click",
+
+  () => {
+
+    elevenLabsOK =
+      false;
+
+
+    checkElevenLabsAPI(
+      true
+    );
+
+  }
+
+);
+
+
+// ============================================================
+// VOICE SELECT
+// ============================================================
+
+
+voiceSelect.addEventListener(
+
+  "change",
+
+  async event => {
+
+    if (
+      isPlayingAll
+    ) {
+
+      stopEverything(
+        false
+      );
+
+    }
+
+
+    stopSpeech();
+
+
+    VOICE_ID =
+      event.target.value;
+
+
+    verifiedVoiceName =
+      "";
+
+
+    elevenLabsOK =
+      false;
+
+
+    await checkElevenLabsAPI(
+      true
+    );
+
+  }
+
+);
+
+
+// ============================================================
+// VOICE VOLUME
+// ============================================================
+
+
+voiceVolumeSlider.addEventListener(
+
+  "input",
+
+  event => {
+
+    voiceVolume =
+      Number(
+        event.target.value
+      );
+
+
+    voiceVolumeValue.textContent =
+
+      `${Math.round(
+        voiceVolume *
+        100
+      )}%`;
+
+
+    if (
+      currentVoiceGain
+    ) {
+
+      smoothGain(
+
+        currentVoiceGain.gain,
+
+        Math.max(
+          0.0001,
+          voiceVolume
+        ),
+
+        0.07
+
+      );
+
+    }
+
+  }
+
+);
+
+
+// ============================================================
+// TONE VOLUME
+// ============================================================
+
+
+toneVolumeSlider.addEventListener(
+
+  "input",
+
+  event => {
+
+    toneVolume =
+      Number(
+        event.target.value
+      );
+
+
+    toneVolumeValue.textContent =
+
+      `${Math.round(
+        toneVolume *
+        100
+      )}%`;
+
+
+    if (
+      currentTone
+    ) {
+
+      smoothGain(
+
+        currentTone.volumeGain.gain,
+
+        Math.max(
+          0.0001,
+          toneVolume
+        ),
+
+        0.08
+
+      );
+
+    }
+
+  }
+
+);
+
+
+// ============================================================
+// TONE TOGGLE
+// ============================================================
+
+
+toneToggle.addEventListener(
+
+  "change",
+
+  event => {
+
+    toneEnabled =
+      event.target.checked;
+
+
+    if (
+      !toneEnabled
+    ) {
+
+      stopTone(
+        false
+      );
+
+    }
+
+    else if (
+      activeName
+    ) {
+
+      const chakra =
+        CHAKRAS.find(
+
+          item =>
+            item.name ===
+            activeName
+
+        );
+
+
+      if (
+        chakra
+      ) {
+
+        playTone(
+          chakra
+        );
+
+      }
+
+    }
+
+  }
+
+);
+
+
+// ============================================================
+// RANDOMIZE
+// ============================================================
+
+
+randomToggle.addEventListener(
+
+  "change",
+
+  event => {
+
+    randomizeAffirmations =
+      event.target.checked;
+
+
+    setStatus(
+
+      randomizeAffirmations
+        ?
+        "Affirmations will be randomized"
+        :
+        "Affirmations will play in order"
+
+    );
+
+
+    setTimeout(
       () => {
-        ensureAudio();
-        if (isPlayingAll) {
-          stopPlayAll(
-            true
-          );
-          return;
+
+        if (
+          !isPlayingAll
+        ) {
+
+          setStatus("");
+
         }
-        stopVoice(
+
+      },
+
+      1800
+    );
+
+  }
+
+);
+
+
+// ============================================================
+// IOS AUDIO UNLOCK
+// ============================================================
+
+
+document.body.addEventListener(
+
+  "touchstart",
+
+  ensureAudio,
+
+  {
+    once: true,
+    passive: true
+  }
+
+);
+
+
+document.body.addEventListener(
+
+  "click",
+
+  ensureAudio,
+
+  {
+    once: true
+  }
+
+);
+
+
+// ============================================================
+// RETURNING TO APP
+// ============================================================
+
+
+document.addEventListener(
+
+  "visibilitychange",
+
+  () => {
+
+    if (
+      document.visibilityState ===
+      "visible"
+    ) {
+
+      ensureAudio();
+
+    }
+
+  }
+
+);
+
+
+// ============================================================
+// INITIAL API CHECK
+// ============================================================
+
+
+window.addEventListener(
+
+  "load",
+
+  () => {
+
+    setTimeout(
+      () => {
+
+        checkElevenLabsAPI(
           false
         );
-        journeyToken++;
-        const token =
-          journeyToken;
-        isPlayingAll =
-          true;
-        playAllBtn.textContent =
-          "Stop Journey";
-        playAllSequence(
-          token
-        );
-      }
+
+      },
+
+      350
     );
-    // ============================================================
-    // STOP BUTTON
-    // ============================================================
-    stopBtn.addEventListener(
-      "click",
-      () => {
-        stopPlayAll(
-          true
-        );
-      }
-    );
-    // ============================================================
-    // VOICE VOLUME
-    // ============================================================
-    voiceVolumeSlider.addEventListener(
-      "input",
-      event => {
-        voiceVolume =
-          parseFloat(
-            event.target.value
-          );
-        voiceVolumeValue.textContent =
-          `${Math.round(
-            voiceVolume * 100
-          )}%`;
-        if (currentVoiceGain) {
-          setParamSmooth(
-            currentVoiceGain.gain,
-            Math.max(
-              0.0001,
-              voiceVolume
-            ),
-            0.05
-          );
-        }
-      }
-    );
-    // ============================================================
-    // TONE VOLUME
-    // ============================================================
-    toneVolumeSlider.addEventListener(
-      "input",
-      event => {
-        toneVolume =
-          parseFloat(
-            event.target.value
-          );
-        toneVolumeValue.textContent =
-          `${Math.round(
-            toneVolume * 100
-          )}%`;
-        applyToneVolume();
-      }
-    );
-    // ============================================================
-    // TONE ON / OFF
-    // ============================================================
-    toneToggle.addEventListener(
-      "change",
-      event => {
-        toneEnabled =
-          event.target.checked;
-        if (!toneEnabled) {
-          stopTone(
-            false
-          );
-          return;
-        }
-        if (activeName) {
-          const activeChakra =
-            CHAKRAS.find(
-              ch =>
-                ch.name ===
-                activeName
-            );
-          if (activeChakra) {
-            playTone(
-              activeChakra
-            );
-          }
-        }
-      }
-    );
-    // ============================================================
-    // VOICE SELECT
-    // ============================================================
-    voiceSelect.addEventListener(
-      "change",
-      event => {
-        VOICE_ID =
-          event.target.value;
-      }
-    );
-    // ============================================================
-    // IOS AUDIO UNLOCK
-    // ============================================================
-    document.body.addEventListener(
-      "touchstart",
-      ensureAudio,
-      {
-        once: true,
-        passive: true
-      }
-    );
-    document.body.addEventListener(
-      "pointerdown",
-      ensureAudio,
-      {
-        once: true
-      }
-    );
-    document.addEventListener(
-      "visibilitychange",
-      () => {
-        if (
-          document.visibilityState ===
-          "visible"
-        ) {
-          ensureAudio();
-        }
-      }
-    );
-  </script>
+
+  }
+
+);
+
+</script>
+
 </body>
 </html>
