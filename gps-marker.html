@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>GPS Marker – Search Nearby</title>
+  <title>GPS Marker – Historical Landmarks</title>
   <style>
     :root {
       --bg: #0f1419;
@@ -27,7 +27,7 @@
       min-height: 100dvh;
       padding: 16px;
       padding-bottom: 50px;
-      line-height: 1.4;
+      line-height: 1.45;
       -webkit-tap-highlight-color: transparent;
     }
     h1 { font-size: 1.35rem; font-weight: 700; margin-bottom: 2px; letter-spacing: -0.02em; }
@@ -160,20 +160,20 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.72);
+      background: rgba(0,0,0,0.75);
       z-index: 100;
       align-items: flex-end;
       justify-content: center;
-      padding: 16px;
+      padding: 12px;
     }
     .overlay.show { display: flex; }
     .sheet {
       background: var(--card);
       border-radius: 20px 20px 16px 16px;
-      padding: 20px;
+      padding: 18px;
       width: 100%;
-      max-width: 440px;
-      max-height: 88vh;
+      max-width: 460px;
+      max-height: 90vh;
       overflow-y: auto;
     }
     .sheet input[type="text"] {
@@ -191,12 +191,12 @@
     .search-row {
       display: flex;
       gap: 8px;
-      margin: 10px 0 16px;
+      margin: 10px 0 14px;
     }
     .search-row input { flex: 1; }
     .search-row .btn {
       width: auto;
-      padding: 0 18px;
+      padding: 0 16px;
       margin: 0;
       flex-shrink: 0;
     }
@@ -220,6 +220,57 @@
     }
     .cat-btn:active { background: var(--accent); }
 
+    /* Tour / Landmark cards */
+    .tour-card {
+      background: #141c27;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .tour-img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      background: #0d1219;
+      display: block;
+    }
+    .tour-img.placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      height: 120px;
+    }
+    .tour-body { padding: 14px; }
+    .tour-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+    .tour-meta {
+      font-size: 0.8rem;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .tour-extract {
+      font-size: 0.92rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+    .tour-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .tour-actions .btn {
+      margin: 0;
+      padding: 11px;
+      font-size: 0.9rem;
+    }
+
     .empty-state {
       text-align: center;
       color: var(--muted);
@@ -242,14 +293,14 @@
     .hidden { display: none !important; }
     .loading {
       text-align: center;
-      padding: 28px 10px;
+      padding: 30px 10px;
       color: var(--muted);
     }
   </style>
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Save spots • search what’s nearby</p>
+  <p class="subtitle">Save spots • search nearby • historical landmarks</p>
 
   <div id="status">Requesting location permission…</div>
 
@@ -292,10 +343,16 @@
         </div>
       </div>
     </div>
+
+    <!-- New button for historical landmarks near the marked location -->
+    <button class="btn btn-secondary" id="landmarksBtn" style="margin-top:12px; margin-bottom:0;" disabled>
+      5 Closest Historical Landmarks
+    </button>
   </div>
 
   <button class="btn btn-primary" id="markBtn" disabled>Mark Current Location</button>
   <button class="btn btn-secondary" id="nearbyBtn" disabled>Find / Search Nearby</button>
+  <button class="btn btn-secondary" id="tourBtn" disabled>Walking History Tour (Current Location)</button>
   <button class="btn btn-secondary" id="mapsBtn" disabled>Open in Maps</button>
 
   <div class="section-title">Saved Markers</div>
@@ -303,7 +360,7 @@
 
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Uses OpenStreetMap • Data stays on your device</p>
+  <p class="footer">Wikipedia + OpenStreetMap • Data stays on your device</p>
 
   <!-- Name input sheet -->
   <div class="overlay" id="nameOverlay">
@@ -325,7 +382,6 @@
         <button class="icon-btn" id="closeNearbyBtn" style="width:32px;height:32px;">✕</button>
       </div>
 
-      <!-- Search box -->
       <div class="search-row">
         <input type="text" id="searchInput" placeholder="Search anything… (pizza, Target, park)" />
         <button class="btn btn-primary" id="searchBtn">Search</button>
@@ -351,6 +407,22 @@
     </div>
   </div>
 
+  <!-- Historical Landmarks / Tour sheet -->
+  <div class="overlay" id="tourOverlay">
+    <div class="sheet">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div>
+          <div class="label" style="margin:0;" id="tourTitle">Historical Landmarks</div>
+          <div style="font-size:0.8rem; color:var(--muted); margin-top:2px;" id="tourSubtitle">Closest notable places</div>
+        </div>
+        <button class="icon-btn" id="closeTourBtn" style="width:32px;height:32px;">✕</button>
+      </div>
+
+      <div id="tourStatus" class="loading">Loading…</div>
+      <div id="tourResults"></div>
+    </div>
+  </div>
+
   <script>
     // ── State ──────────────────────────────────────────────
     let current = null;
@@ -372,6 +444,8 @@
     const arrowEl       = $("arrow");
     const markBtn       = $("markBtn");
     const nearbyBtn     = $("nearbyBtn");
+    const tourBtn       = $("tourBtn");
+    const landmarksBtn  = $("landmarksBtn");
     const mapsBtn       = $("mapsBtn");
     const clearAllBtn   = $("clearAllBtn");
     const markerListEl  = $("markerList");
@@ -388,6 +462,12 @@
     const backToCatsBtn = $("backToCatsBtn");
     const searchInput   = $("searchInput");
     const searchBtn     = $("searchBtn");
+    const tourOverlay   = $("tourOverlay");
+    const closeTourBtn  = $("closeTourBtn");
+    const tourStatus    = $("tourStatus");
+    const tourResults   = $("tourResults");
+    const tourTitle     = $("tourTitle");
+    const tourSubtitle  = $("tourSubtitle");
 
     // ── Helpers ────────────────────────────────────────────
     function setStatus(msg, type = "") {
@@ -428,6 +508,9 @@
       const mi = m / 1609.344;
       return mi < 10 ? `${mi.toFixed(2)} mi` : `${mi.toFixed(1)} mi`;
     }
+    function walkingMinutes(meters) {
+      return Math.max(1, Math.round(meters / 80));
+    }
     function uid() {
       return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     }
@@ -462,6 +545,7 @@
       lastUpdateEl.textContent = fmtTime(current.time);
       markBtn.disabled = false;
       nearbyBtn.disabled = false;
+      tourBtn.disabled = false;
     }
 
     function getActiveMarker() {
@@ -475,12 +559,14 @@
         activeCoords.textContent = "—";
         navSection.classList.add("hidden");
         mapsBtn.disabled = true;
+        landmarksBtn.disabled = true;
         return;
       }
       activeNameEl.textContent = active.name;
       activeCoords.textContent = `${fmtCoord(active.lat)}, ${fmtCoord(active.lng)}`;
       navSection.classList.remove("hidden");
       mapsBtn.disabled = false;
+      landmarksBtn.disabled = false;
       updateNavigation();
     }
 
@@ -599,7 +685,6 @@
       `).join("");
     }
 
-    // Free-text search via Nominatim
     async function searchText(query) {
       if (!current || !query.trim()) return;
       showResultsView();
@@ -608,8 +693,7 @@
       nearbyResults.innerHTML = "";
 
       const q = encodeURIComponent(query.trim());
-      // Bias results toward current location
-      const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=15&addressdetails=0&extratags=1&namedetails=0&lat=${current.lat}&lon=${current.lng}`;
+      const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=15&addressdetails=0&extratags=1&lat=${current.lat}&lon=${current.lng}`;
 
       try {
         const res = await fetch(url, {
@@ -637,7 +721,6 @@
       }
     }
 
-    // Category search via Overpass
     async function searchCategory(cat) {
       if (!current) return;
       showResultsView();
@@ -678,7 +761,6 @@
           };
         }).filter(Boolean);
 
-        // Deduplicate
         const seen = new Set();
         const unique = places.filter(p => {
           const key = p.name + p.lat.toFixed(4) + p.lon.toFixed(4);
@@ -692,6 +774,100 @@
         console.error(err);
         nearbyStatus.textContent = "Search failed. Try again later.";
         nearbyStatus.className = "empty-state";
+      }
+    }
+
+    // ── Historical Landmarks (centered on a location) ──────
+    async function loadHistoricalLandmarks(centerLat, centerLon, titleText, limit = 5) {
+      tourOverlay.classList.add("show");
+      tourTitle.textContent = titleText || "Historical Landmarks";
+      tourSubtitle.textContent = "5 closest notable places";
+      tourStatus.textContent = "Finding historical landmarks…";
+      tourStatus.className = "loading";
+      tourResults.innerHTML = "";
+
+      try {
+        // Wikipedia geosearch centered on the marked location
+        const geoUrl = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${centerLat}|${centerLon}&gsradius=2000&gslimit=12&format=json&origin=*`;
+
+        const geoRes = await fetch(geoUrl);
+        if (!geoRes.ok) throw new Error("Geosearch failed");
+        const geoData = await geoRes.json();
+        const geoItems = (geoData.query && geoData.query.geosearch) || [];
+
+        if (geoItems.length === 0) {
+          tourStatus.textContent = "No notable historical places found nearby.";
+          tourStatus.className = "empty-state";
+          return;
+        }
+
+        tourStatus.textContent = "Loading photos & descriptions…";
+
+        const stops = [];
+        for (const item of geoItems) {
+          try {
+            const title = encodeURIComponent(item.title.replace(/ /g, "_"));
+            const sumUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${title}`;
+            const sumRes = await fetch(sumUrl);
+            if (!sumRes.ok) continue;
+            const sum = await sumRes.json();
+
+            if (sum.type === "disambiguation" || !sum.extract || sum.extract.length < 50) continue;
+
+            const lat = item.lat;
+            const lon = item.lon;
+            const dist = distanceMeters(centerLat, centerLon, lat, lon);
+
+            stops.push({
+              title: sum.title || item.title,
+              extract: sum.extract,
+              image: (sum.thumbnail && sum.thumbnail.source) || (sum.originalimage && sum.originalimage.source) || null,
+              lat, lon, dist
+            });
+          } catch (e) {}
+        }
+
+        // Sort by distance and take the 5 closest
+        stops.sort((a, b) => a.dist - b.dist);
+        const top5 = stops.slice(0, limit);
+
+        if (top5.length === 0) {
+          tourStatus.textContent = "Could not load details for nearby landmarks.";
+          tourStatus.className = "empty-state";
+          return;
+        }
+
+        tourStatus.textContent = `${top5.length} closest historical landmarks`;
+        tourStatus.className = "label";
+
+        tourResults.innerHTML = top5.map((s, idx) => `
+          <div class="tour-card">
+            ${s.image
+              ? `<img class="tour-img" src="${s.image}" alt="${escapeHtml(s.title)}" loading="lazy" />`
+              : `<div class="tour-img placeholder">No photo available</div>`
+            }
+            <div class="tour-body">
+              <div class="tour-title">${idx + 1}. ${escapeHtml(s.title)}</div>
+              <div class="tour-meta">${formatDistance(s.dist)} · ~${walkingMinutes(s.dist)} min walk</div>
+              <div class="tour-extract">${escapeHtml(s.extract.length > 260 ? s.extract.slice(0, 257) + "…" : s.extract)}</div>
+              <div class="tour-actions">
+                <button class="btn btn-primary" style="flex:1"
+                  data-lat="${s.lat}" data-lon="${s.lon}" data-name="${escapeHtml(s.title)}" data-action="go">
+                  Navigate
+                </button>
+                <button class="btn btn-secondary" style="flex:1"
+                  data-lat="${s.lat}" data-lon="${s.lon}" data-name="${escapeHtml(s.title)}" data-action="save">
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join("");
+
+      } catch (err) {
+        console.error(err);
+        tourStatus.textContent = "Could not load landmarks. Please try again.";
+        tourStatus.className = "empty-state";
       }
     }
 
@@ -753,7 +929,7 @@
       setStatus("All markers cleared", "ok");
     });
 
-    // Nearby / Search
+    // Nearby
     nearbyBtn.addEventListener("click", () => {
       if (!current) return;
       searchInput.value = "";
@@ -767,17 +943,60 @@
       resultsView.classList.add("hidden");
       categoryView.classList.remove("hidden");
     });
-
     searchBtn.addEventListener("click", () => searchText(searchInput.value));
     searchInput.addEventListener("keydown", e => {
       if (e.key === "Enter") searchText(searchInput.value);
     });
-
     document.querySelectorAll(".cat-btn").forEach(btn => {
       btn.addEventListener("click", () => searchCategory(btn.dataset.cat));
     });
 
     nearbyResults.addEventListener("click", e => {
+      const btn = e.target.closest("[data-action]");
+      if (!btn) return;
+      const lat = parseFloat(btn.dataset.lat);
+      const lon = parseFloat(btn.dataset.lon);
+      const name = btn.dataset.name;
+      if (btn.dataset.action === "go") {
+        window.open(`https://maps.apple.com/?daddr=${lat},${lon}&dirflg=w`, "_blank");
+      } else if (btn.dataset.action === "save") {
+        markers.push({
+          id: uid(), name: name || "Nearby place",
+          lat, lng: lon, accuracy: 25, time: Date.now()
+        });
+        activeId = markers[markers.length - 1].id;
+        fullRefresh();
+        nearbyOverlay.classList.remove("show");
+        setStatus(`Saved “${name}”`, "ok");
+      }
+    });
+
+    // Historical landmarks near the *marked* location
+    landmarksBtn.addEventListener("click", () => {
+      const active = getActiveMarker();
+      if (!active) return;
+      loadHistoricalLandmarks(
+        active.lat,
+        active.lng,
+        `Near “${active.name}”`,
+        5
+      );
+    });
+
+    // Walking tour around *current* location
+    tourBtn.addEventListener("click", () => {
+      if (!current) return;
+      loadHistoricalLandmarks(
+        current.lat,
+        current.lng,
+        "Walking History Tour",
+        6
+      );
+    });
+
+    closeTourBtn.addEventListener("click", () => tourOverlay.classList.remove("show"));
+
+    tourResults.addEventListener("click", e => {
       const btn = e.target.closest("[data-action]");
       if (!btn) return;
       const lat = parseFloat(btn.dataset.lat);
@@ -789,14 +1008,14 @@
       } else if (btn.dataset.action === "save") {
         markers.push({
           id: uid(),
-          name: name || "Nearby place",
+          name: name || "Landmark",
           lat, lng: lon,
-          accuracy: 25,
+          accuracy: 20,
           time: Date.now()
         });
         activeId = markers[markers.length - 1].id;
         fullRefresh();
-        nearbyOverlay.classList.remove("show");
+        tourOverlay.classList.remove("show");
         setStatus(`Saved “${name}”`, "ok");
       }
     });
