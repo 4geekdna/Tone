@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>GPS Marker – Distance Selector</title>
+  <title>GPS Marker – Improved Free Food</title>
   <style>
     :root {
       --bg: #0f1419;
@@ -148,7 +148,6 @@
       overflow-y: auto;
     }
 
-    /* Distance selector */
     .distance-selector {
       display: flex;
       gap: 6px;
@@ -236,8 +235,8 @@
       align-items: center;
       justify-content: center;
       color: var(--muted);
-      height: 130px;
-      font-size: 1.1rem;
+      height: 140px;
+      font-size: 2rem;
       background: linear-gradient(135deg, #1a2332, #0f1419);
     }
     .guide-body { padding: 14px; }
@@ -261,12 +260,14 @@
     }
     .guide-website {
       display: inline-block;
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       color: #60a5fa;
       text-decoration: none;
       margin-bottom: 12px;
+      padding: 6px 0;
       word-break: break-all;
     }
+    .guide-website:active { opacity: 0.7; }
     .guide-actions {
       display: flex;
       gap: 8px;
@@ -302,11 +303,11 @@
       margin-bottom: 4px;
     }
     .basic-website {
-      font-size: 0.82rem;
+      font-size: 0.85rem;
       color: #60a5fa;
       text-decoration: none;
       display: inline-block;
-      margin-top: 2px;
+      margin-top: 3px;
     }
     .basic-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
@@ -331,7 +332,7 @@
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Distance selector • same radius for all categories</p>
+  <p class="subtitle">Improved free food sources + better websites</p>
 
   <div id="status">Requesting location permission…</div>
 
@@ -401,7 +402,7 @@
   <div id="markerList"></div>
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">All categories use the same selected distance</p>
+  <p class="footer">Free sources improved for websites + photo attempts</p>
 
   <!-- Name sheet -->
   <div class="overlay" id="nameOverlay">
@@ -446,8 +447,8 @@
     let currentResults = [];
     let currentCategory = "";
     let viewMode = "extended";
-    let selectedMiles = 1;               // default 1 mile
-    const STORAGE_KEY = "gps-marker-guide-v4";
+    let selectedMiles = 1;
+    const STORAGE_KEY = "gps-marker-guide-v5";
 
     const $ = id => document.getElementById(id);
     const statusEl = $("status");
@@ -519,8 +520,9 @@
     }
     function cleanWebsite(url) {
       if (!url) return null;
-      url = url.trim();
-      if (!url.startsWith("http")) url = "https://" + url;
+      url = String(url).trim();
+      if (!url) return null;
+      if (!/^https?:\/\//i.test(url)) url = "https://" + url;
       return url;
     }
 
@@ -654,8 +656,9 @@
         resultsList.innerHTML = currentResults.map((p, idx) => `
           <div class="guide-card">
             ${p.image
-              ? `<img class="guide-img" src="${p.image}" alt="${escapeHtml(p.displayName)}" loading="lazy" />`
-              : `<div class="guide-img placeholder">${currentCategory === "food" ? "🍽️" : currentCategory === "art" ? "🎨" : currentCategory === "adult" ? "🔥" : "🏛️"}</div>`
+              ? `<img class="guide-img" src="${p.image}" alt="${escapeHtml(p.displayName)}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                 <div class="guide-img placeholder" style="display:none;">🍽️</div>`
+              : `<div class="guide-img placeholder">🍽️</div>`
             }
             <div class="guide-body">
               <div class="guide-title">${idx + 1}. ${escapeHtml(p.displayName)}</div>
@@ -664,8 +667,8 @@
                 ${p.cuisine ? " · " + escapeHtml(p.cuisine) : ""}
                 ${p.type && !p.cuisine ? " · " + escapeHtml(p.type) : ""}
               </div>
-              ${p.extract ? `<div class="guide-extract">${escapeHtml(p.extract.length > 200 ? p.extract.slice(0, 197) + "…" : p.extract)}</div>` : ""}
-              ${p.website ? `<a class="guide-website" href="${escapeHtml(p.website)}" target="_blank" rel="noopener">${escapeHtml(p.website.replace(/^https?:\/\//, ""))}</a>` : ""}
+              ${p.extract ? `<div class="guide-extract">${escapeHtml(p.extract.length > 190 ? p.extract.slice(0, 187) + "…" : p.extract)}</div>` : ""}
+              ${p.website ? `<a class="guide-website" href="${escapeHtml(p.website)}" target="_blank" rel="noopener">🌐 ${escapeHtml(p.website.replace(/^https?:\/\//, ""))}</a>` : ""}
               <div class="guide-actions">
                 <button class="btn btn-primary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="go">Navigate</button>
                 <button class="btn btn-secondary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="save">Save</button>
@@ -684,7 +687,7 @@
                   ${p.cuisine ? " · " + escapeHtml(p.cuisine) : ""}
                   ${p.type && !p.cuisine ? " · " + escapeHtml(p.type) : ""}
                 </div>
-                ${p.website ? `<a class="basic-website" href="${escapeHtml(p.website)}" target="_blank" rel="noopener">${escapeHtml(p.website.replace(/^https?:\/\//, ""))}</a>` : ""}
+                ${p.website ? `<a class="basic-website" href="${escapeHtml(p.website)}" target="_blank" rel="noopener">🌐 ${escapeHtml(p.website.replace(/^https?:\/\//, ""))}</a>` : ""}
               </div>
               <div class="basic-actions">
                 <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="go">➤</button>
@@ -723,11 +726,12 @@
         if (category === "historical") {
           rawPlaces = await getWikipediaNearby(active.lat, active.lng, radiusMeters, 12);
         } else if (category === "food") {
+          // Improved free food sources
           const op = await getOverpass(active.lat, active.lng, radiusMeters, `
-            node["amenity"~"restaurant|cafe|fast_food|bar|pub|ice_cream|biergarten"](around:RADIUS,LAT,LON);
-            way["amenity"~"restaurant|cafe|fast_food|bar|pub"](around:RADIUS,LAT,LON);
+            node["amenity"~"restaurant|cafe|fast_food|bar|pub|ice_cream|biergarten"]["name"](around:RADIUS,LAT,LON);
+            way["amenity"~"restaurant|cafe|fast_food|bar|pub"]["name"](around:RADIUS,LAT,LON);
           `);
-          const nom = await getNominatimFood(active.lat, active.lng);
+          const nom = await getNominatimFood(active.lat, active.lng, radiusMeters);
           rawPlaces = [...op, ...nom];
         } else if (category === "art") {
           rawPlaces = await getOverpass(active.lat, active.lng, radiusMeters, `
@@ -744,10 +748,16 @@
           rawPlaces = [...op, ...nom];
         }
 
-        // Enrich with Wikipedia data
+        // Enrich – try harder for photos on food
         const enriched = [];
-        for (const place of rawPlaces.slice(0, 15)) {
-          const wiki = await tryWikipediaSummary(place.name);
+        for (const place of rawPlaces.slice(0, 16)) {
+          let wiki = await tryWikipediaSummary(place.name);
+
+          // Second attempt for food places (name + "restaurant")
+          if (!wiki?.image && category === "food") {
+            wiki = await tryWikipediaSummary(place.name + " restaurant") || wiki;
+          }
+
           enriched.push({
             ...place,
             image: wiki?.image || place.image || null,
@@ -757,10 +767,11 @@
           });
         }
 
-        // Filter to selected radius + deduplicate + sort
-        const maxDist = milesToMeters(selectedMiles) * 1.05; // small tolerance
+        // Filter + deduplicate + sort
+        const maxDist = milesToMeters(selectedMiles) * 1.08;
         const seen = new Set();
         const unique = enriched.filter(p => {
+          if (!p.displayName || p.displayName === "Unnamed place") return false;
           if (p.dist > maxDist) return false;
           const key = (p.displayName + p.lat.toFixed(4)).toLowerCase();
           if (seen.has(key)) return false;
@@ -800,13 +811,13 @@
         (
           ${queryPart.replaceAll("LAT", lat).replaceAll("LON", lon).replaceAll("RADIUS", radiusMeters)}
         );
-        out center 25;
+        out center 30;
       `;
       const res = await fetch("https://overpass-api.de/api/interpreter", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "GPS-Marker-Guide/1.2"
+          "User-Agent": "GPS-Marker-Guide/1.3"
         },
         body: "data=" + encodeURIComponent(query)
       });
@@ -816,9 +827,11 @@
         const plon = el.lon || (el.center && el.center.lon);
         if (!plat || !plon) return null;
         const tags = el.tags || {};
-        const website = cleanWebsite(tags.website || tags["contact:website"] || tags.url);
+        const website = cleanWebsite(
+          tags.website || tags["contact:website"] || tags.url || tags["contact:facebook"]
+        );
         return {
-          name: tags.name || tags.brand || tags.operator || "Unnamed place",
+          name: tags.name || tags.brand || tags.operator || null,
           lat: plat,
           lon: plon,
           dist: distanceMeters(lat, lon, plat, plon),
@@ -827,12 +840,13 @@
           website: website,
           image: tags.image || null
         };
-      }).filter(Boolean);
+      }).filter(p => p && p.name);
     }
 
-    async function getNominatimFood(lat, lon) {
-      const url = `https://nominatim.openstreetmap.org/search?q=restaurant&format=json&limit=12&lat=${lat}&lon=${lon}&extratags=1`;
-      const res = await fetch(url, { headers: { "User-Agent": "GPS-Marker-Guide/1.2" } });
+    async function getNominatimFood(lat, lon, radiusMeters) {
+      // More specific food search
+      const url = `https://nominatim.openstreetmap.org/search?q=restaurant&format=json&limit=15&lat=${lat}&lon=${lon}&extratags=1&addressdetails=0`;
+      const res = await fetch(url, { headers: { "User-Agent": "GPS-Marker-Guide/1.3" } });
       const data = await res.json();
       return data.map(item => {
         const plat = parseFloat(item.lat);
@@ -853,7 +867,7 @@
 
     async function getNominatim(lat, lon, q) {
       const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=8&lat=${lat}&lon=${lon}&extratags=1`;
-      const res = await fetch(url, { headers: { "User-Agent": "GPS-Marker-Guide/1.2" } });
+      const res = await fetch(url, { headers: { "User-Agent": "GPS-Marker-Guide/1.3" } });
       const data = await res.json();
       return data.map(item => {
         const plat = parseFloat(item.lat);
@@ -874,7 +888,7 @@
     async function tryWikipediaSummary(name) {
       if (!name || name.length < 3) return null;
       try {
-        const title = encodeURIComponent(name.replace(/ /g, "_"));
+        const title = encodeURIComponent(name.trim().replace(/ /g, "_"));
         const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${title}`);
         if (!res.ok) return null;
         const data = await res.json();
@@ -946,7 +960,6 @@
       fullRefresh();
     });
 
-    // Distance selector
     document.querySelectorAll(".dist-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         document.querySelectorAll(".dist-btn").forEach(b => b.classList.remove("active"));
