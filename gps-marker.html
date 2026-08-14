@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>GPS Marker – Travel Guide Style</title>
+  <title>GPS Marker – Extended / Basic Guide</title>
   <style>
     :root {
       --bg: #0f1419;
@@ -167,7 +167,32 @@
     }
     .cat-btn:active { background: var(--accent); }
 
-    /* Travel Guide Cards */
+    /* View mode toggle */
+    .view-toggle {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+      background: rgba(255,255,255,0.05);
+      padding: 4px;
+      border-radius: 12px;
+    }
+    .view-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      padding: 10px;
+      border-radius: 9px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .view-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Extended Guide Cards */
     .guide-card {
       background: #141c27;
       border: 1px solid var(--border);
@@ -220,6 +245,30 @@
       font-size: 0.92rem;
     }
 
+    /* Basic list style */
+    .basic-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px 14px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .basic-info { flex: 1; min-width: 0; }
+    .basic-name {
+      font-weight: 600;
+      font-size: 1.02rem;
+      margin-bottom: 2px;
+    }
+    .basic-meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .basic-actions { display: flex; gap: 6px; }
+
     .empty-state { text-align: center; color: var(--muted); padding: 24px 10px; }
     .section-title {
       font-size: 0.78rem;
@@ -235,11 +284,10 @@
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Mark places • travel-guide style exploration</p>
+  <p class="subtitle">Mark places • choose Extended or Basic guide</p>
 
   <div id="status">Requesting location permission…</div>
 
-  <!-- Current Location -->
   <div class="card">
     <div class="label">Current Location</div>
     <div class="coords" id="currentCoords">—</div>
@@ -255,7 +303,6 @@
     </div>
   </div>
 
-  <!-- Active Landmark -->
   <div class="card">
     <div class="label">Active Landmark</div>
     <div id="activeName" style="font-weight:600; font-size:1.1rem; margin-bottom:4px;">None selected</div>
@@ -298,7 +345,7 @@
   <div id="markerList"></div>
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Distances in miles • Photos from Wikipedia when available</p>
+  <p class="footer">Choose Extended (photos) or Basic list view</p>
 
   <!-- Name sheet -->
   <div class="overlay" id="nameOverlay">
@@ -313,17 +360,24 @@
     </div>
   </div>
 
-  <!-- Results / Travel Guide sheet -->
+  <!-- Results sheet -->
   <div class="overlay" id="resultsOverlay">
     <div class="sheet">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <div>
           <div class="label" style="margin:0;" id="resultsTitle">Results</div>
-          <div style="font-size:0.8rem; color:var(--muted);" id="resultsSubtitle">Travel guide style</div>
+          <div style="font-size:0.8rem; color:var(--muted);" id="resultsSubtitle">Around landmark</div>
         </div>
         <button class="icon-btn" id="closeResultsBtn" style="width:32px;height:32px;">✕</button>
       </div>
-      <div id="resultsStatus" class="loading">Loading guide…</div>
+
+      <!-- View mode toggle -->
+      <div class="view-toggle">
+        <button class="view-btn active" id="viewExtended">Extended (Photos)</button>
+        <button class="view-btn" id="viewBasic">Basic List</button>
+      </div>
+
+      <div id="resultsStatus" class="loading">Loading…</div>
       <div id="resultsList"></div>
     </div>
   </div>
@@ -332,7 +386,10 @@
     let current = null;
     let markers = [];
     let activeId = null;
-    const STORAGE_KEY = "gps-marker-guide-v1";
+    let currentResults = [];          // stores the last fetched places
+    let currentCategory = "";
+    let viewMode = "extended";        // "extended" or "basic"
+    const STORAGE_KEY = "gps-marker-guide-v2";
 
     const $ = id => document.getElementById(id);
     const statusEl = $("status");
@@ -357,6 +414,8 @@
     const resultsSubtitle = $("resultsSubtitle");
     const resultsStatus = $("resultsStatus");
     const resultsList = $("resultsList");
+    const viewExtendedBtn = $("viewExtended");
+    const viewBasicBtn = $("viewBasic");
 
     function setStatus(msg, type = "") {
       statusEl.textContent = msg;
@@ -512,11 +571,59 @@
       });
     }
 
-    // ── Enhanced category search with pictures ─────────────
+    // ── Render results according to current view mode ─────
+    function renderResults() {
+      if (!currentResults.length) {
+        resultsStatus.textContent = "No places found.";
+        resultsStatus.className = "empty-state";
+        resultsList.innerHTML = "";
+        return;
+      }
+
+      resultsStatus.textContent = `${currentResults.length} places • ${viewMode === "extended" ? "Extended guide" : "Basic list"}`;
+      resultsStatus.className = "label";
+
+      if (viewMode === "extended") {
+        resultsList.innerHTML = currentResults.map((p, idx) => `
+          <div class="guide-card">
+            ${p.image
+              ? `<img class="guide-img" src="${p.image}" alt="${escapeHtml(p.displayName)}" loading="lazy" />`
+              : `<div class="guide-img placeholder">${currentCategory === "food" ? "🍽️" : currentCategory === "art" ? "🎨" : currentCategory === "adult" ? "🔥" : "🏛️"}</div>`
+            }
+            <div class="guide-body">
+              <div class="guide-title">${idx + 1}. ${escapeHtml(p.displayName)}</div>
+              <div class="guide-meta">${formatMiles(p.dist)}${p.type ? " · " + escapeHtml(p.type) : ""}</div>
+              ${p.extract ? `<div class="guide-extract">${escapeHtml(p.extract.length > 220 ? p.extract.slice(0, 217) + "…" : p.extract)}</div>` : ""}
+              <div class="guide-actions">
+                <button class="btn btn-primary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="go">Navigate</button>
+                <button class="btn btn-secondary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="save">Save</button>
+              </div>
+            </div>
+          </div>
+        `).join("");
+      } else {
+        // Basic list
+        resultsList.innerHTML = currentResults.map(p => `
+          <div class="basic-item">
+            <div class="basic-info">
+              <div class="basic-name">${escapeHtml(p.displayName)}</div>
+              <div class="basic-meta">${formatMiles(p.dist)}${p.type ? " · " + escapeHtml(p.type) : ""}</div>
+            </div>
+            <div class="basic-actions">
+              <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="go">➤</button>
+              <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="save">＋</button>
+            </div>
+          </div>
+        `).join("");
+      }
+    }
+
+    // ── Category search ───────────────────────────────────
     async function searchAroundLandmark(category) {
       const active = getActiveMarker();
       if (!active) return;
 
+      currentCategory = category;
       resultsOverlay.classList.add("show");
       resultsTitle.textContent = {
         historical: "Historical Places",
@@ -524,11 +631,11 @@
         art: "Art & Museums",
         adult: "Adult & Nightlife"
       }[category] || category;
-
-      resultsSubtitle.textContent = `Around “${active.name}” • distances in miles`;
-      resultsStatus.textContent = "Creating travel guide…";
+      resultsSubtitle.textContent = `Around “${active.name}”`;
+      resultsStatus.textContent = "Loading places…";
       resultsStatus.className = "loading";
       resultsList.innerHTML = "";
+      currentResults = [];
 
       try {
         let rawPlaces = [];
@@ -555,9 +662,9 @@
           rawPlaces = [...op, ...nom];
         }
 
-        // Enrich top results with Wikipedia images + descriptions
+        // Enrich with Wikipedia data (images + extracts)
         const enriched = [];
-        for (const place of rawPlaces.slice(0, 14)) {
+        for (const place of rawPlaces.slice(0, 12)) {
           const wiki = await tryWikipediaSummary(place.name);
           enriched.push({
             ...place,
@@ -567,49 +674,14 @@
           });
         }
 
-        // Sort by distance and limit
         enriched.sort((a, b) => a.dist - b.dist);
-        const final = enriched.slice(0, 10);
+        currentResults = enriched.slice(0, 10);
 
-        if (final.length === 0) {
-          resultsStatus.textContent = "No places found nearby for this category.";
-          resultsStatus.className = "empty-state";
-          return;
-        }
-
-        resultsStatus.textContent = `${final.length} places • travel guide view`;
-        resultsStatus.className = "label";
-
-        resultsList.innerHTML = final.map((p, idx) => `
-          <div class="guide-card">
-            ${p.image
-              ? `<img class="guide-img" src="${p.image}" alt="${escapeHtml(p.displayName)}" loading="lazy" />`
-              : `<div class="guide-img placeholder">${category === "food" ? "🍽️" : category === "art" ? "🎨" : category === "adult" ? "🔥" : "🏛️"} No photo</div>`
-            }
-            <div class="guide-body">
-              <div class="guide-title">${idx + 1}. ${escapeHtml(p.displayName)}</div>
-              <div class="guide-meta">${formatMiles(p.dist)}${p.type ? " · " + escapeHtml(p.type) : ""}</div>
-              ${p.extract
-                ? `<div class="guide-extract">${escapeHtml(p.extract.length > 220 ? p.extract.slice(0, 217) + "…" : p.extract)}</div>`
-                : ""
-              }
-              <div class="guide-actions">
-                <button class="btn btn-primary" style="flex:1"
-                  data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="go">
-                  Navigate
-                </button>
-                <button class="btn btn-secondary" style="flex:1"
-                  data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="save">
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        `).join("");
+        renderResults();
 
       } catch (err) {
         console.error(err);
-        resultsStatus.textContent = "Could not load the guide. Try again.";
+        resultsStatus.textContent = "Could not load results.";
         resultsStatus.className = "empty-state";
       }
     }
@@ -757,6 +829,20 @@
     });
 
     $("closeResultsBtn").addEventListener("click", () => resultsOverlay.classList.remove("show"));
+
+    // View mode toggle
+    viewExtendedBtn.addEventListener("click", () => {
+      viewMode = "extended";
+      viewExtendedBtn.classList.add("active");
+      viewBasicBtn.classList.remove("active");
+      renderResults();
+    });
+    viewBasicBtn.addEventListener("click", () => {
+      viewMode = "basic";
+      viewBasicBtn.classList.add("active");
+      viewExtendedBtn.classList.remove("active");
+      renderResults();
+    });
 
     resultsList.addEventListener("click", e => {
       const btn = e.target.closest("[data-action]");
