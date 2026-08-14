@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>GPS Marker – Favorites + Nearby</title>
+  <title>GPS Marker – Search Nearby</title>
   <style>
     :root {
       --bg: #0f1419;
@@ -156,7 +156,6 @@
     .icon-btn.delete { color: var(--danger); border-color: rgba(239,68,68,0.3); }
     .icon-btn:active { transform: scale(0.93); }
 
-    /* Overlays / sheets */
     .overlay {
       display: none;
       position: fixed;
@@ -174,37 +173,47 @@
       padding: 20px;
       width: 100%;
       max-width: 440px;
-      max-height: 85vh;
+      max-height: 88vh;
       overflow-y: auto;
     }
-    .sheet input {
+    .sheet input[type="text"] {
       width: 100%;
       background: rgba(255,255,255,0.07);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 14px;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       color: var(--text);
-      margin: 12px 0 16px;
       outline: none;
     }
     .sheet input:focus { border-color: var(--accent); }
-    .sheet-buttons { display: flex; gap: 10px; }
-    .sheet-buttons .btn { margin-bottom: 0; }
+
+    .search-row {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0 16px;
+    }
+    .search-row input { flex: 1; }
+    .search-row .btn {
+      width: auto;
+      padding: 0 18px;
+      margin: 0;
+      flex-shrink: 0;
+    }
 
     .category-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin: 12px 0 8px;
+      margin: 8px 0 4px;
     }
     .cat-btn {
       background: rgba(255,255,255,0.06);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 14px 10px;
+      padding: 13px 10px;
       color: var(--text);
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       font-weight: 500;
       cursor: pointer;
       text-align: center;
@@ -233,14 +242,14 @@
     .hidden { display: none !important; }
     .loading {
       text-align: center;
-      padding: 30px 10px;
+      padding: 28px 10px;
       color: var(--muted);
     }
   </style>
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Save spots • find things nearby</p>
+  <p class="subtitle">Save spots • search what’s nearby</p>
 
   <div id="status">Requesting location permission…</div>
 
@@ -286,7 +295,7 @@
   </div>
 
   <button class="btn btn-primary" id="markBtn" disabled>Mark Current Location</button>
-  <button class="btn btn-secondary" id="nearbyBtn" disabled>Find Nearby</button>
+  <button class="btn btn-secondary" id="nearbyBtn" disabled>Find / Search Nearby</button>
   <button class="btn btn-secondary" id="mapsBtn" disabled>Open in Maps</button>
 
   <div class="section-title">Saved Markers</div>
@@ -294,29 +303,36 @@
 
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Uses OpenStreetMap data · Works offline after load</p>
+  <p class="footer">Uses OpenStreetMap • Data stays on your device</p>
 
   <!-- Name input sheet -->
   <div class="overlay" id="nameOverlay">
     <div class="sheet">
       <div class="label">Name this location</div>
       <input type="text" id="nameInput" placeholder="e.g. Parking, Hotel, Car…" maxlength="40" />
-      <div class="sheet-buttons">
-        <button class="btn btn-secondary" id="cancelNameBtn" style="flex:1;">Cancel</button>
-        <button class="btn btn-primary" id="saveNameBtn" style="flex:1;">Save</button>
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button class="btn btn-secondary" id="cancelNameBtn" style="flex:1; margin:0;">Cancel</button>
+        <button class="btn btn-primary" id="saveNameBtn" style="flex:1; margin:0;">Save</button>
       </div>
     </div>
   </div>
 
-  <!-- Nearby category + results sheet -->
+  <!-- Nearby / Search sheet -->
   <div class="overlay" id="nearbyOverlay">
     <div class="sheet">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <div class="label" style="margin:0;">Find Nearby</div>
         <button class="icon-btn" id="closeNearbyBtn" style="width:32px;height:32px;">✕</button>
       </div>
 
+      <!-- Search box -->
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="Search anything… (pizza, Target, park)" />
+        <button class="btn btn-primary" id="searchBtn">Search</button>
+      </div>
+
       <div id="categoryView">
+        <div class="label" style="margin-bottom:8px;">Or pick a category</div>
         <div class="category-grid">
           <button class="cat-btn" data-cat="food">🍽️ Food & Drink</button>
           <button class="cat-btn" data-cat="coffee">☕ Coffee</button>
@@ -330,18 +346,16 @@
       <div id="resultsView" class="hidden">
         <div id="nearbyStatus" class="loading">Searching…</div>
         <div id="nearbyResults"></div>
-        <button class="btn btn-secondary" id="backToCatsBtn" style="margin-top:12px;">← Back to categories</button>
+        <button class="btn btn-secondary" id="backToCatsBtn" style="margin-top:14px;">← Back</button>
       </div>
     </div>
   </div>
 
   <script>
     // ── State ──────────────────────────────────────────────
-    let watchId = null;
     let current = null;
     let markers = [];
     let activeId = null;
-
     const STORAGE_KEY = "gps-marker-favorites-v1";
 
     // ── DOM ────────────────────────────────────────────────
@@ -372,6 +386,8 @@
     const nearbyStatus  = $("nearbyStatus");
     const nearbyResults = $("nearbyResults");
     const backToCatsBtn = $("backToCatsBtn");
+    const searchInput   = $("searchInput");
+    const searchBtn     = $("searchBtn");
 
     // ── Helpers ────────────────────────────────────────────
     function setStatus(msg, type = "") {
@@ -538,46 +554,93 @@
         setStatus("Geolocation not supported", "error");
         return;
       }
-      watchId = navigator.geolocation.watchPosition(onPosition, onError, {
+      navigator.geolocation.watchPosition(onPosition, onError, {
         enableHighAccuracy: true,
         maximumAge: 2000,
         timeout: 15000
       });
     }
 
-    // ── Nearby (Overpass) ──────────────────────────────────
+    // ── Nearby Search ──────────────────────────────────────
     const categoryQueries = {
-      food: `
-        node["amenity"~"restaurant|cafe|fast_food|bar|pub|ice_cream"](around:900,LAT,LON);
-        way["amenity"~"restaurant|cafe|fast_food|bar|pub|ice_cream"](around:900,LAT,LON);
-      `,
-      coffee: `
-        node["amenity"="cafe"](around:900,LAT,LON);
-        node["cuisine"="coffee_shop"](around:900,LAT,LON);
-        way["amenity"="cafe"](around:900,LAT,LON);
-      `,
-      fuel: `
-        node["amenity"="fuel"](around:1500,LAT,LON);
-        way["amenity"="fuel"](around:1500,LAT,LON);
-      `,
-      parking: `
-        node["amenity"="parking"](around:800,LAT,LON);
-        way["amenity"="parking"](around:800,LAT,LON);
-      `,
-      hotel: `
-        node["tourism"~"hotel|motel|guest_house"](around:1500,LAT,LON);
-        way["tourism"~"hotel|motel|guest_house"](around:1500,LAT,LON);
-      `,
-      pharmacy: `
-        node["amenity"="pharmacy"](around:1200,LAT,LON);
-        way["amenity"="pharmacy"](around:1200,LAT,LON);
-      `
+      food: `node["amenity"~"restaurant|cafe|fast_food|bar|pub|ice_cream"](around:1000,LAT,LON);way["amenity"~"restaurant|cafe|fast_food|bar|pub|ice_cream"](around:1000,LAT,LON);`,
+      coffee: `node["amenity"="cafe"](around:1000,LAT,LON);way["amenity"="cafe"](around:1000,LAT,LON);`,
+      fuel: `node["amenity"="fuel"](around:1800,LAT,LON);way["amenity"="fuel"](around:1800,LAT,LON);`,
+      parking: `node["amenity"="parking"](around:900,LAT,LON);way["amenity"="parking"](around:900,LAT,LON);`,
+      hotel: `node["tourism"~"hotel|motel|guest_house"](around:1800,LAT,LON);way["tourism"~"hotel|motel|guest_house"](around:1800,LAT,LON);`,
+      pharmacy: `node["amenity"="pharmacy"](around:1400,LAT,LON);way["amenity"="pharmacy"](around:1400,LAT,LON);`
     };
 
-    async function searchNearby(cat) {
-      if (!current) return;
+    function showResultsView() {
       categoryView.classList.add("hidden");
       resultsView.classList.remove("hidden");
+    }
+
+    function renderNearbyResults(places) {
+      if (!places || places.length === 0) {
+        nearbyStatus.textContent = "No results found.";
+        nearbyStatus.className = "empty-state";
+        nearbyResults.innerHTML = "";
+        return;
+      }
+      nearbyStatus.textContent = `${places.length} places found`;
+      nearbyStatus.className = "label";
+      nearbyResults.innerHTML = places.slice(0, 15).map(p => `
+        <div class="nearby-item">
+          <div class="nearby-info">
+            <div class="nearby-name">${escapeHtml(p.name)}</div>
+            <div class="nearby-meta">${formatDistance(p.dist)} · ${escapeHtml(p.type || "")}</div>
+          </div>
+          <div class="nearby-actions">
+            <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go">➤</button>
+            <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="save">＋</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // Free-text search via Nominatim
+    async function searchText(query) {
+      if (!current || !query.trim()) return;
+      showResultsView();
+      nearbyStatus.textContent = "Searching…";
+      nearbyStatus.className = "loading";
+      nearbyResults.innerHTML = "";
+
+      const q = encodeURIComponent(query.trim());
+      // Bias results toward current location
+      const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=15&addressdetails=0&extratags=1&namedetails=0&lat=${current.lat}&lon=${current.lng}`;
+
+      try {
+        const res = await fetch(url, {
+          headers: { "User-Agent": "GPS-Marker-App/1.0 (personal use)" }
+        });
+        if (!res.ok) throw new Error("Network error");
+        const data = await res.json();
+
+        const places = data.map(item => {
+          const lat = parseFloat(item.lat);
+          const lon = parseFloat(item.lon);
+          return {
+            lat, lon,
+            name: item.display_name.split(",")[0] || item.name || "Unnamed",
+            type: item.type || item.class || "",
+            dist: distanceMeters(current.lat, current.lng, lat, lon)
+          };
+        }).sort((a, b) => a.dist - b.dist);
+
+        renderNearbyResults(places);
+      } catch (err) {
+        console.error(err);
+        nearbyStatus.textContent = "Search failed. Try again.";
+        nearbyStatus.className = "empty-state";
+      }
+    }
+
+    // Category search via Overpass
+    async function searchCategory(cat) {
+      if (!current) return;
+      showResultsView();
       nearbyStatus.textContent = "Searching OpenStreetMap…";
       nearbyStatus.className = "loading";
       nearbyResults.innerHTML = "";
@@ -599,59 +662,32 @@
           },
           body: "data=" + encodeURIComponent(query)
         });
-
         if (!res.ok) throw new Error("Network error");
-
         const data = await res.json();
-        const elements = data.elements || [];
 
-        // Normalize to points
-        const places = elements.map(el => {
+        const places = (data.elements || []).map(el => {
           const lat = el.lat || (el.center && el.center.lat);
           const lon = el.lon || (el.center && el.center.lon);
           if (!lat || !lon) return null;
           const tags = el.tags || {};
-          const name = tags.name || tags.brand || tags.operator || "Unnamed";
-          const type = tags.amenity || tags.tourism || tags.cuisine || cat;
-          return { lat, lon, name, type };
+          return {
+            lat, lon,
+            name: tags.name || tags.brand || tags.operator || "Unnamed",
+            type: tags.amenity || tags.tourism || cat,
+            dist: distanceMeters(current.lat, current.lng, lat, lon)
+          };
         }).filter(Boolean);
 
-        // Deduplicate roughly by name+rounded coords
+        // Deduplicate
         const seen = new Set();
         const unique = places.filter(p => {
-          const key = p.name + "|" + p.lat.toFixed(4) + "|" + p.lon.toFixed(4);
+          const key = p.name + p.lat.toFixed(4) + p.lon.toFixed(4);
           if (seen.has(key)) return false;
           seen.add(key);
           return true;
-        });
+        }).sort((a, b) => a.dist - b.dist);
 
-        // Sort by distance
-        unique.forEach(p => {
-          p.dist = distanceMeters(current.lat, current.lng, p.lat, p.lon);
-        });
-        unique.sort((a, b) => a.dist - b.dist);
-
-        if (unique.length === 0) {
-          nearbyStatus.textContent = "No results found nearby.";
-          nearbyStatus.className = "empty-state";
-          return;
-        }
-
-        nearbyStatus.textContent = `${unique.length} places found`;
-        nearbyStatus.className = "label";
-        nearbyResults.innerHTML = unique.slice(0, 15).map(p => `
-          <div class="nearby-item">
-            <div class="nearby-info">
-              <div class="nearby-name">${escapeHtml(p.name)}</div>
-              <div class="nearby-meta">${formatDistance(p.dist)} · ${escapeHtml(p.type)}</div>
-            </div>
-            <div class="nearby-actions">
-              <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go" title="Navigate">➤</button>
-              <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="save" title="Save">＋</button>
-            </div>
-          </div>
-        `).join("");
-
+        renderNearbyResults(unique);
       } catch (err) {
         console.error(err);
         nearbyStatus.textContent = "Search failed. Try again later.";
@@ -666,27 +702,20 @@
       nameOverlay.classList.add("show");
       setTimeout(() => nameInput.focus(), 80);
     });
-
     cancelNameBtn.addEventListener("click", () => nameOverlay.classList.remove("show"));
     saveNameBtn.addEventListener("click", () => {
       const name = nameInput.value.trim() || `Spot ${markers.length + 1}`;
-      const newMarker = {
-        id: uid(),
-        name,
-        lat: current.lat,
-        lng: current.lng,
-        accuracy: current.accuracy,
-        time: Date.now()
-      };
-      markers.push(newMarker);
-      activeId = newMarker.id;
+      markers.push({
+        id: uid(), name,
+        lat: current.lat, lng: current.lng,
+        accuracy: current.accuracy, time: Date.now()
+      });
+      activeId = markers[markers.length - 1].id;
       nameOverlay.classList.remove("show");
       fullRefresh();
       setStatus(`Saved “${name}”`, "ok");
     });
-    nameInput.addEventListener("keydown", e => {
-      if (e.key === "Enter") saveNameBtn.click();
-    });
+    nameInput.addEventListener("keydown", e => { if (e.key === "Enter") saveNameBtn.click(); });
 
     markerListEl.addEventListener("click", e => {
       const item = e.target.closest(".marker-item");
@@ -694,14 +723,13 @@
       const id = item.dataset.id;
       const actionBtn = e.target.closest("[data-action]");
       if (actionBtn) {
-        const action = actionBtn.dataset.action;
-        if (action === "nav") {
+        if (actionBtn.dataset.action === "nav") {
           activeId = id;
           fullRefresh();
-        } else if (action === "del") {
+        } else if (actionBtn.dataset.action === "del") {
           if (confirm("Delete this marker?")) {
             markers = markers.filter(m => m.id !== id);
-            if (activeId === id) activeId = markers.length ? markers[markers.length - 1].id : null;
+            if (activeId === id) activeId = markers.length ? markers[markers.length-1].id : null;
             fullRefresh();
           }
         }
@@ -725,12 +753,14 @@
       setStatus("All markers cleared", "ok");
     });
 
-    // Nearby
+    // Nearby / Search
     nearbyBtn.addEventListener("click", () => {
       if (!current) return;
+      searchInput.value = "";
       categoryView.classList.remove("hidden");
       resultsView.classList.add("hidden");
       nearbyOverlay.classList.add("show");
+      setTimeout(() => searchInput.focus(), 100);
     });
     closeNearbyBtn.addEventListener("click", () => nearbyOverlay.classList.remove("show"));
     backToCatsBtn.addEventListener("click", () => {
@@ -738,8 +768,13 @@
       categoryView.classList.remove("hidden");
     });
 
+    searchBtn.addEventListener("click", () => searchText(searchInput.value));
+    searchInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") searchText(searchInput.value);
+    });
+
     document.querySelectorAll(".cat-btn").forEach(btn => {
-      btn.addEventListener("click", () => searchNearby(btn.dataset.cat));
+      btn.addEventListener("click", () => searchCategory(btn.dataset.cat));
     });
 
     nearbyResults.addEventListener("click", e => {
@@ -752,18 +787,17 @@
       if (btn.dataset.action === "go") {
         window.open(`https://maps.apple.com/?daddr=${lat},${lon}&dirflg=w`, "_blank");
       } else if (btn.dataset.action === "save") {
-        const newMarker = {
+        markers.push({
           id: uid(),
           name: name || "Nearby place",
           lat, lng: lon,
-          accuracy: 30,
+          accuracy: 25,
           time: Date.now()
-        };
-        markers.push(newMarker);
-        activeId = newMarker.id;
+        });
+        activeId = markers[markers.length - 1].id;
         fullRefresh();
         nearbyOverlay.classList.remove("show");
-        setStatus(`Saved “${newMarker.name}”`, "ok");
+        setStatus(`Saved “${name}”`, "ok");
       }
     });
 
