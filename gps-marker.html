@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>GPS Marker – Fixed Food Search</title>
+  <title>GPS Marker – Erotic Adult + Fixed Food</title>
 
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAshrwRouMRF8QW-3Du0wgSNjjkFnr89yw&libraries=places"></script>
 
@@ -92,12 +92,11 @@
     .view-btn.active { background: var(--accent); color: white; }
 
     .guide-card { background: #141c27; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 16px; }
-    .guide-img { width: 100%; height: 180px; object-fit: cover; background: #0d1219; display: block; }
-    .guide-img.placeholder { display: flex; align-items: center; justify-content: center; color: var(--muted); height: 140px; font-size: 2rem; background: linear-gradient(135deg, #1a2332, #0f1419); }
+    .guide-img { width: 100%; height: 170px; object-fit: cover; background: #0d1219; display: block; }
+    .guide-img.placeholder { display: flex; align-items: center; justify-content: center; color: var(--muted); height: 130px; font-size: 2rem; background: linear-gradient(135deg, #1a2332, #0f1419); }
     .guide-body { padding: 14px; }
-    .guide-title { font-size: 1.18rem; font-weight: 700; margin-bottom: 4px; }
+    .guide-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
     .guide-meta { font-size: 0.82rem; color: var(--accent); margin-bottom: 6px; font-weight: 500; }
-    .guide-extract { font-size: 0.92rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 8px; }
     .guide-website { display: inline-block; font-size: 0.9rem; color: #60a5fa; text-decoration: none; margin-bottom: 12px; word-break: break-all; }
     .guide-actions { display: flex; gap: 8px; }
     .guide-actions .btn { margin: 0; padding: 12px; font-size: 0.92rem; }
@@ -121,7 +120,7 @@
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Food search fixed + default = Basic list</p>
+  <p class="subtitle">Erotic Adult places + improved Food search</p>
 
   <div id="status">Requesting location permission…</div>
 
@@ -167,7 +166,7 @@
         <button class="cat-btn" data-cat="historical">🏛️ Historical</button>
         <button class="cat-btn" data-cat="food">🍽️ Food</button>
         <button class="cat-btn" data-cat="art">🎨 Art</button>
-        <button class="cat-btn" data-cat="adult">🔥 Adult</button>
+        <button class="cat-btn" data-cat="adult">🔥 Adult / Erotic</button>
       </div>
     </div>
   </div>
@@ -179,7 +178,7 @@
   <div id="markerList"></div>
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Default view = Basic List</p>
+  <p class="footer">Adult category = erotic places only</p>
 
   <!-- Name sheet -->
   <div class="overlay" id="nameOverlay">
@@ -226,13 +225,12 @@
     let activeId = null;
     let currentResults = [];
     let currentCategory = "";
-    let viewMode = "basic";               // ← DEFAULT IS NOW BASIC
+    let viewMode = "basic";          // Default = Basic
     let selectedMiles = 1;
-    const STORAGE_KEY = "gps-marker-v6";
+    const STORAGE_KEY = "gps-marker-erotic-v1";
 
     const $ = id => document.getElementById(id);
 
-    // ... (helper functions remain the same – distance, formatMiles, etc.)
     function setStatus(msg, type = "") { $("status").textContent = msg; $("status").className = type; }
     function fmtCoord(n) { return n.toFixed(6); }
     function fmtTime(ts) { return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
@@ -351,80 +349,78 @@
       navigator.geolocation.watchPosition(onPosition, onError, { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 });
     }
 
-    // Google Places with better error reporting
+    // ========== GOOGLE PLACES (Food) ==========
     function searchGoogleFood(lat, lon, radiusMeters) {
       return new Promise((resolve, reject) => {
-        if (typeof google === "undefined" || !google.maps || !google.maps.places) {
-          reject(new Error("Google Maps library failed to load. Check your API key."));
+        if (typeof google === "undefined" || !google.maps?.places) {
+          reject(new Error("Google Maps library not loaded"));
           return;
         }
-
         const service = new google.maps.places.PlacesService(document.createElement("div"));
-        const request = {
+        service.nearbySearch({
           location: new google.maps.LatLng(lat, lon),
           radius: radiusMeters,
           type: "restaurant"
-        };
-
-        service.nearbySearch(request, (results, status) => {
+        }, (results, status) => {
           if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-            const places = results.slice(0, 12).map(p => {
+            resolve(results.slice(0, 12).map(p => {
               const lat2 = p.geometry.location.lat();
               const lon2 = p.geometry.location.lng();
-              let photo = null;
-              if (p.photos && p.photos[0]) {
-                photo = p.photos[0].getUrl({ maxWidth: 800 });
-              }
               return {
                 name: p.name,
-                lat: lat2,
-                lon: lon2,
+                lat: lat2, lon: lon2,
                 dist: distanceMeters(lat, lon, lat2, lon2),
                 type: "restaurant",
                 rating: p.rating || null,
-                image: photo,
+                image: p.photos?.[0]?.getUrl({ maxWidth: 800 }) || null,
                 website: null,
                 extract: p.vicinity || null
               };
-            });
-            resolve(places);
+            }));
           } else {
-            // Return the real Google status so we can show it
-            reject(new Error("Google Places status: " + status));
+            reject(new Error(status));
           }
         });
       });
     }
 
-    // Free fallback for food
-    async function getFreeFood(lat, lon, radiusMeters) {
-      const query = `
-        [out:json][timeout:20];
-        (
-          node["amenity"~"restaurant|cafe|fast_food|bar"]["name"](around:${radiusMeters},${lat},${lon});
-          way["amenity"~"restaurant|cafe|fast_food|bar"]["name"](around:${radiusMeters},${lat},${lon});
-        );
-        out center 20;
-      `;
+    // ========== FREE SOURCES ==========
+    async function getOverpass(lat, lon, radiusMeters, query) {
+      const fullQuery = `[out:json][timeout:25];(${query});out center 25;`;
       const res = await fetch("https://overpass-api.de/api/interpreter", {
         method: "POST",
-        body: "data=" + encodeURIComponent(query)
+        body: "data=" + encodeURIComponent(fullQuery)
       });
       const data = await res.json();
       return (data.elements || []).map(el => {
         const plat = el.lat || el.center?.lat;
         const plon = el.lon || el.center?.lon;
-        if (!plat || !plon) return null;
+        if (!plat || !plon || !el.tags?.name) return null;
         return {
-          name: el.tags?.name || "Restaurant",
+          name: el.tags.name,
           lat: plat, lon: plon,
           dist: distanceMeters(lat, lon, plat, plon),
-          type: el.tags?.amenity || "restaurant",
-          website: el.tags?.website || null
+          type: el.tags.amenity || el.tags.shop || el.tags.tourism || "",
+          website: el.tags.website || el.tags["contact:website"] || null
         };
       }).filter(Boolean);
     }
 
+    // ========== ADULT / EROTIC (improved) ==========
+    async function searchErotic(lat, lon, radiusMeters) {
+      // Specific erotic tags
+      const eroticQuery = `
+        node["amenity"~"stripclub|brothel|swingerclub"](around:${radiusMeters},${lat},${lon});
+        way["amenity"~"stripclub|brothel|swingerclub"](around:${radiusMeters},${lat},${lon});
+        node["shop"~"erotic|sex"](around:${radiusMeters},${lat},${lon});
+        way["shop"~"erotic|sex"](around:${radiusMeters},${lat},${lon});
+        node["leisure"="adult_gaming_centre"](around:${radiusMeters},${lat},${lon});
+        node["name"~"sex shop|strip club|erotic|swingers|fetish|peep show|love hotel",i](around:${radiusMeters},${lat},${lon});
+      `;
+      return await getOverpass(lat, lon, radiusMeters, eroticQuery);
+    }
+
+    // ========== MAIN SEARCH ==========
     async function searchAroundLandmark(category) {
       const active = getActiveMarker();
       if (!active) return;
@@ -433,7 +429,12 @@
       currentCategory = category;
 
       $("resultsOverlay").classList.add("show");
-      $("resultsTitle").textContent = { historical: "Historical", food: "Food & Drink", art: "Art", adult: "Adult" }[category] || category;
+      $("resultsTitle").textContent = {
+        historical: "Historical Places",
+        food: "Food & Drink",
+        art: "Art & Museums",
+        adult: "Adult / Erotic Places"
+      }[category];
       $("resultsSubtitle").textContent = `Around “${active.name}”`;
       $("radiusInfo").textContent = `Searching within ${selectedMiles} mile${selectedMiles > 1 ? "s" : ""}`;
       $("errorBox").classList.add("hidden");
@@ -448,14 +449,17 @@
         if (category === "food") {
           try {
             places = await searchGoogleFood(active.lat, active.lng, radiusMeters);
-          } catch (googleErr) {
-            console.warn("Google Places failed:", googleErr.message);
-            $("errorBox").textContent = "Google Places failed (" + googleErr.message + "). Using free sources instead.";
+          } catch (err) {
+            $("errorBox").textContent = "Google Places failed (" + err.message + "). Using free sources.";
             $("errorBox").classList.remove("hidden");
-            places = await getFreeFood(active.lat, active.lng, radiusMeters);
+            places = await getOverpass(active.lat, active.lng, radiusMeters, `
+              node["amenity"~"restaurant|cafe|fast_food|bar"]["name"](around:${radiusMeters},${active.lat},${active.lng});
+              way["amenity"~"restaurant|cafe|fast_food|bar"]["name"](around:${radiusMeters},${active.lat},${active.lng});
+            `);
           }
+        } else if (category === "adult") {
+          places = await searchErotic(active.lat, active.lng, radiusMeters);
         } else if (category === "historical") {
-          // simplified free historical
           const url = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${active.lat}|${active.lng}&gsradius=${radiusMeters}&gslimit=12&format=json&origin=*`;
           const res = await fetch(url);
           const data = await res.json();
@@ -463,9 +467,12 @@
             name: item.title, lat: item.lat, lon: item.lon,
             dist: distanceMeters(active.lat, active.lng, item.lat, item.lon), type: "historical"
           }));
-        } else {
-          // art / adult free
-          places = await getFreeFood(active.lat, active.lng, radiusMeters); // reuse for simplicity
+        } else if (category === "art") {
+          places = await getOverpass(active.lat, active.lng, radiusMeters, `
+            node["tourism"~"museum|gallery|artwork"](around:${radiusMeters},${active.lat},${active.lng});
+            way["tourism"~"museum|gallery|artwork"](around:${radiusMeters},${active.lat},${active.lng});
+            node["amenity"="arts_centre"](around:${radiusMeters},${active.lat},${active.lng});
+          `);
         }
 
         const maxDist = milesToMeters(selectedMiles) * 1.05;
@@ -485,22 +492,22 @@
 
     function renderResults() {
       if (!currentResults.length) {
-        $("resultsStatus").textContent = "No places found.";
+        $("resultsStatus").textContent = "No places found within the selected distance.";
         $("resultsStatus").className = "empty-state";
         $("resultsList").innerHTML = "";
         return;
       }
-      $("resultsStatus").textContent = `${currentResults.length} places`;
+      $("resultsStatus").textContent = `${currentResults.length} places found`;
       $("resultsStatus").className = "label";
 
       if (viewMode === "extended") {
         $("resultsList").innerHTML = currentResults.map((p, i) => `
           <div class="guide-card">
-            ${p.image ? `<img class="guide-img" src="${p.image}" loading="lazy">` : `<div class="guide-img placeholder">🍽️</div>`}
+            ${p.image ? `<img class="guide-img" src="${p.image}" loading="lazy">` : `<div class="guide-img placeholder">${currentCategory === "adult" ? "🔥" : "🍽️"}</div>`}
             <div class="guide-body">
               <div class="guide-title">${i+1}. ${escapeHtml(p.displayName)}</div>
-              <div class="guide-meta">${formatMiles(p.dist)}${p.rating ? " · ★ " + p.rating : ""}</div>
-              ${p.website ? `<a class="guide-website" href="${p.website}" target="_blank">🌐 Website</a>` : ""}
+              <div class="guide-meta">${formatMiles(p.dist)}${p.rating ? " · ★ " + p.rating : ""} ${p.type ? " · " + escapeHtml(p.type) : ""}</div>
+              ${p.website ? `<a class="guide-website" href="${escapeHtml(p.website)}" target="_blank">🌐 Website</a>` : ""}
               <div class="guide-actions">
                 <button class="btn btn-primary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="go">Navigate</button>
                 <button class="btn btn-secondary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="save">Save</button>
@@ -513,8 +520,8 @@
             <div class="basic-top">
               <div class="basic-info">
                 <div class="basic-name">${escapeHtml(p.displayName)}</div>
-                <div class="basic-meta">${formatMiles(p.dist)}${p.rating ? " · ★ " + p.rating : ""}</div>
-                ${p.website ? `<a class="basic-website" href="${p.website}" target="_blank">🌐 Website</a>` : ""}
+                <div class="basic-meta">${formatMiles(p.dist)}${p.rating ? " · ★ " + p.rating : ""} ${p.type ? " · " + escapeHtml(p.type) : ""}</div>
+                ${p.website ? `<a class="basic-website" href="${escapeHtml(p.website)}" target="_blank">🌐 Website</a>` : ""}
               </div>
               <div class="basic-actions">
                 <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="go">➤</button>
@@ -525,7 +532,7 @@
       }
     }
 
-    // Event listeners
+    // Events
     $("markBtn").onclick = () => { if (!current) return; $("nameInput").value = ""; $("nameOverlay").classList.add("show"); };
     $("cancelNameBtn").onclick = () => $("nameOverlay").classList.remove("show");
     $("saveNameBtn").onclick = () => {
@@ -543,7 +550,7 @@
       const btn = e.target.closest("[data-action]");
       if (btn?.dataset.action === "nav") { activeId = id; fullRefresh(); }
       else if (btn?.dataset.action === "del") {
-        if (confirm("Delete?")) {
+        if (confirm("Delete this marker?")) {
           markers = markers.filter(m => m.id !== id);
           if (activeId === id) activeId = markers[0]?.id || null;
           fullRefresh();
@@ -557,7 +564,7 @@
     };
 
     $("clearAllBtn").onclick = () => {
-      if (confirm("Delete all?")) { markers = []; activeId = null; fullRefresh(); }
+      if (confirm("Delete ALL markers?")) { markers = []; activeId = null; fullRefresh(); }
     };
 
     document.querySelectorAll(".dist-btn").forEach(btn => {
