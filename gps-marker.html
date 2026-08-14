@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>GPS Marker – Return to Spot</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a2332;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --border: #2d3748;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding: 16px;
+      line-height: 1.4;
+      -webkit-tap-highlight-color: transparent;
+    }
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .coords {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.95rem;
+      word-break: break-all;
+    }
+    .big {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .stat {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+    .stat .value {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .stat .unit {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      margin-bottom: 10px;
+      -webkit-appearance: none;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid rgba(239,68,68,0.4);
+    }
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    #status {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 16px;
+      min-height: 1.2em;
+    }
+    #status.error { color: var(--danger); }
+    #status.ok { color: var(--success); }
+    .arrow-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 110px;
+      margin: 8px 0 4px;
+    }
+    #arrow {
+      width: 64px;
+      height: 64px;
+      transition: transform 0.25s ease-out;
+    }
+    .hidden { display: none !important; }
+    .footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>GPS Marker</h1>
+  <p class="subtitle">Mark a spot → return to it later</p>
+
+  <div id="status">Requesting location permission…</div>
+
+  <!-- Current position -->
+  <div class="card">
+    <div class="label">Current Location</div>
+    <div class="coords" id="currentCoords">—</div>
+    <div class="row">
+      <div class="stat">
+        <div class="value" id="accuracy">—</div>
+        <div class="unit">accuracy</div>
+      </div>
+      <div class="stat">
+        <div class="value" id="lastUpdate">—</div>
+        <div class="unit">last update</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Marked position + guidance -->
+  <div class="card" id="markedCard">
+    <div class="label">Marked Location</div>
+    <div class="coords" id="markedCoords">No location marked yet</div>
+    <div id="navSection" class="hidden">
+      <div class="arrow-wrap">
+        <svg id="arrow" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 6 L48 42 L32 34 L16 42 Z" fill="#3b82f6"/>
+          <circle cx="32" cy="32" r="4" fill="#e2e8f0"/>
+        </svg>
+      </div>
+      <div class="row">
+        <div class="stat">
+          <div class="value" id="distance">—</div>
+          <div class="unit">distance</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="bearing">—</div>
+          <div class="unit">bearing</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="markBtn" disabled>Mark Current Location</button>
+  <button class="btn btn-secondary" id="mapsBtn" disabled>Open in Maps</button>
+  <button class="btn btn-danger" id="clearBtn" disabled>Clear Mark</button>
+
+  <p class="footer">Works offline once loaded · Data stays on your device</p>
+
+  <script>
+    // ── State ──────────────────────────────────────────────
+    let watchId = null;
+    let current = null;          // { lat, lng, accuracy, time }
+    let marked  = null;          // { lat, lng, accuracy, time }
+    const STORAGE_KEY = "gps-marker-v1";
+
+    // ── DOM ────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const statusEl     = $("status");
+    const currentCoords= $("currentCoords");
+    const accuracyEl   = $("accuracy");
+    const lastUpdateEl = $("lastUpdate");
+    const markedCoords = $("markedCoords");
+    const navSection   = $("navSection");
+    const distanceEl   = $("distance");
+    const bearingEl    = $("bearing");
+    const arrowEl      = $("arrow");
+    const markBtn      = $("markBtn");
+    const mapsBtn      = $("mapsBtn");
+    const clearBtn     = $("clearBtn");
+
+    // ── Helpers ────────────────────────────────────────────
+    function setStatus(msg, type = "") {
+      statusEl.textContent = msg;
+      statusEl.className = type;
+    }
+
+    function fmtCoord(n) {
+      return n.toFixed(6);
+    }
+
+    function fmtTime(ts) {
+      return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+
+    // Haversine distance in meters
+    function distanceMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    // Initial bearing in degrees (0–360)
+    function bearingDegrees(lat1, lon1, lat2, lon2) {
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      const y = Math.sin(Δλ) * Math.cos(φ2);
+      const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+      let θ = Math.atan2(y, x) * 180 / Math.PI;
+      return (θ + 360) % 360;
+    }
+
+    function cardinal(deg) {
+      const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+      return dirs[Math.round(deg / 22.5) % 16];
+    }
+
+    function formatDistance(m) {
+      if (m < 1000) {
+        // feet for US users when under ~0.6 mi
+        const ft = m * 3.28084;
+        return ft < 10 ? `${ft.toFixed(1)} ft` : `${Math.round(ft)} ft`;
+      }
+      const mi = m / 1609.344;
+      return mi < 10 ? `${mi.toFixed(2)} mi` : `${mi.toFixed(1)} mi`;
+    }
+
+    // ── UI updates ─────────────────────────────────────────
+    function updateCurrentUI() {
+      if (!current) return;
+      currentCoords.textContent = `${fmtCoord(current.lat)}, ${fmtCoord(current.lng)}`;
+      accuracyEl.textContent = current.accuracy < 1000
+        ? `±${Math.round(current.accuracy)} m`
+        : `±${(current.accuracy/1000).toFixed(1)} km`;
+      lastUpdateEl.textContent = fmtTime(current.time);
+      markBtn.disabled = false;
+    }
+
+    function updateMarkedUI() {
+      if (!marked) {
+        markedCoords.textContent = "No location marked yet";
+        navSection.classList.add("hidden");
+        mapsBtn.disabled = true;
+        clearBtn.disabled = true;
+        return;
+      }
+      markedCoords.textContent = `${fmtCoord(marked.lat)}, ${fmtCoord(marked.lng)}`;
+      navSection.classList.remove("hidden");
+      mapsBtn.disabled = false;
+      clearBtn.disabled = false;
+      updateNavigation();
+    }
+
+    function updateNavigation() {
+      if (!current || !marked) return;
+
+      const dist = distanceMeters(current.lat, current.lng, marked.lat, marked.lng);
+      const brg  = bearingDegrees(current.lat, current.lng, marked.lat, marked.lng);
+
+      distanceEl.textContent = formatDistance(dist);
+      bearingEl.textContent  = `${Math.round(brg)}° ${cardinal(brg)}`;
+
+      // Rotate arrow (0° = north/up)
+      arrowEl.style.transform = `rotate(${brg}deg)`;
+    }
+
+    // ── Persistence ────────────────────────────────────────
+    function saveMarked() {
+      if (marked) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(marked));
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+
+    function loadMarked() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          marked = JSON.parse(raw);
+          updateMarkedUI();
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    // ── Geolocation ────────────────────────────────────────
+    function onPosition(pos) {
+      current = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+        time: pos.timestamp || Date.now()
+      };
+      setStatus("Live tracking active", "ok");
+      updateCurrentUI();
+      updateNavigation();
+    }
+
+    function onError(err) {
+      let msg = "Location error";
+      if (err.code === 1) msg = "Permission denied – enable location for this site";
+      else if (err.code === 2) msg = "Position unavailable";
+      else if (err.code === 3) msg = "Timeout – trying again…";
+      setStatus(msg, "error");
+    }
+
+    function startWatch() {
+      if (!navigator.geolocation) {
+        setStatus("Geolocation not supported by this browser", "error");
+        return;
+      }
+      const options = {
+        enableHighAccuracy: true,
+        maximumAge: 2000,
+        timeout: 15000
+      };
+      watchId = navigator.geolocation.watchPosition(onPosition, onError, options);
+    }
+
+    // ── Actions ────────────────────────────────────────────
+    markBtn.addEventListener("click", () => {
+      if (!current) return;
+      marked = { ...current };
+      saveMarked();
+      updateMarkedUI();
+      setStatus("Location marked – you can return anytime", "ok");
+    });
+
+    clearBtn.addEventListener("click", () => {
+      if (!confirm("Clear the marked location?")) return;
+      marked = null;
+      saveMarked();
+      updateMarkedUI();
+      setStatus("Mark cleared", "ok");
+    });
+
+    mapsBtn.addEventListener("click", () => {
+      if (!marked) return;
+      // Universal geo URI – works well on iOS (Apple Maps) and Android
+      const url = `https://maps.apple.com/?daddr=${marked.lat},${marked.lng}&dirflg=w`;
+      // Alternative pure geo:  geo:${marked.lat},${marked.lng}
+      window.open(url, "_blank");
+    });
+
+    // ── Init ───────────────────────────────────────────────
+    loadMarked();
+    startWatch();
+
+    // Also try device orientation for better compass feel (optional)
+    // Most phones already report heading via geolocation when available.
+  </script>
+</body>
+</html>
