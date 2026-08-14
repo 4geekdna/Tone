@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>GPS Marker – Favorites</title>
+  <title>GPS Marker – Favorites + Nearby</title>
   <style>
     :root {
       --bg: #0f1419;
@@ -26,21 +26,12 @@
       color: var(--text);
       min-height: 100dvh;
       padding: 16px;
-      padding-bottom: 40px;
+      padding-bottom: 50px;
       line-height: 1.4;
       -webkit-tap-highlight-color: transparent;
     }
-    h1 {
-      font-size: 1.35rem;
-      font-weight: 700;
-      margin-bottom: 2px;
-      letter-spacing: -0.02em;
-    }
-    .subtitle {
-      color: var(--muted);
-      font-size: 0.85rem;
-      margin-bottom: 18px;
-    }
+    h1 { font-size: 1.35rem; font-weight: 700; margin-bottom: 2px; letter-spacing: -0.02em; }
+    .subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 18px; }
     .card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -60,11 +51,7 @@
       font-size: 0.92rem;
       word-break: break-all;
     }
-    .row {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
+    .row { display: flex; gap: 10px; margin-top: 10px; }
     .stat {
       flex: 1;
       background: rgba(255,255,255,0.04);
@@ -72,14 +59,8 @@
       padding: 10px;
       text-align: center;
     }
-    .stat .value {
-      font-size: 1.15rem;
-      font-weight: 600;
-    }
-    .stat .unit {
-      font-size: 0.72rem;
-      color: var(--muted);
-    }
+    .stat .value { font-size: 1.15rem; font-weight: 600; }
+    .stat .unit { font-size: 0.72rem; color: var(--muted); }
     .btn {
       display: block;
       width: 100%;
@@ -94,10 +75,7 @@
       -webkit-appearance: none;
     }
     .btn:active { transform: scale(0.98); }
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-    }
+    .btn-primary { background: var(--accent); color: white; }
     .btn-primary:hover { background: var(--accent-hover); }
     .btn-secondary {
       background: transparent;
@@ -109,10 +87,7 @@
       color: var(--danger);
       border: 1px solid rgba(239,68,68,0.35);
     }
-    .btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
     #status {
       font-size: 0.85rem;
       color: var(--muted);
@@ -122,7 +97,6 @@
     #status.error { color: var(--danger); }
     #status.ok { color: var(--success); }
 
-    /* Arrow */
     .arrow-wrap {
       display: flex;
       justify-content: center;
@@ -136,8 +110,7 @@
       transition: transform 0.25s ease-out;
     }
 
-    /* Marker list */
-    .marker-item {
+    .marker-item, .nearby-item {
       background: rgba(255,255,255,0.03);
       border: 1px solid var(--border);
       border-radius: 14px;
@@ -148,27 +121,21 @@
       align-items: center;
       gap: 10px;
     }
-    .marker-item.active {
-      background: var(--active);
-      border-color: var(--accent);
-    }
-    .marker-info {
-      flex: 1;
-      min-width: 0;
-    }
-    .marker-name {
+    .marker-item.active { background: var(--active); border-color: var(--accent); }
+    .marker-info, .nearby-info { flex: 1; min-width: 0; }
+    .marker-name, .nearby-name {
       font-weight: 600;
       font-size: 1.02rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .marker-meta {
+    .marker-meta, .nearby-meta {
       font-size: 0.78rem;
       color: var(--muted);
       margin-top: 2px;
     }
-    .marker-actions {
+    .marker-actions, .nearby-actions {
       display: flex;
       gap: 6px;
       flex-shrink: 0;
@@ -189,26 +156,28 @@
     .icon-btn.delete { color: var(--danger); border-color: rgba(239,68,68,0.3); }
     .icon-btn:active { transform: scale(0.93); }
 
-    /* Name input overlay */
-    #nameOverlay {
+    /* Overlays / sheets */
+    .overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.72);
       z-index: 100;
       align-items: flex-end;
       justify-content: center;
-      padding: 20px;
+      padding: 16px;
     }
-    #nameOverlay.show { display: flex; }
-    .name-sheet {
+    .overlay.show { display: flex; }
+    .sheet {
       background: var(--card);
       border-radius: 20px 20px 16px 16px;
       padding: 20px;
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
+      max-height: 85vh;
+      overflow-y: auto;
     }
-    .name-sheet input {
+    .sheet input {
       width: 100%;
       background: rgba(255,255,255,0.07);
       border: 1px solid var(--border);
@@ -219,12 +188,28 @@
       margin: 12px 0 16px;
       outline: none;
     }
-    .name-sheet input:focus { border-color: var(--accent); }
-    .sheet-buttons {
-      display: flex;
-      gap: 10px;
-    }
+    .sheet input:focus { border-color: var(--accent); }
+    .sheet-buttons { display: flex; gap: 10px; }
     .sheet-buttons .btn { margin-bottom: 0; }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 12px 0 8px;
+    }
+    .cat-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 10px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+    }
+    .cat-btn:active { background: var(--accent); }
 
     .empty-state {
       text-align: center;
@@ -246,11 +231,16 @@
       margin-top: 24px;
     }
     .hidden { display: none !important; }
+    .loading {
+      text-align: center;
+      padding: 30px 10px;
+      color: var(--muted);
+    }
   </style>
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Save multiple spots • navigate back anytime</p>
+  <p class="subtitle">Save spots • find things nearby</p>
 
   <div id="status">Requesting location permission…</div>
 
@@ -296,6 +286,7 @@
   </div>
 
   <button class="btn btn-primary" id="markBtn" disabled>Mark Current Location</button>
+  <button class="btn btn-secondary" id="nearbyBtn" disabled>Find Nearby</button>
   <button class="btn btn-secondary" id="mapsBtn" disabled>Open in Maps</button>
 
   <div class="section-title">Saved Markers</div>
@@ -303,11 +294,11 @@
 
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Works offline once loaded · Data stays on your device</p>
+  <p class="footer">Uses OpenStreetMap data · Works offline after load</p>
 
   <!-- Name input sheet -->
-  <div id="nameOverlay">
-    <div class="name-sheet">
+  <div class="overlay" id="nameOverlay">
+    <div class="sheet">
       <div class="label">Name this location</div>
       <input type="text" id="nameInput" placeholder="e.g. Parking, Hotel, Car…" maxlength="40" />
       <div class="sheet-buttons">
@@ -317,11 +308,38 @@
     </div>
   </div>
 
+  <!-- Nearby category + results sheet -->
+  <div class="overlay" id="nearbyOverlay">
+    <div class="sheet">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div class="label" style="margin:0;">Find Nearby</div>
+        <button class="icon-btn" id="closeNearbyBtn" style="width:32px;height:32px;">✕</button>
+      </div>
+
+      <div id="categoryView">
+        <div class="category-grid">
+          <button class="cat-btn" data-cat="food">🍽️ Food & Drink</button>
+          <button class="cat-btn" data-cat="coffee">☕ Coffee</button>
+          <button class="cat-btn" data-cat="fuel">⛽ Gas</button>
+          <button class="cat-btn" data-cat="parking">🅿️ Parking</button>
+          <button class="cat-btn" data-cat="hotel">🏨 Hotels</button>
+          <button class="cat-btn" data-cat="pharmacy">💊 Pharmacy</button>
+        </div>
+      </div>
+
+      <div id="resultsView" class="hidden">
+        <div id="nearbyStatus" class="loading">Searching…</div>
+        <div id="nearbyResults"></div>
+        <button class="btn btn-secondary" id="backToCatsBtn" style="margin-top:12px;">← Back to categories</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ── State ──────────────────────────────────────────────
     let watchId = null;
-    let current = null;               // { lat, lng, accuracy, time }
-    let markers = [];                 // array of { id, name, lat, lng, accuracy, time }
+    let current = null;
+    let markers = [];
     let activeId = null;
 
     const STORAGE_KEY = "gps-marker-favorites-v1";
@@ -339,6 +357,7 @@
     const bearingEl     = $("bearing");
     const arrowEl       = $("arrow");
     const markBtn       = $("markBtn");
+    const nearbyBtn     = $("nearbyBtn");
     const mapsBtn       = $("mapsBtn");
     const clearAllBtn   = $("clearAllBtn");
     const markerListEl  = $("markerList");
@@ -346,21 +365,23 @@
     const nameInput     = $("nameInput");
     const saveNameBtn   = $("saveNameBtn");
     const cancelNameBtn = $("cancelNameBtn");
+    const nearbyOverlay = $("nearbyOverlay");
+    const closeNearbyBtn= $("closeNearbyBtn");
+    const categoryView  = $("categoryView");
+    const resultsView   = $("resultsView");
+    const nearbyStatus  = $("nearbyStatus");
+    const nearbyResults = $("nearbyResults");
+    const backToCatsBtn = $("backToCatsBtn");
 
     // ── Helpers ────────────────────────────────────────────
     function setStatus(msg, type = "") {
       statusEl.textContent = msg;
       statusEl.className = type;
     }
-
-    function fmtCoord(n) {
-      return n.toFixed(6);
-    }
-
+    function fmtCoord(n) { return n.toFixed(6); }
     function fmtTime(ts) {
       return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     }
-
     function distanceMeters(lat1, lon1, lat2, lon2) {
       const R = 6371000;
       const φ1 = lat1 * Math.PI / 180;
@@ -370,7 +391,6 @@
       const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
-
     function bearingDegrees(lat1, lon1, lat2, lon2) {
       const φ1 = lat1 * Math.PI / 180;
       const φ2 = lat2 * Math.PI / 180;
@@ -380,12 +400,10 @@
       let θ = Math.atan2(y, x) * 180 / Math.PI;
       return (θ + 360) % 360;
     }
-
     function cardinal(deg) {
       const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
       return dirs[Math.round(deg / 22.5) % 16];
     }
-
     function formatDistance(m) {
       if (m < 1000) {
         const ft = m * 3.28084;
@@ -394,16 +412,19 @@
       const mi = m / 1609.344;
       return mi < 10 ? `${mi.toFixed(2)} mi` : `${mi.toFixed(1)} mi`;
     }
-
     function uid() {
       return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, c =>
+        ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c])
+      );
     }
 
     // ── Persistence ────────────────────────────────────────
     function save() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ markers, activeId }));
     }
-
     function load() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -424,6 +445,7 @@
         : `±${(current.accuracy/1000).toFixed(1)} km`;
       lastUpdateEl.textContent = fmtTime(current.time);
       markBtn.disabled = false;
+      nearbyBtn.disabled = false;
     }
 
     function getActiveMarker() {
@@ -449,10 +471,8 @@
     function updateNavigation() {
       const active = getActiveMarker();
       if (!current || !active) return;
-
       const dist = distanceMeters(current.lat, current.lng, active.lat, active.lng);
       const brg  = bearingDegrees(current.lat, current.lng, active.lat, active.lng);
-
       distanceEl.textContent = formatDistance(dist);
       bearingEl.textContent  = `${Math.round(brg)}° ${cardinal(brg)}`;
       arrowEl.style.transform = `rotate(${brg}deg)`;
@@ -465,15 +485,11 @@
         return;
       }
       clearAllBtn.style.display = "block";
-
-      // Sort by most recent first
       const sorted = [...markers].sort((a, b) => b.time - a.time);
-
       markerListEl.innerHTML = sorted.map(m => {
         let distText = "—";
         if (current) {
-          const d = distanceMeters(current.lat, current.lng, m.lat, m.lng);
-          distText = formatDistance(d);
+          distText = formatDistance(distanceMeters(current.lat, current.lng, m.lat, m.lng));
         }
         const isActive = m.id === activeId;
         return `
@@ -489,12 +505,6 @@
           </div>
         `;
       }).join("");
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/[&<>"']/g, c => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
-      })[c]);
     }
 
     function fullRefresh() {
@@ -514,9 +524,8 @@
       setStatus("Live tracking active", "ok");
       updateCurrentUI();
       updateNavigation();
-      renderList(); // update distances
+      renderList();
     }
-
     function onError(err) {
       let msg = "Location error";
       if (err.code === 1) msg = "Permission denied – enable location for this site";
@@ -524,7 +533,6 @@
       else if (err.code === 3) msg = "Timeout – trying again…";
       setStatus(msg, "error");
     }
-
     function startWatch() {
       if (!navigator.geolocation) {
         setStatus("Geolocation not supported", "error");
@@ -537,18 +545,129 @@
       });
     }
 
-    // ── Actions ────────────────────────────────────────────
+    // ── Nearby (Overpass) ──────────────────────────────────
+    const categoryQueries = {
+      food: `
+        node["amenity"~"restaurant|cafe|fast_food|bar|pub|ice_cream"](around:900,LAT,LON);
+        way["amenity"~"restaurant|cafe|fast_food|bar|pub|ice_cream"](around:900,LAT,LON);
+      `,
+      coffee: `
+        node["amenity"="cafe"](around:900,LAT,LON);
+        node["cuisine"="coffee_shop"](around:900,LAT,LON);
+        way["amenity"="cafe"](around:900,LAT,LON);
+      `,
+      fuel: `
+        node["amenity"="fuel"](around:1500,LAT,LON);
+        way["amenity"="fuel"](around:1500,LAT,LON);
+      `,
+      parking: `
+        node["amenity"="parking"](around:800,LAT,LON);
+        way["amenity"="parking"](around:800,LAT,LON);
+      `,
+      hotel: `
+        node["tourism"~"hotel|motel|guest_house"](around:1500,LAT,LON);
+        way["tourism"~"hotel|motel|guest_house"](around:1500,LAT,LON);
+      `,
+      pharmacy: `
+        node["amenity"="pharmacy"](around:1200,LAT,LON);
+        way["amenity"="pharmacy"](around:1200,LAT,LON);
+      `
+    };
+
+    async function searchNearby(cat) {
+      if (!current) return;
+      categoryView.classList.add("hidden");
+      resultsView.classList.remove("hidden");
+      nearbyStatus.textContent = "Searching OpenStreetMap…";
+      nearbyStatus.className = "loading";
+      nearbyResults.innerHTML = "";
+
+      const query = `
+        [out:json][timeout:20];
+        (
+          ${categoryQueries[cat].replaceAll("LAT", current.lat).replaceAll("LON", current.lng)}
+        );
+        out center 20;
+      `;
+
+      try {
+        const res = await fetch("https://overpass-api.de/api/interpreter", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "GPS-Marker-App/1.0 (personal use)"
+          },
+          body: "data=" + encodeURIComponent(query)
+        });
+
+        if (!res.ok) throw new Error("Network error");
+
+        const data = await res.json();
+        const elements = data.elements || [];
+
+        // Normalize to points
+        const places = elements.map(el => {
+          const lat = el.lat || (el.center && el.center.lat);
+          const lon = el.lon || (el.center && el.center.lon);
+          if (!lat || !lon) return null;
+          const tags = el.tags || {};
+          const name = tags.name || tags.brand || tags.operator || "Unnamed";
+          const type = tags.amenity || tags.tourism || tags.cuisine || cat;
+          return { lat, lon, name, type };
+        }).filter(Boolean);
+
+        // Deduplicate roughly by name+rounded coords
+        const seen = new Set();
+        const unique = places.filter(p => {
+          const key = p.name + "|" + p.lat.toFixed(4) + "|" + p.lon.toFixed(4);
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        // Sort by distance
+        unique.forEach(p => {
+          p.dist = distanceMeters(current.lat, current.lng, p.lat, p.lon);
+        });
+        unique.sort((a, b) => a.dist - b.dist);
+
+        if (unique.length === 0) {
+          nearbyStatus.textContent = "No results found nearby.";
+          nearbyStatus.className = "empty-state";
+          return;
+        }
+
+        nearbyStatus.textContent = `${unique.length} places found`;
+        nearbyStatus.className = "label";
+        nearbyResults.innerHTML = unique.slice(0, 15).map(p => `
+          <div class="nearby-item">
+            <div class="nearby-info">
+              <div class="nearby-name">${escapeHtml(p.name)}</div>
+              <div class="nearby-meta">${formatDistance(p.dist)} · ${escapeHtml(p.type)}</div>
+            </div>
+            <div class="nearby-actions">
+              <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go" title="Navigate">➤</button>
+              <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="save" title="Save">＋</button>
+            </div>
+          </div>
+        `).join("");
+
+      } catch (err) {
+        console.error(err);
+        nearbyStatus.textContent = "Search failed. Try again later.";
+        nearbyStatus.className = "empty-state";
+      }
+    }
+
+    // ── Event listeners ────────────────────────────────────
     markBtn.addEventListener("click", () => {
       if (!current) return;
       nameInput.value = "";
       nameOverlay.classList.add("show");
-      setTimeout(() => nameInput.focus(), 100);
+      setTimeout(() => nameInput.focus(), 80);
     });
 
-    cancelNameBtn.addEventListener("click", () => {
-      nameOverlay.classList.remove("show");
-    });
-
+    cancelNameBtn.addEventListener("click", () => nameOverlay.classList.remove("show"));
     saveNameBtn.addEventListener("click", () => {
       const name = nameInput.value.trim() || `Spot ${markers.length + 1}`;
       const newMarker = {
@@ -560,24 +679,20 @@
         time: Date.now()
       };
       markers.push(newMarker);
-      activeId = newMarker.id;          // auto-select the new one
+      activeId = newMarker.id;
       nameOverlay.classList.remove("show");
       fullRefresh();
       setStatus(`Saved “${name}”`, "ok");
     });
-
-    // Handle Enter key in name input
     nameInput.addEventListener("keydown", e => {
       if (e.key === "Enter") saveNameBtn.click();
     });
 
-    // List item clicks (event delegation)
     markerListEl.addEventListener("click", e => {
       const item = e.target.closest(".marker-item");
       if (!item) return;
       const id = item.dataset.id;
       const actionBtn = e.target.closest("[data-action]");
-
       if (actionBtn) {
         const action = actionBtn.dataset.action;
         if (action === "nav") {
@@ -586,12 +701,11 @@
         } else if (action === "del") {
           if (confirm("Delete this marker?")) {
             markers = markers.filter(m => m.id !== id);
-            if (activeId === id) activeId = markers.length ? markers[markers.length-1].id : null;
+            if (activeId === id) activeId = markers.length ? markers[markers.length - 1].id : null;
             fullRefresh();
           }
         }
       } else {
-        // Tap on the row itself → set as active
         activeId = id;
         fullRefresh();
       }
@@ -600,8 +714,7 @@
     mapsBtn.addEventListener("click", () => {
       const active = getActiveMarker();
       if (!active) return;
-      const url = `https://maps.apple.com/?daddr=${active.lat},${active.lng}&dirflg=w`;
-      window.open(url, "_blank");
+      window.open(`https://maps.apple.com/?daddr=${active.lat},${active.lng}&dirflg=w`, "_blank");
     });
 
     clearAllBtn.addEventListener("click", () => {
@@ -610,6 +723,48 @@
       activeId = null;
       fullRefresh();
       setStatus("All markers cleared", "ok");
+    });
+
+    // Nearby
+    nearbyBtn.addEventListener("click", () => {
+      if (!current) return;
+      categoryView.classList.remove("hidden");
+      resultsView.classList.add("hidden");
+      nearbyOverlay.classList.add("show");
+    });
+    closeNearbyBtn.addEventListener("click", () => nearbyOverlay.classList.remove("show"));
+    backToCatsBtn.addEventListener("click", () => {
+      resultsView.classList.add("hidden");
+      categoryView.classList.remove("hidden");
+    });
+
+    document.querySelectorAll(".cat-btn").forEach(btn => {
+      btn.addEventListener("click", () => searchNearby(btn.dataset.cat));
+    });
+
+    nearbyResults.addEventListener("click", e => {
+      const btn = e.target.closest("[data-action]");
+      if (!btn) return;
+      const lat = parseFloat(btn.dataset.lat);
+      const lon = parseFloat(btn.dataset.lon);
+      const name = btn.dataset.name;
+
+      if (btn.dataset.action === "go") {
+        window.open(`https://maps.apple.com/?daddr=${lat},${lon}&dirflg=w`, "_blank");
+      } else if (btn.dataset.action === "save") {
+        const newMarker = {
+          id: uid(),
+          name: name || "Nearby place",
+          lat, lng: lon,
+          accuracy: 30,
+          time: Date.now()
+        };
+        markers.push(newMarker);
+        activeId = newMarker.id;
+        fullRefresh();
+        nearbyOverlay.classList.remove("show");
+        setStatus(`Saved “${newMarker.name}”`, "ok");
+      }
     });
 
     // ── Init ───────────────────────────────────────────────
