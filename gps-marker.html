@@ -5,13 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>GPS Marker – Categories Around Landmark</title>
+  <title>GPS Marker – Travel Guide Style</title>
   <style>
     :root {
       --bg: #0f1419;
       --card: #1a2332;
       --accent: #3b82f6;
-      --accent-hover: #2563eb;
       --text: #e2e8f0;
       --muted: #94a3b8;
       --success: #22c55e;
@@ -47,7 +46,7 @@
       margin-bottom: 6px;
     }
     .coords {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
       font-size: 0.92rem;
       word-break: break-all;
     }
@@ -70,7 +69,6 @@
       font-size: 1.02rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
       margin-bottom: 10px;
       -webkit-appearance: none;
     }
@@ -95,7 +93,7 @@
     .arrow-wrap { display: flex; justify-content: center; align-items: center; height: 90px; margin: 6px 0 2px; }
     #arrow { width: 58px; height: 58px; transition: transform 0.25s ease-out; }
 
-    .marker-item, .result-item {
+    .marker-item {
       background: rgba(255,255,255,0.03);
       border: 1px solid var(--border);
       border-radius: 14px;
@@ -107,35 +105,24 @@
       gap: 10px;
     }
     .marker-item.active { background: var(--active); border-color: var(--accent); }
-    .marker-info, .result-info { flex: 1; min-width: 0; }
-    .marker-name, .result-name {
+    .marker-info { flex: 1; min-width: 0; }
+    .marker-name {
       font-weight: 600;
       font-size: 1.02rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .marker-meta, .result-meta {
-      font-size: 0.78rem;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-    .marker-actions, .result-actions {
-      display: flex;
-      gap: 6px;
-      flex-shrink: 0;
-    }
+    .marker-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .marker-actions { display: flex; gap: 6px; flex-shrink: 0; }
     .icon-btn {
-      width: 36px;
-      height: 36px;
+      width: 36px; height: 36px;
       border-radius: 10px;
       border: 1px solid var(--border);
       background: rgba(255,255,255,0.05);
       color: var(--text);
       font-size: 0.95rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       cursor: pointer;
     }
     .icon-btn.delete { color: var(--danger); border-color: rgba(239,68,68,0.3); }
@@ -157,7 +144,7 @@
       padding: 18px;
       width: 100%;
       max-width: 460px;
-      max-height: 90vh;
+      max-height: 92vh;
       overflow-y: auto;
     }
 
@@ -165,7 +152,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin: 12px 0;
+      margin: 12px 0 4px;
     }
     .cat-btn {
       background: rgba(255,255,255,0.06);
@@ -180,36 +167,60 @@
     }
     .cat-btn:active { background: var(--accent); }
 
-    .tour-card {
+    /* Travel Guide Cards */
+    .guide-card {
       background: #141c27;
       border: 1px solid var(--border);
       border-radius: 16px;
       overflow: hidden;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
-    .tour-img {
+    .guide-img {
       width: 100%;
-      height: 150px;
+      height: 170px;
       object-fit: cover;
       background: #0d1219;
       display: block;
     }
-    .tour-img.placeholder {
+    .guide-img.placeholder {
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--muted);
-      height: 110px;
-      font-size: 0.9rem;
+      height: 130px;
+      font-size: 0.95rem;
+      background: linear-gradient(135deg, #1a2332, #0f1419);
     }
-    .tour-body { padding: 13px; }
-    .tour-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
-    .tour-meta { font-size: 0.8rem; color: var(--accent); margin-bottom: 8px; }
-    .tour-extract { font-size: 0.9rem; color: #cbd5e1; line-height: 1.45; margin-bottom: 12px; }
-    .tour-actions { display: flex; gap: 8px; }
-    .tour-actions .btn { margin: 0; padding: 11px; font-size: 0.9rem; }
+    .guide-body { padding: 14px; }
+    .guide-title {
+      font-size: 1.18rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+    .guide-meta {
+      font-size: 0.82rem;
+      color: var(--accent);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .guide-extract {
+      font-size: 0.92rem;
+      color: #cbd5e1;
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+    .guide-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .guide-actions .btn {
+      margin: 0;
+      padding: 12px;
+      font-size: 0.92rem;
+    }
 
-    .empty-state { text-align: center; color: var(--muted); padding: 20px 10px; }
+    .empty-state { text-align: center; color: var(--muted); padding: 24px 10px; }
     .section-title {
       font-size: 0.78rem;
       text-transform: uppercase;
@@ -219,12 +230,12 @@
     }
     .footer { text-align: center; font-size: 0.72rem; color: var(--muted); margin-top: 24px; }
     .hidden { display: none !important; }
-    .loading { text-align: center; padding: 28px 10px; color: var(--muted); }
+    .loading { text-align: center; padding: 30px 10px; color: var(--muted); }
   </style>
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Mark places • explore categories around landmarks</p>
+  <p class="subtitle">Mark places • travel-guide style exploration</p>
 
   <div id="status">Requesting location permission…</div>
 
@@ -244,8 +255,8 @@
     </div>
   </div>
 
-  <!-- Active Marker -->
-  <div class="card" id="navCard">
+  <!-- Active Landmark -->
+  <div class="card">
     <div class="label">Active Landmark</div>
     <div id="activeName" style="font-weight:600; font-size:1.1rem; margin-bottom:4px;">None selected</div>
     <div class="coords" id="activeCoords" style="margin-bottom:8px;">—</div>
@@ -269,7 +280,6 @@
       </div>
     </div>
 
-    <!-- Category buttons around the landmark -->
     <div id="categoryAround" class="hidden" style="margin-top:14px;">
       <div class="label" style="margin-bottom:8px;">Explore around this landmark</div>
       <div class="category-grid">
@@ -288,13 +298,14 @@
   <div id="markerList"></div>
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Distances shown in miles • Data stays on your device</p>
+  <p class="footer">Distances in miles • Photos from Wikipedia when available</p>
 
   <!-- Name sheet -->
   <div class="overlay" id="nameOverlay">
     <div class="sheet">
       <div class="label">Name this location</div>
-      <input type="text" id="nameInput" placeholder="e.g. Hotel, Parking, Meeting point" maxlength="40" style="width:100%; padding:14px; margin:12px 0; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,0.07); color:var(--text); font-size:1.05rem;" />
+      <input type="text" id="nameInput" placeholder="e.g. Hotel, Meeting point" maxlength="40"
+        style="width:100%; padding:14px; margin:12px 0; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,0.07); color:var(--text); font-size:1.05rem;" />
       <div style="display:flex; gap:10px;">
         <button class="btn btn-secondary" id="cancelNameBtn" style="flex:1; margin:0;">Cancel</button>
         <button class="btn btn-primary" id="saveNameBtn" style="flex:1; margin:0;">Save</button>
@@ -302,17 +313,17 @@
     </div>
   </div>
 
-  <!-- Results sheet -->
+  <!-- Results / Travel Guide sheet -->
   <div class="overlay" id="resultsOverlay">
     <div class="sheet">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <div>
           <div class="label" style="margin:0;" id="resultsTitle">Results</div>
-          <div style="font-size:0.8rem; color:var(--muted);" id="resultsSubtitle">Around selected landmark</div>
+          <div style="font-size:0.8rem; color:var(--muted);" id="resultsSubtitle">Travel guide style</div>
         </div>
         <button class="icon-btn" id="closeResultsBtn" style="width:32px;height:32px;">✕</button>
       </div>
-      <div id="resultsStatus" class="loading">Loading…</div>
+      <div id="resultsStatus" class="loading">Loading guide…</div>
       <div id="resultsList"></div>
     </div>
   </div>
@@ -321,7 +332,7 @@
     let current = null;
     let markers = [];
     let activeId = null;
-    const STORAGE_KEY = "gps-marker-categories-v1";
+    const STORAGE_KEY = "gps-marker-guide-v1";
 
     const $ = id => document.getElementById(id);
     const statusEl = $("status");
@@ -365,7 +376,7 @@
     }
     function formatMiles(meters) {
       const mi = meters / 1609.344;
-      if (mi < 0.1) return (mi * 5280).toFixed(0) + " ft";
+      if (mi < 0.1) return Math.round(mi * 5280) + " ft";
       return mi < 10 ? mi.toFixed(2) + " mi" : mi.toFixed(1) + " mi";
     }
     function bearingDegrees(lat1, lon1, lat2, lon2) {
@@ -472,7 +483,6 @@
       save();
     }
 
-    // Geolocation
     function onPosition(pos) {
       current = {
         lat: pos.coords.latitude,
@@ -502,85 +512,110 @@
       });
     }
 
-    // ── Category search around a landmark ─────────────────
+    // ── Enhanced category search with pictures ─────────────
     async function searchAroundLandmark(category) {
       const active = getActiveMarker();
       if (!active) return;
 
       resultsOverlay.classList.add("show");
-      resultsTitle.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+      resultsTitle.textContent = {
+        historical: "Historical Places",
+        food: "Food & Drink",
+        art: "Art & Museums",
+        adult: "Adult & Nightlife"
+      }[category] || category;
+
       resultsSubtitle.textContent = `Around “${active.name}” • distances in miles`;
-      resultsStatus.textContent = "Searching…";
+      resultsStatus.textContent = "Creating travel guide…";
       resultsStatus.className = "loading";
       resultsList.innerHTML = "";
 
       try {
-        let places = [];
+        let rawPlaces = [];
 
         if (category === "historical") {
-          places = await searchWikipedia(active.lat, active.lng, 8);
+          rawPlaces = await getWikipediaNearby(active.lat, active.lng, 10);
         } else if (category === "food") {
-          places = await searchOverpass(active.lat, active.lng, `
-            node["amenity"~"restaurant|cafe|fast_food|bar|pub|ice_cream|biergarten"](around:1800,LAT,LON);
-            way["amenity"~"restaurant|cafe|fast_food|bar|pub|ice_cream"](around:1800,LAT,LON);
+          rawPlaces = await getOverpass(active.lat, active.lng, `
+            node["amenity"~"restaurant|cafe|fast_food|bar|pub|ice_cream"](around:2000,LAT,LON);
+            way["amenity"~"restaurant|cafe|fast_food|bar|pub"](around:2000,LAT,LON);
           `);
         } else if (category === "art") {
-          places = await searchOverpass(active.lat, active.lng, `
-            node["tourism"~"museum|gallery|artwork"](around:2000,LAT,LON);
-            way["tourism"~"museum|gallery|artwork"](around:2000,LAT,LON);
-            node["amenity"="arts_centre"](around:2000,LAT,LON);
+          rawPlaces = await getOverpass(active.lat, active.lng, `
+            node["tourism"~"museum|gallery|artwork"](around:2200,LAT,LON);
+            way["tourism"~"museum|gallery|artwork"](around:2200,LAT,LON);
+            node["amenity"="arts_centre"](around:2200,LAT,LON);
           `);
         } else if (category === "adult") {
-          // Combination of Overpass tags + Nominatim for better coverage
-          const overpassPlaces = await searchOverpass(active.lat, active.lng, `
-            node["amenity"~"stripclub|brothel|swingerclub"](around:3000,LAT,LON);
-            node["shop"="erotic"](around:3000,LAT,LON);
-            node["leisure"="adult_gaming_centre"](around:3000,LAT,LON);
+          const op = await getOverpass(active.lat, active.lng, `
+            node["amenity"~"stripclub|brothel"](around:3500,LAT,LON);
+            node["shop"="erotic"](around:3500,LAT,LON);
           `);
-          const nominatimPlaces = await searchNominatim(active.lat, active.lng, "strip club OR sex shop OR erotic museum OR adult entertainment OR red light");
-          places = [...overpassPlaces, ...nominatimPlaces];
+          const nom = await getNominatim(active.lat, active.lng, "strip club OR sex shop OR erotic museum OR adult entertainment");
+          rawPlaces = [...op, ...nom];
         }
 
-        // Deduplicate & sort by distance
-        const seen = new Set();
-        places = places.filter(p => {
-          const key = (p.name + p.lat.toFixed(4) + p.lon.toFixed(4)).toLowerCase();
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        }).sort((a, b) => a.dist - b.dist).slice(0, 12);
+        // Enrich top results with Wikipedia images + descriptions
+        const enriched = [];
+        for (const place of rawPlaces.slice(0, 14)) {
+          const wiki = await tryWikipediaSummary(place.name);
+          enriched.push({
+            ...place,
+            image: wiki?.image || null,
+            extract: wiki?.extract || null,
+            displayName: wiki?.title || place.name
+          });
+        }
 
-        if (places.length === 0) {
-          resultsStatus.textContent = "No places found in this category nearby.";
+        // Sort by distance and limit
+        enriched.sort((a, b) => a.dist - b.dist);
+        const final = enriched.slice(0, 10);
+
+        if (final.length === 0) {
+          resultsStatus.textContent = "No places found nearby for this category.";
           resultsStatus.className = "empty-state";
           return;
         }
 
-        resultsStatus.textContent = `${places.length} places found`;
+        resultsStatus.textContent = `${final.length} places • travel guide view`;
         resultsStatus.className = "label";
 
-        resultsList.innerHTML = places.map(p => `
-          <div class="result-item">
-            <div class="result-info">
-              <div class="result-name">${escapeHtml(p.name)}</div>
-              <div class="result-meta">${formatMiles(p.dist)}${p.type ? " · " + escapeHtml(p.type) : ""}</div>
-            </div>
-            <div class="result-actions">
-              <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go">➤</button>
-              <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="save">＋</button>
+        resultsList.innerHTML = final.map((p, idx) => `
+          <div class="guide-card">
+            ${p.image
+              ? `<img class="guide-img" src="${p.image}" alt="${escapeHtml(p.displayName)}" loading="lazy" />`
+              : `<div class="guide-img placeholder">${category === "food" ? "🍽️" : category === "art" ? "🎨" : category === "adult" ? "🔥" : "🏛️"} No photo</div>`
+            }
+            <div class="guide-body">
+              <div class="guide-title">${idx + 1}. ${escapeHtml(p.displayName)}</div>
+              <div class="guide-meta">${formatMiles(p.dist)}${p.type ? " · " + escapeHtml(p.type) : ""}</div>
+              ${p.extract
+                ? `<div class="guide-extract">${escapeHtml(p.extract.length > 220 ? p.extract.slice(0, 217) + "…" : p.extract)}</div>`
+                : ""
+              }
+              <div class="guide-actions">
+                <button class="btn btn-primary" style="flex:1"
+                  data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="go">
+                  Navigate
+                </button>
+                <button class="btn btn-secondary" style="flex:1"
+                  data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="save">
+                  Save
+                </button>
+              </div>
             </div>
           </div>
         `).join("");
 
       } catch (err) {
         console.error(err);
-        resultsStatus.textContent = "Search failed. Try again.";
+        resultsStatus.textContent = "Could not load the guide. Try again.";
         resultsStatus.className = "empty-state";
       }
     }
 
-    async function searchWikipedia(lat, lon, limit = 8) {
-      const url = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lon}&gsradius=2000&gslimit=${limit}&format=json&origin=*`;
+    async function getWikipediaNearby(lat, lon, limit = 10) {
+      const url = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lon}&gsradius=2200&gslimit=${limit}&format=json&origin=*`;
       const res = await fetch(url);
       const data = await res.json();
       const items = (data.query && data.query.geosearch) || [];
@@ -593,17 +628,20 @@
       }));
     }
 
-    async function searchOverpass(lat, lon, queryPart) {
+    async function getOverpass(lat, lon, queryPart) {
       const query = `
-        [out:json][timeout:20];
+        [out:json][timeout:22];
         (
           ${queryPart.replaceAll("LAT", lat).replaceAll("LON", lon)}
         );
-        out center 25;
+        out center 20;
       `;
       const res = await fetch("https://overpass-api.de/api/interpreter", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "GPS-Marker-App/1.0" },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "GPS-Marker-Guide/1.0"
+        },
         body: "data=" + encodeURIComponent(query)
       });
       const data = await res.json();
@@ -613,18 +651,18 @@
         if (!plat || !plon) return null;
         const tags = el.tags || {};
         return {
-          name: tags.name || tags.brand || tags.operator || "Unnamed",
+          name: tags.name || tags.brand || tags.operator || "Unnamed place",
           lat: plat,
           lon: plon,
           dist: distanceMeters(lat, lon, plat, plon),
-          type: tags.amenity || tags.tourism || tags.shop || tags.leisure || ""
+          type: tags.amenity || tags.tourism || tags.shop || ""
         };
       }).filter(Boolean);
     }
 
-    async function searchNominatim(lat, lon, query) {
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=10&lat=${lat}&lon=${lon}`;
-      const res = await fetch(url, { headers: { "User-Agent": "GPS-Marker-App/1.0" } });
+    async function getNominatim(lat, lon, q) {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=8&lat=${lat}&lon=${lon}`;
+      const res = await fetch(url, { headers: { "User-Agent": "GPS-Marker-Guide/1.0" } });
       const data = await res.json();
       return data.map(item => {
         const plat = parseFloat(item.lat);
@@ -637,6 +675,24 @@
           type: item.type || item.class || ""
         };
       });
+    }
+
+    async function tryWikipediaSummary(name) {
+      if (!name || name.length < 3) return null;
+      try {
+        const title = encodeURIComponent(name.replace(/ /g, "_"));
+        const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${title}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.type === "disambiguation" || !data.extract) return null;
+        return {
+          title: data.title,
+          extract: data.extract,
+          image: (data.thumbnail && data.thumbnail.source) || (data.originalimage && data.originalimage.source) || null
+        };
+      } catch (e) {
+        return null;
+      }
     }
 
     // Events
@@ -696,7 +752,6 @@
       fullRefresh();
     });
 
-    // Category buttons
     document.querySelectorAll("#categoryAround .cat-btn").forEach(btn => {
       btn.addEventListener("click", () => searchAroundLandmark(btn.dataset.cat));
     });
@@ -723,7 +778,6 @@
       }
     });
 
-    // Init
     load();
     fullRefresh();
     startWatch();
