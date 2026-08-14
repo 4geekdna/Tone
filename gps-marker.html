@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>GPS Marker – Return to Spot</title>
+  <title>GPS Marker – Favorites</title>
   <style>
     :root {
       --bg: #0f1419;
@@ -17,6 +17,7 @@
       --success: #22c55e;
       --danger: #ef4444;
       --border: #2d3748;
+      --active: #1e3a5f;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -25,19 +26,20 @@
       color: var(--text);
       min-height: 100dvh;
       padding: 16px;
+      padding-bottom: 40px;
       line-height: 1.4;
       -webkit-tap-highlight-color: transparent;
     }
     h1 {
       font-size: 1.35rem;
       font-weight: 700;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       letter-spacing: -0.02em;
     }
     .subtitle {
       color: var(--muted);
       font-size: 0.85rem;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
     .card {
       background: var(--card);
@@ -55,32 +57,27 @@
     }
     .coords {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       word-break: break-all;
-    }
-    .big {
-      font-size: 1.8rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
     }
     .row {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       margin-top: 10px;
     }
     .stat {
       flex: 1;
       background: rgba(255,255,255,0.04);
       border-radius: 12px;
-      padding: 12px;
+      padding: 10px;
       text-align: center;
     }
     .stat .value {
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: 600;
     }
     .stat .unit {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: var(--muted);
     }
     .btn {
@@ -88,8 +85,8 @@
       width: 100%;
       border: none;
       border-radius: 14px;
-      padding: 16px;
-      font-size: 1.05rem;
+      padding: 15px;
+      font-size: 1.02rem;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.15s, transform 0.1s;
@@ -110,44 +107,150 @@
     .btn-danger {
       background: transparent;
       color: var(--danger);
-      border: 1px solid rgba(239,68,68,0.4);
+      border: 1px solid rgba(239,68,68,0.35);
     }
     .btn:disabled {
-      opacity: 0.45;
+      opacity: 0.4;
       cursor: not-allowed;
     }
     #status {
       font-size: 0.85rem;
       color: var(--muted);
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       min-height: 1.2em;
     }
     #status.error { color: var(--danger); }
     #status.ok { color: var(--success); }
+
+    /* Arrow */
     .arrow-wrap {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 110px;
-      margin: 8px 0 4px;
+      height: 90px;
+      margin: 6px 0 2px;
     }
     #arrow {
-      width: 64px;
-      height: 64px;
+      width: 58px;
+      height: 58px;
       transition: transform 0.25s ease-out;
     }
-    .hidden { display: none !important; }
+
+    /* Marker list */
+    .marker-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .marker-item.active {
+      background: var(--active);
+      border-color: var(--accent);
+    }
+    .marker-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .marker-name {
+      font-weight: 600;
+      font-size: 1.02rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .marker-meta {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .marker-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .icon-btn.delete { color: var(--danger); border-color: rgba(239,68,68,0.3); }
+    .icon-btn:active { transform: scale(0.93); }
+
+    /* Name input overlay */
+    #nameOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 20px;
+    }
+    #nameOverlay.show { display: flex; }
+    .name-sheet {
+      background: var(--card);
+      border-radius: 20px 20px 16px 16px;
+      padding: 20px;
+      width: 100%;
+      max-width: 420px;
+    }
+    .name-sheet input {
+      width: 100%;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 1.1rem;
+      color: var(--text);
+      margin: 12px 0 16px;
+      outline: none;
+    }
+    .name-sheet input:focus { border-color: var(--accent); }
+    .sheet-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .sheet-buttons .btn { margin-bottom: 0; }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 18px 10px;
+      font-size: 0.95rem;
+    }
+    .section-title {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin: 18px 0 10px;
+    }
     .footer {
       text-align: center;
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: var(--muted);
-      margin-top: 20px;
+      margin-top: 24px;
     }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Mark a spot → return to it later</p>
+  <p class="subtitle">Save multiple spots • navigate back anytime</p>
 
   <div id="status">Requesting location permission…</div>
 
@@ -167,13 +270,14 @@
     </div>
   </div>
 
-  <!-- Marked position + guidance -->
-  <div class="card" id="markedCard">
-    <div class="label">Marked Location</div>
-    <div class="coords" id="markedCoords">No location marked yet</div>
+  <!-- Active navigation -->
+  <div class="card" id="navCard">
+    <div class="label">Navigating To</div>
+    <div id="activeName" style="font-weight:600; font-size:1.1rem; margin-bottom:4px;">None selected</div>
+    <div class="coords" id="activeCoords" style="margin-bottom:6px;">—</div>
     <div id="navSection" class="hidden">
       <div class="arrow-wrap">
-        <svg id="arrow" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg id="arrow" viewBox="0 0 64 64" fill="none">
           <path d="M32 6 L48 42 L32 34 L16 42 Z" fill="#3b82f6"/>
           <circle cx="32" cy="32" r="4" fill="#e2e8f0"/>
         </svg>
@@ -193,31 +297,55 @@
 
   <button class="btn btn-primary" id="markBtn" disabled>Mark Current Location</button>
   <button class="btn btn-secondary" id="mapsBtn" disabled>Open in Maps</button>
-  <button class="btn btn-danger" id="clearBtn" disabled>Clear Mark</button>
+
+  <div class="section-title">Saved Markers</div>
+  <div id="markerList"></div>
+
+  <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
   <p class="footer">Works offline once loaded · Data stays on your device</p>
+
+  <!-- Name input sheet -->
+  <div id="nameOverlay">
+    <div class="name-sheet">
+      <div class="label">Name this location</div>
+      <input type="text" id="nameInput" placeholder="e.g. Parking, Hotel, Car…" maxlength="40" />
+      <div class="sheet-buttons">
+        <button class="btn btn-secondary" id="cancelNameBtn" style="flex:1;">Cancel</button>
+        <button class="btn btn-primary" id="saveNameBtn" style="flex:1;">Save</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     // ── State ──────────────────────────────────────────────
     let watchId = null;
-    let current = null;          // { lat, lng, accuracy, time }
-    let marked  = null;          // { lat, lng, accuracy, time }
-    const STORAGE_KEY = "gps-marker-v1";
+    let current = null;               // { lat, lng, accuracy, time }
+    let markers = [];                 // array of { id, name, lat, lng, accuracy, time }
+    let activeId = null;
+
+    const STORAGE_KEY = "gps-marker-favorites-v1";
 
     // ── DOM ────────────────────────────────────────────────
     const $ = id => document.getElementById(id);
-    const statusEl     = $("status");
-    const currentCoords= $("currentCoords");
-    const accuracyEl   = $("accuracy");
-    const lastUpdateEl = $("lastUpdate");
-    const markedCoords = $("markedCoords");
-    const navSection   = $("navSection");
-    const distanceEl   = $("distance");
-    const bearingEl    = $("bearing");
-    const arrowEl      = $("arrow");
-    const markBtn      = $("markBtn");
-    const mapsBtn      = $("mapsBtn");
-    const clearBtn     = $("clearBtn");
+    const statusEl      = $("status");
+    const currentCoords = $("currentCoords");
+    const accuracyEl    = $("accuracy");
+    const lastUpdateEl  = $("lastUpdate");
+    const activeNameEl  = $("activeName");
+    const activeCoords  = $("activeCoords");
+    const navSection    = $("navSection");
+    const distanceEl    = $("distance");
+    const bearingEl     = $("bearing");
+    const arrowEl       = $("arrow");
+    const markBtn       = $("markBtn");
+    const mapsBtn       = $("mapsBtn");
+    const clearAllBtn   = $("clearAllBtn");
+    const markerListEl  = $("markerList");
+    const nameOverlay   = $("nameOverlay");
+    const nameInput     = $("nameInput");
+    const saveNameBtn   = $("saveNameBtn");
+    const cancelNameBtn = $("cancelNameBtn");
 
     // ── Helpers ────────────────────────────────────────────
     function setStatus(msg, type = "") {
@@ -230,10 +358,9 @@
     }
 
     function fmtTime(ts) {
-      return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     }
 
-    // Haversine distance in meters
     function distanceMeters(lat1, lon1, lat2, lon2) {
       const R = 6371000;
       const φ1 = lat1 * Math.PI / 180;
@@ -244,7 +371,6 @@
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // Initial bearing in degrees (0–360)
     function bearingDegrees(lat1, lon1, lat2, lon2) {
       const φ1 = lat1 * Math.PI / 180;
       const φ2 = lat2 * Math.PI / 180;
@@ -262,7 +388,6 @@
 
     function formatDistance(m) {
       if (m < 1000) {
-        // feet for US users when under ~0.6 mi
         const ft = m * 3.28084;
         return ft < 10 ? `${ft.toFixed(1)} ft` : `${Math.round(ft)} ft`;
       }
@@ -270,7 +395,27 @@
       return mi < 10 ? `${mi.toFixed(2)} mi` : `${mi.toFixed(1)} mi`;
     }
 
-    // ── UI updates ─────────────────────────────────────────
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    // ── Persistence ────────────────────────────────────────
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ markers, activeId }));
+    }
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const data = JSON.parse(raw);
+          markers = data.markers || [];
+          activeId = data.activeId || null;
+        }
+      } catch (e) {}
+    }
+
+    // ── UI Updates ─────────────────────────────────────────
     function updateCurrentUI() {
       if (!current) return;
       currentCoords.textContent = `${fmtCoord(current.lat)}, ${fmtCoord(current.lng)}`;
@@ -281,51 +426,81 @@
       markBtn.disabled = false;
     }
 
-    function updateMarkedUI() {
-      if (!marked) {
-        markedCoords.textContent = "No location marked yet";
+    function getActiveMarker() {
+      return markers.find(m => m.id === activeId) || null;
+    }
+
+    function updateActiveUI() {
+      const active = getActiveMarker();
+      if (!active) {
+        activeNameEl.textContent = "None selected";
+        activeCoords.textContent = "—";
         navSection.classList.add("hidden");
         mapsBtn.disabled = true;
-        clearBtn.disabled = true;
         return;
       }
-      markedCoords.textContent = `${fmtCoord(marked.lat)}, ${fmtCoord(marked.lng)}`;
+      activeNameEl.textContent = active.name;
+      activeCoords.textContent = `${fmtCoord(active.lat)}, ${fmtCoord(active.lng)}`;
       navSection.classList.remove("hidden");
       mapsBtn.disabled = false;
-      clearBtn.disabled = false;
       updateNavigation();
     }
 
     function updateNavigation() {
-      if (!current || !marked) return;
+      const active = getActiveMarker();
+      if (!current || !active) return;
 
-      const dist = distanceMeters(current.lat, current.lng, marked.lat, marked.lng);
-      const brg  = bearingDegrees(current.lat, current.lng, marked.lat, marked.lng);
+      const dist = distanceMeters(current.lat, current.lng, active.lat, active.lng);
+      const brg  = bearingDegrees(current.lat, current.lng, active.lat, active.lng);
 
       distanceEl.textContent = formatDistance(dist);
       bearingEl.textContent  = `${Math.round(brg)}° ${cardinal(brg)}`;
-
-      // Rotate arrow (0° = north/up)
       arrowEl.style.transform = `rotate(${brg}deg)`;
     }
 
-    // ── Persistence ────────────────────────────────────────
-    function saveMarked() {
-      if (marked) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(marked));
-      } else {
-        localStorage.removeItem(STORAGE_KEY);
+    function renderList() {
+      if (markers.length === 0) {
+        markerListEl.innerHTML = `<div class="empty-state">No markers saved yet.<br>Tap “Mark Current Location” to add one.</div>`;
+        clearAllBtn.style.display = "none";
+        return;
       }
+      clearAllBtn.style.display = "block";
+
+      // Sort by most recent first
+      const sorted = [...markers].sort((a, b) => b.time - a.time);
+
+      markerListEl.innerHTML = sorted.map(m => {
+        let distText = "—";
+        if (current) {
+          const d = distanceMeters(current.lat, current.lng, m.lat, m.lng);
+          distText = formatDistance(d);
+        }
+        const isActive = m.id === activeId;
+        return `
+          <div class="marker-item ${isActive ? "active" : ""}" data-id="${m.id}">
+            <div class="marker-info">
+              <div class="marker-name">${escapeHtml(m.name)}</div>
+              <div class="marker-meta">${distText} · ${fmtTime(m.time)}</div>
+            </div>
+            <div class="marker-actions">
+              <button class="icon-btn" data-action="nav" title="Navigate">➤</button>
+              <button class="icon-btn delete" data-action="del" title="Delete">✕</button>
+            </div>
+          </div>
+        `;
+      }).join("");
     }
 
-    function loadMarked() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          marked = JSON.parse(raw);
-          updateMarkedUI();
-        }
-      } catch (e) { /* ignore */ }
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+      })[c]);
+    }
+
+    function fullRefresh() {
+      updateActiveUI();
+      renderList();
+      save();
     }
 
     // ── Geolocation ────────────────────────────────────────
@@ -339,6 +514,7 @@
       setStatus("Live tracking active", "ok");
       updateCurrentUI();
       updateNavigation();
+      renderList(); // update distances
     }
 
     function onError(err) {
@@ -351,48 +527,95 @@
 
     function startWatch() {
       if (!navigator.geolocation) {
-        setStatus("Geolocation not supported by this browser", "error");
+        setStatus("Geolocation not supported", "error");
         return;
       }
-      const options = {
+      watchId = navigator.geolocation.watchPosition(onPosition, onError, {
         enableHighAccuracy: true,
         maximumAge: 2000,
         timeout: 15000
-      };
-      watchId = navigator.geolocation.watchPosition(onPosition, onError, options);
+      });
     }
 
     // ── Actions ────────────────────────────────────────────
     markBtn.addEventListener("click", () => {
       if (!current) return;
-      marked = { ...current };
-      saveMarked();
-      updateMarkedUI();
-      setStatus("Location marked – you can return anytime", "ok");
+      nameInput.value = "";
+      nameOverlay.classList.add("show");
+      setTimeout(() => nameInput.focus(), 100);
     });
 
-    clearBtn.addEventListener("click", () => {
-      if (!confirm("Clear the marked location?")) return;
-      marked = null;
-      saveMarked();
-      updateMarkedUI();
-      setStatus("Mark cleared", "ok");
+    cancelNameBtn.addEventListener("click", () => {
+      nameOverlay.classList.remove("show");
+    });
+
+    saveNameBtn.addEventListener("click", () => {
+      const name = nameInput.value.trim() || `Spot ${markers.length + 1}`;
+      const newMarker = {
+        id: uid(),
+        name,
+        lat: current.lat,
+        lng: current.lng,
+        accuracy: current.accuracy,
+        time: Date.now()
+      };
+      markers.push(newMarker);
+      activeId = newMarker.id;          // auto-select the new one
+      nameOverlay.classList.remove("show");
+      fullRefresh();
+      setStatus(`Saved “${name}”`, "ok");
+    });
+
+    // Handle Enter key in name input
+    nameInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") saveNameBtn.click();
+    });
+
+    // List item clicks (event delegation)
+    markerListEl.addEventListener("click", e => {
+      const item = e.target.closest(".marker-item");
+      if (!item) return;
+      const id = item.dataset.id;
+      const actionBtn = e.target.closest("[data-action]");
+
+      if (actionBtn) {
+        const action = actionBtn.dataset.action;
+        if (action === "nav") {
+          activeId = id;
+          fullRefresh();
+        } else if (action === "del") {
+          if (confirm("Delete this marker?")) {
+            markers = markers.filter(m => m.id !== id);
+            if (activeId === id) activeId = markers.length ? markers[markers.length-1].id : null;
+            fullRefresh();
+          }
+        }
+      } else {
+        // Tap on the row itself → set as active
+        activeId = id;
+        fullRefresh();
+      }
     });
 
     mapsBtn.addEventListener("click", () => {
-      if (!marked) return;
-      // Universal geo URI – works well on iOS (Apple Maps) and Android
-      const url = `https://maps.apple.com/?daddr=${marked.lat},${marked.lng}&dirflg=w`;
-      // Alternative pure geo:  geo:${marked.lat},${marked.lng}
+      const active = getActiveMarker();
+      if (!active) return;
+      const url = `https://maps.apple.com/?daddr=${active.lat},${active.lng}&dirflg=w`;
       window.open(url, "_blank");
     });
 
-    // ── Init ───────────────────────────────────────────────
-    loadMarked();
-    startWatch();
+    clearAllBtn.addEventListener("click", () => {
+      if (!confirm("Delete ALL saved markers?")) return;
+      markers = [];
+      activeId = null;
+      fullRefresh();
+      setStatus("All markers cleared", "ok");
+    });
 
-    // Also try device orientation for better compass feel (optional)
-    // Most phones already report heading via geolocation when available.
+    // ── Init ───────────────────────────────────────────────
+    load();
+    fullRefresh();
+    startWatch();
   </script>
 </body>
 </html>
