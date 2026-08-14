@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>GPS Marker – Extended / Basic Guide</title>
+  <title>GPS Marker – Better Food Guide</title>
   <style>
     :root {
       --bg: #0f1419;
@@ -167,7 +167,6 @@
     }
     .cat-btn:active { background: var(--accent); }
 
-    /* View mode toggle */
     .view-toggle {
       display: flex;
       gap: 6px;
@@ -192,7 +191,7 @@
       color: white;
     }
 
-    /* Extended Guide Cards */
+    /* Extended cards */
     .guide-card {
       background: #141c27;
       border: 1px solid var(--border);
@@ -213,7 +212,7 @@
       justify-content: center;
       color: var(--muted);
       height: 130px;
-      font-size: 0.95rem;
+      font-size: 1.1rem;
       background: linear-gradient(135deg, #1a2332, #0f1419);
     }
     .guide-body { padding: 14px; }
@@ -226,15 +225,24 @@
     .guide-meta {
       font-size: 0.82rem;
       color: var(--accent);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       font-weight: 500;
     }
     .guide-extract {
       font-size: 0.92rem;
       color: #cbd5e1;
       line-height: 1.5;
-      margin-bottom: 14px;
+      margin-bottom: 8px;
     }
+    .guide-website {
+      display: inline-block;
+      font-size: 0.88rem;
+      color: #60a5fa;
+      text-decoration: none;
+      margin-bottom: 12px;
+      word-break: break-all;
+    }
+    .guide-website:active { opacity: 0.7; }
     .guide-actions {
       display: flex;
       gap: 8px;
@@ -245,16 +253,18 @@
       font-size: 0.92rem;
     }
 
-    /* Basic list style */
+    /* Basic list */
     .basic-item {
       background: rgba(255,255,255,0.03);
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 13px 14px;
       margin-bottom: 10px;
+    }
+    .basic-top {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
     }
     .basic-info { flex: 1; min-width: 0; }
@@ -266,8 +276,16 @@
     .basic-meta {
       font-size: 0.8rem;
       color: var(--muted);
+      margin-bottom: 4px;
     }
-    .basic-actions { display: flex; gap: 6px; }
+    .basic-website {
+      font-size: 0.82rem;
+      color: #60a5fa;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 2px;
+    }
+    .basic-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
     .empty-state { text-align: center; color: var(--muted); padding: 24px 10px; }
     .section-title {
@@ -284,7 +302,7 @@
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Mark places • choose Extended or Basic guide</p>
+  <p class="subtitle">Better food photos + clickable websites</p>
 
   <div id="status">Requesting location permission…</div>
 
@@ -345,7 +363,7 @@
   <div id="markerList"></div>
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Choose Extended (photos) or Basic list view</p>
+  <p class="footer">Food results now try harder for photos + websites</p>
 
   <!-- Name sheet -->
   <div class="overlay" id="nameOverlay">
@@ -371,7 +389,6 @@
         <button class="icon-btn" id="closeResultsBtn" style="width:32px;height:32px;">✕</button>
       </div>
 
-      <!-- View mode toggle -->
       <div class="view-toggle">
         <button class="view-btn active" id="viewExtended">Extended (Photos)</button>
         <button class="view-btn" id="viewBasic">Basic List</button>
@@ -386,10 +403,10 @@
     let current = null;
     let markers = [];
     let activeId = null;
-    let currentResults = [];          // stores the last fetched places
+    let currentResults = [];
     let currentCategory = "";
-    let viewMode = "extended";        // "extended" or "basic"
-    const STORAGE_KEY = "gps-marker-guide-v2";
+    let viewMode = "extended";
+    const STORAGE_KEY = "gps-marker-guide-v3";
 
     const $ = id => document.getElementById(id);
     const statusEl = $("status");
@@ -454,6 +471,12 @@
     }
     function escapeHtml(str) {
       return String(str).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
+    }
+    function cleanWebsite(url) {
+      if (!url) return null;
+      url = url.trim();
+      if (!url.startsWith("http")) url = "https://" + url;
+      return url;
     }
 
     function save() {
@@ -571,7 +594,7 @@
       });
     }
 
-    // ── Render results according to current view mode ─────
+    // Render according to view mode
     function renderResults() {
       if (!currentResults.length) {
         resultsStatus.textContent = "No places found.";
@@ -592,8 +615,13 @@
             }
             <div class="guide-body">
               <div class="guide-title">${idx + 1}. ${escapeHtml(p.displayName)}</div>
-              <div class="guide-meta">${formatMiles(p.dist)}${p.type ? " · " + escapeHtml(p.type) : ""}</div>
-              ${p.extract ? `<div class="guide-extract">${escapeHtml(p.extract.length > 220 ? p.extract.slice(0, 217) + "…" : p.extract)}</div>` : ""}
+              <div class="guide-meta">
+                ${formatMiles(p.dist)}
+                ${p.cuisine ? " · " + escapeHtml(p.cuisine) : ""}
+                ${p.type && !p.cuisine ? " · " + escapeHtml(p.type) : ""}
+              </div>
+              ${p.extract ? `<div class="guide-extract">${escapeHtml(p.extract.length > 200 ? p.extract.slice(0, 197) + "…" : p.extract)}</div>` : ""}
+              ${p.website ? `<a class="guide-website" href="${escapeHtml(p.website)}" target="_blank" rel="noopener">${escapeHtml(p.website.replace(/^https?:\/\//, ""))}</a>` : ""}
               <div class="guide-actions">
                 <button class="btn btn-primary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="go">Navigate</button>
                 <button class="btn btn-secondary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="save">Save</button>
@@ -602,23 +630,28 @@
           </div>
         `).join("");
       } else {
-        // Basic list
         resultsList.innerHTML = currentResults.map(p => `
           <div class="basic-item">
-            <div class="basic-info">
-              <div class="basic-name">${escapeHtml(p.displayName)}</div>
-              <div class="basic-meta">${formatMiles(p.dist)}${p.type ? " · " + escapeHtml(p.type) : ""}</div>
-            </div>
-            <div class="basic-actions">
-              <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="go">➤</button>
-              <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="save">＋</button>
+            <div class="basic-top">
+              <div class="basic-info">
+                <div class="basic-name">${escapeHtml(p.displayName)}</div>
+                <div class="basic-meta">
+                  ${formatMiles(p.dist)}
+                  ${p.cuisine ? " · " + escapeHtml(p.cuisine) : ""}
+                  ${p.type && !p.cuisine ? " · " + escapeHtml(p.type) : ""}
+                </div>
+                ${p.website ? `<a class="basic-website" href="${escapeHtml(p.website)}" target="_blank" rel="noopener">${escapeHtml(p.website.replace(/^https?:\/\//, ""))}</a>` : ""}
+              </div>
+              <div class="basic-actions">
+                <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="go">➤</button>
+                <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.displayName)}" data-action="save">＋</button>
+              </div>
             </div>
           </div>
         `).join("");
       }
     }
 
-    // ── Category search ───────────────────────────────────
     async function searchAroundLandmark(category) {
       const active = getActiveMarker();
       if (!active) return;
@@ -643,10 +676,13 @@
         if (category === "historical") {
           rawPlaces = await getWikipediaNearby(active.lat, active.lng, 10);
         } else if (category === "food") {
-          rawPlaces = await getOverpass(active.lat, active.lng, `
-            node["amenity"~"restaurant|cafe|fast_food|bar|pub|ice_cream"](around:2000,LAT,LON);
-            way["amenity"~"restaurant|cafe|fast_food|bar|pub"](around:2000,LAT,LON);
+          // Stronger food query + Nominatim with extratags
+          const op = await getOverpass(active.lat, active.lng, `
+            node["amenity"~"restaurant|cafe|fast_food|bar|pub|ice_cream|biergarten"](around:2200,LAT,LON);
+            way["amenity"~"restaurant|cafe|fast_food|bar|pub"](around:2200,LAT,LON);
           `);
+          const nom = await getNominatimFood(active.lat, active.lng);
+          rawPlaces = [...op, ...nom];
         } else if (category === "art") {
           rawPlaces = await getOverpass(active.lat, active.lng, `
             node["tourism"~"museum|gallery|artwork"](around:2200,LAT,LON);
@@ -662,20 +698,30 @@
           rawPlaces = [...op, ...nom];
         }
 
-        // Enrich with Wikipedia data (images + extracts)
+        // Enrich
         const enriched = [];
-        for (const place of rawPlaces.slice(0, 12)) {
+        for (const place of rawPlaces.slice(0, 14)) {
           const wiki = await tryWikipediaSummary(place.name);
           enriched.push({
             ...place,
-            image: wiki?.image || null,
+            image: wiki?.image || place.image || null,
             extract: wiki?.extract || null,
-            displayName: wiki?.title || place.name
+            displayName: wiki?.title || place.name,
+            website: place.website || wiki?.website || null
           });
         }
 
-        enriched.sort((a, b) => a.dist - b.dist);
-        currentResults = enriched.slice(0, 10);
+        // Deduplicate
+        const seen = new Set();
+        const unique = enriched.filter(p => {
+          const key = (p.displayName + p.lat.toFixed(4)).toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        unique.sort((a, b) => a.dist - b.dist);
+        currentResults = unique.slice(0, 10);
 
         renderResults();
 
@@ -702,17 +748,17 @@
 
     async function getOverpass(lat, lon, queryPart) {
       const query = `
-        [out:json][timeout:22];
+        [out:json][timeout:25];
         (
           ${queryPart.replaceAll("LAT", lat).replaceAll("LON", lon)}
         );
-        out center 20;
+        out center 25;
       `;
       const res = await fetch("https://overpass-api.de/api/interpreter", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "GPS-Marker-Guide/1.0"
+          "User-Agent": "GPS-Marker-Guide/1.1"
         },
         body: "data=" + encodeURIComponent(query)
       });
@@ -722,29 +768,58 @@
         const plon = el.lon || (el.center && el.center.lon);
         if (!plat || !plon) return null;
         const tags = el.tags || {};
+        const website = cleanWebsite(tags.website || tags["contact:website"] || tags.url);
         return {
           name: tags.name || tags.brand || tags.operator || "Unnamed place",
           lat: plat,
           lon: plon,
           dist: distanceMeters(lat, lon, plat, plon),
-          type: tags.amenity || tags.tourism || tags.shop || ""
+          type: tags.amenity || tags.tourism || tags.shop || "",
+          cuisine: tags.cuisine || null,
+          website: website,
+          image: tags.image || null
         };
       }).filter(Boolean);
     }
 
-    async function getNominatim(lat, lon, q) {
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=8&lat=${lat}&lon=${lon}`;
-      const res = await fetch(url, { headers: { "User-Agent": "GPS-Marker-Guide/1.0" } });
+    async function getNominatimFood(lat, lon) {
+      // Better food search with extratags
+      const url = `https://nominatim.openstreetmap.org/search?q=restaurant&format=json&limit=12&lat=${lat}&lon=${lon}&extratags=1&addressdetails=0`;
+      const res = await fetch(url, { headers: { "User-Agent": "GPS-Marker-Guide/1.1" } });
       const data = await res.json();
       return data.map(item => {
         const plat = parseFloat(item.lat);
         const plon = parseFloat(item.lon);
+        const extra = item.extratags || {};
+        const website = cleanWebsite(extra.website || extra["contact:website"] || extra.url);
         return {
           name: item.display_name.split(",")[0],
           lat: plat,
           lon: plon,
           dist: distanceMeters(lat, lon, plat, plon),
-          type: item.type || item.class || ""
+          type: item.type || item.class || "restaurant",
+          cuisine: extra.cuisine || null,
+          website: website
+        };
+      });
+    }
+
+    async function getNominatim(lat, lon, q) {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=8&lat=${lat}&lon=${lon}&extratags=1`;
+      const res = await fetch(url, { headers: { "User-Agent": "GPS-Marker-Guide/1.1" } });
+      const data = await res.json();
+      return data.map(item => {
+        const plat = parseFloat(item.lat);
+        const plon = parseFloat(item.lon);
+        const extra = item.extratags || {};
+        const website = cleanWebsite(extra.website || extra["contact:website"] || extra.url);
+        return {
+          name: item.display_name.split(",")[0],
+          lat: plat,
+          lon: plon,
+          dist: distanceMeters(lat, lon, plat, plon),
+          type: item.type || item.class || "",
+          website: website
         };
       });
     }
@@ -830,7 +905,6 @@
 
     $("closeResultsBtn").addEventListener("click", () => resultsOverlay.classList.remove("show"));
 
-    // View mode toggle
     viewExtendedBtn.addEventListener("click", () => {
       viewMode = "extended";
       viewExtendedBtn.classList.add("active");
