@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>GPS Marker – Working Food</title>
+  <title>GPS Marker – Fixed Extended + Better Basic</title>
   <style>
     :root {
       --bg: #0f1419; --card: #1a2332; --accent: #3b82f6; --text: #e2e8f0;
@@ -87,15 +87,49 @@
     .view-btn { flex: 1; border: none; background: transparent; color: var(--muted); padding: 10px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; }
     .view-btn.active { background: var(--accent); color: white; }
 
+    /* Extended cards */
+    .guide-card {
+      background: #141c27; border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden; margin-bottom: 14px;
+    }
+    .guide-img {
+      width: 100%; height: 150px; object-fit: cover; background: #0d1219; display: block;
+    }
+    .guide-img.placeholder {
+      display: flex; align-items: center; justify-content: center;
+      height: 120px; font-size: 2rem; color: var(--muted);
+      background: linear-gradient(135deg, #1a2332, #0f1419);
+    }
+    .guide-body { padding: 14px; }
+    .guide-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
+    .guide-meta { font-size: 0.82rem; color: var(--accent); margin-bottom: 8px; }
+    .guide-website {
+      display: inline-block; font-size: 0.88rem; color: #60a5fa;
+      text-decoration: none; margin-bottom: 12px; word-break: break-all;
+    }
+    .guide-actions { display: flex; gap: 8px; }
+    .guide-actions .btn { margin: 0; padding: 11px; font-size: 0.9rem; }
+
+    /* Better Basic items */
     .basic-item {
       background: rgba(255,255,255,0.03); border: 1px solid var(--border);
       border-radius: 14px; padding: 13px 14px; margin-bottom: 10px;
-      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    }
+    .basic-top {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
     }
     .basic-info { flex: 1; min-width: 0; }
-    .basic-name { font-weight: 600; font-size: 1.02rem; }
-    .basic-meta { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
-    .basic-actions { display: flex; gap: 6px; }
+    .basic-name { font-weight: 600; font-size: 1.05rem; margin-bottom: 3px; }
+    .basic-meta { font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; }
+    .basic-type {
+      display: inline-block; font-size: 0.75rem; background: rgba(59,130,246,0.15);
+      color: #93c5fd; padding: 2px 8px; border-radius: 6px; margin-right: 6px;
+    }
+    .basic-website {
+      display: inline-block; font-size: 0.84rem; color: #60a5fa;
+      text-decoration: none; margin-top: 4px;
+    }
+    .basic-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
     .empty-state { text-align: center; color: var(--muted); padding: 28px 10px; }
     .section-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 18px 0 10px; }
@@ -107,7 +141,7 @@
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Food now uses reliable free source</p>
+  <p class="subtitle">Extended works again • Basic has more detail</p>
 
   <div id="status">Requesting location…</div>
 
@@ -165,7 +199,7 @@
   <div id="markerList"></div>
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Food now works reliably (OpenStreetMap)</p>
+  <p class="footer">Extended restored • Basic shows more detail</p>
 
   <!-- Name sheet -->
   <div class="overlay" id="nameOverlay">
@@ -211,7 +245,7 @@
     let currentCategory = "";
     let viewMode = "basic";
     let selectedMiles = 1;
-    const STORAGE_KEY = "gps-marker-working-food";
+    const STORAGE_KEY = "gps-marker-v7";
 
     const $ = id => document.getElementById(id);
 
@@ -333,7 +367,6 @@
       save();
     }
 
-    // Geolocation
     function onPos(pos) {
       current = {
         lat: pos.coords.latitude,
@@ -359,7 +392,7 @@
       });
     }
 
-    // ========== Reliable Free Search ==========
+    // Search
     async function overpassSearch(lat, lon, radius, queryPart) {
       const query = `
         [out:json][timeout:20];
@@ -447,7 +480,6 @@
           }));
         }
 
-        // Filter + sort
         const maxDist = milesToMeters(selectedMiles) * 1.08;
         currentResults = places
           .filter(p => p.dist <= maxDist)
@@ -473,23 +505,48 @@
       $("resultsStatus").textContent = `${currentResults.length} places found`;
       $("resultsStatus").className = "label";
 
-      // Always Basic for now (simpler + faster)
-      $("resultsList").innerHTML = currentResults.map(p => `
-        <div class="basic-item">
-          <div class="basic-info">
-            <div class="basic-name">${escapeHtml(p.name)}</div>
-            <div class="basic-meta">
-              ${formatMiles(p.dist)}
-              ${p.type ? " · " + escapeHtml(p.type) : ""}
+      if (viewMode === "extended") {
+        // Extended cards
+        $("resultsList").innerHTML = currentResults.map((p, i) => `
+          <div class="guide-card">
+            <div class="guide-img placeholder">
+              ${currentCategory === "food" ? "🍽️" : currentCategory === "adult" ? "🔥" : currentCategory === "art" ? "🎨" : "🏛️"}
             </div>
-            ${p.website ? `<div style="margin-top:4px;"><a href="${escapeHtml(p.website)}" target="_blank" style="color:#60a5fa;font-size:0.85rem;">🌐 Website</a></div>` : ""}
+            <div class="guide-body">
+              <div class="guide-title">${i + 1}. ${escapeHtml(p.name)}</div>
+              <div class="guide-meta">
+                ${formatMiles(p.dist)}
+                ${p.type ? " · " + escapeHtml(p.type) : ""}
+              </div>
+              ${p.website ? `<a class="guide-website" href="${escapeHtml(p.website)}" target="_blank">🌐 ${escapeHtml(p.website.replace(/^https?:\/\//,''))}</a>` : ""}
+              <div class="guide-actions">
+                <button class="btn btn-primary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go">Navigate</button>
+                <button class="btn btn-secondary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="save">Save</button>
+              </div>
+            </div>
           </div>
-          <div class="basic-actions">
-            <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go">➤</button>
-            <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="save">＋</button>
+        `).join("");
+      } else {
+        // Better Basic list with more detail
+        $("resultsList").innerHTML = currentResults.map(p => `
+          <div class="basic-item">
+            <div class="basic-top">
+              <div class="basic-info">
+                <div class="basic-name">${escapeHtml(p.name)}</div>
+                <div class="basic-meta">
+                  <span class="basic-type">${escapeHtml(p.type || currentCategory)}</span>
+                  ${formatMiles(p.dist)}
+                </div>
+                ${p.website ? `<a class="basic-website" href="${escapeHtml(p.website)}" target="_blank">🌐 Website</a>` : ""}
+              </div>
+              <div class="basic-actions">
+                <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go">➤</button>
+                <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="save">＋</button>
+              </div>
+            </div>
           </div>
-        </div>
-      `).join("");
+        `).join("");
+      }
     }
 
     // Events
@@ -562,6 +619,20 @@
     });
 
     $("closeResultsBtn").onclick = () => $("resultsOverlay").classList.remove("show");
+
+    // View toggle – both now work
+    $("viewExtended").onclick = () => {
+      viewMode = "extended";
+      $("viewExtended").classList.add("active");
+      $("viewBasic").classList.remove("active");
+      renderResults();
+    };
+    $("viewBasic").onclick = () => {
+      viewMode = "basic";
+      $("viewBasic").classList.add("active");
+      $("viewExtended").classList.remove("active");
+      renderResults();
+    };
 
     $("resultsList").onclick = e => {
       const btn = e.target.closest("[data-action]");
