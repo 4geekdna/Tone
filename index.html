@@ -148,7 +148,6 @@
       <input type="password" id="apiKeyInput" placeholder="Paste ElevenLabs API key here" autocomplete="off" spellcheck="false" />
     </div>
 
-    <!-- Global settings (same for every chakra) -->
     <div class="control-row">
       <label class="control-label" for="durationSelect">Duration</label>
       <select id="durationSelect">
@@ -168,6 +167,16 @@
         <option value="3">3</option>
         <option value="4">4</option>
         <option value="5">5</option>
+      </select>
+    </div>
+
+    <!-- NEW: Tone Style -->
+    <div class="control-row">
+      <label class="control-label" for="toneStyle">Tone Style</label>
+      <select id="toneStyle">
+        <option value="enhanced" selected>Enhanced</option>
+        <option value="pure">Pure Tone</option>
+        <option value="bowl">Singing Bowl</option>
       </select>
     </div>
 
@@ -199,18 +208,19 @@
   </div>
 
   <div class="status" id="status" aria-live="polite"></div>
-  <div class="footer">Solfeggio frequencies + ElevenLabs • Key & settings stored locally</div>
+  <div class="footer">Solfeggio + ElevenLabs • Pure / Enhanced / Singing Bowl</div>
 
   <script>
     "use strict";
 
     // ============================================================
-    // SETTINGS (global – same for all chakras)
+    // SETTINGS
     // ============================================================
     let ELEVENLABS_API_KEY = "";
     let VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
-    let durationPerChakra = 30;   // seconds
+    let durationPerChakra = 30;
     let mantrasPerChakra  = 2;
+    let toneStyle         = "enhanced";   // "enhanced" | "pure" | "bowl"
 
     // ============================================================
     // CHAKRAS
@@ -297,7 +307,7 @@
     let currentUtterance = null;
     let isSpeaking = false;
     let isPlayingAll = false;
-    let sessionToken = 0;          // cancels any running session
+    let sessionToken = 0;
 
     const affirmationIndex = {};
     CHAKRAS.forEach(ch => { affirmationIndex[ch.name] = 0; });
@@ -315,6 +325,7 @@
     const apiKeyInput       = document.getElementById("apiKeyInput");
     const durationSelect    = document.getElementById("durationSelect");
     const mantraCountSelect = document.getElementById("mantraCount");
+    const toneStyleSelect   = document.getElementById("toneStyle");
     const stopBtn           = document.getElementById("stopAll");
     const playAllBtn        = document.getElementById("playAll");
     const affirmPanel       = document.getElementById("affirmationPanel");
@@ -331,9 +342,11 @@
 
       durationPerChakra = parseInt(localStorage.getItem("chakra_duration") || "30", 10);
       mantrasPerChakra  = parseInt(localStorage.getItem("chakra_mantras")  || "2", 10);
+      toneStyle         = localStorage.getItem("chakra_tone_style") || "enhanced";
 
       if (durationSelect) durationSelect.value = String(durationPerChakra);
       if (mantraCountSelect) mantraCountSelect.value = String(mantrasPerChakra);
+      if (toneStyleSelect) toneStyleSelect.value = toneStyle;
 
       if (!ELEVENLABS_API_KEY) {
         setStatus("Paste your ElevenLabs API key above to use natural voice");
@@ -356,6 +369,17 @@
     function saveMantraCount() {
       mantrasPerChakra = parseInt(mantraCountSelect.value, 10);
       localStorage.setItem("chakra_mantras", String(mantrasPerChakra));
+    }
+
+    function saveToneStyle() {
+      toneStyle = toneStyleSelect.value;
+      localStorage.setItem("chakra_tone_style", toneStyle);
+
+      // Live update if a tone is currently playing
+      if (activeName && toneEnabled) {
+        const ch = CHAKRAS.find(c => c.name === activeName);
+        if (ch) playTone(ch);          // recreates with new style
+      }
     }
 
     // ============================================================
@@ -442,8 +466,38 @@
     }
 
     // ============================================================
-    // TONE ENGINE (click-free)
+    // TONE ENGINE – with Pure / Enhanced / Singing Bowl
     // ============================================================
+    function getToneLayers(ch) {
+      if (toneStyle === "pure") {
+        return [
+          { frequency: ch.freq,     gain: 0.72, detune: 0 },
+          { frequency: ch.freq / 2, gain: 0.12, detune: 0 }
+        ];
+      }
+
+      if (toneStyle === "bowl") {
+        // Approximate singing-bowl partials (slightly stretched)
+        return [
+          { frequency: ch.freq * 1.00, gain: 0.42, detune: 0 },
+          { frequency: ch.freq * 2.00, gain: 0.26, detune: 1.8 },
+          { frequency: ch.freq * 3.01, gain: 0.13, detune: -1.2 },
+          { frequency: ch.freq * 4.18, gain: 0.07, detune: 3.5 },
+          { frequency: ch.freq * 5.35, gain: 0.035, detune: -2.8 },
+          { frequency: ch.freq * 0.50, gain: 0.16, detune: 0 }
+        ];
+      }
+
+      // Enhanced (original rich layers)
+      return [
+        { frequency: ch.freq,     gain: 0.50,  detune: 0 },
+        { frequency: ch.freq / 2, gain: 0.22,  detune: 0 },
+        { frequency: ch.freq * 2, gain: 0.045, detune: 0 },
+        { frequency: ch.freq,     gain: 0.105, detune: 3.5 },
+        { frequency: ch.freq,     gain: 0.105, detune: -3.5 }
+      ];
+    }
+
     function createTone(ch) {
       ensureAudio();
       const now = audioCtx.currentTime;
@@ -460,15 +514,9 @@
       masterGain.connect(compressor);
       compressor.connect(audioCtx.destination);
 
-      const layers = [
-        { frequency: ch.freq,     gain: 0.50,  detune: 0 },
-        { frequency: ch.freq / 2, gain: 0.22,  detune: 0 },
-        { frequency: ch.freq * 2, gain: 0.045, detune: 0 },
-        { frequency: ch.freq,     gain: 0.105, detune: 3.5 },
-        { frequency: ch.freq,     gain: 0.105, detune: -3.5 }
-      ];
-
+      const layers = getToneLayers(ch);
       const oscillatorNodes = [];
+
       for (const layer of layers) {
         const osc  = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -482,10 +530,12 @@
         oscillatorNodes.push({ osc, gain });
       }
 
+      // Gentle breathing LFO (slightly less depth on pure tone)
+      const lfoDepth = toneStyle === "pure" ? 0.018 : 0.035;
       const lfo     = audioCtx.createOscillator();
       const lfoGain = audioCtx.createGain();
       lfo.frequency.setValueAtTime(0.085, now);
-      lfoGain.gain.setValueAtTime(toneVolume * 0.035, now);
+      lfoGain.gain.setValueAtTime(toneVolume * lfoDepth, now);
       lfo.connect(lfoGain);
       lfoGain.connect(masterGain.gain);
       lfo.start(now);
@@ -541,14 +591,17 @@
       if (!toneEnabled) return;
       ensureAudio();
 
-      // Keep continuous tone for same chakra (no restart click)
-      if (currentTone && !currentTone.disposed && currentTone.ch.name === ch.name) {
+      // Same style + same chakra → just keep playing (no restart)
+      if (currentTone && !currentTone.disposed &&
+          currentTone.ch.name === ch.name &&
+          currentTone.style === toneStyle) {
         applyToneVolume();
         return;
       }
 
       const previous = currentTone;
       const next = createTone(ch);
+      next.style = toneStyle;          // remember which style this instance is
       currentTone = next;
 
       const now = audioCtx.currentTime;
@@ -574,9 +627,9 @@
 
     function applyToneVolume() {
       if (!currentTone || !toneEnabled || currentTone.disposed) return;
-      // Longer constants = no click when ducking / restoring for voice
       setParamSmooth(currentTone.masterGain.gain, desiredToneLevel(), isSpeaking ? 0.32 : 0.38);
-      setParamSmooth(currentTone.lfoGain.gain, Math.max(0.0001, toneVolume * 0.035), 0.25);
+      const depth = toneStyle === "pure" ? 0.018 : 0.035;
+      setParamSmooth(currentTone.lfoGain.gain, Math.max(0.0001, toneVolume * depth), 0.25);
     }
 
     function fadeToneForSpeech() {
@@ -669,7 +722,6 @@
         const gain   = audioCtx.createGain();
         const now    = audioCtx.currentTime;
 
-        // Slightly longer fades eliminate the last clicks
         const fadeIn  = Math.min(0.10, Math.max(0.07, buffer.duration * 0.06));
         const fadeOut = Math.min(0.14, Math.max(0.08, buffer.duration * 0.09));
 
@@ -833,7 +885,7 @@
     }
 
     // ============================================================
-    // CORE SESSION (used by both single tap and Play All)
+    // CORE SESSION
     // ============================================================
     async function playChakraSession(ch, token, labelPrefix = "") {
       const start = performance.now();
@@ -854,7 +906,6 @@
         const ok = await speakWithElevenLabs(text, label);
         if (!ok || token !== sessionToken) return false;
 
-        // short natural pause between mantras
         if (m < mantrasPerChakra - 1) {
           setStatus(`${label} • Pause`);
           await wait(1500);
@@ -862,7 +913,6 @@
         }
       }
 
-      // Hold the tone for the remaining duration
       const elapsed = performance.now() - start;
       const remaining = Math.max(0, targetMs - elapsed - 600);
       if (remaining > 300 && token === sessionToken) {
@@ -874,11 +924,11 @@
     }
 
     // ============================================================
-    // SINGLE CHAKRA TAP
+    // SINGLE + PLAY ALL
     // ============================================================
     async function handleCardTap(ch) {
       ensureAudio();
-      stopEverything(false);          // cancel any previous session
+      stopEverything(false);
 
       sessionToken++;
       const token = sessionToken;
@@ -892,9 +942,6 @@
       }
     }
 
-    // ============================================================
-    // PLAY ALL
-    // ============================================================
     function stopEverything(clearPanel = true) {
       sessionToken++;
       isPlayingAll = false;
@@ -979,6 +1026,7 @@
 
     durationSelect.addEventListener("change", saveDuration);
     mantraCountSelect.addEventListener("change", saveMantraCount);
+    toneStyleSelect.addEventListener("change", saveToneStyle);
 
     // ============================================================
     // INIT
