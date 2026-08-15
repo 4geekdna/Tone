@@ -121,7 +121,7 @@
 <body>
   <div class="header">
     <h1>Chakra Tone Player</h1>
-    <p>Click to toggle • Multiple chakras at once</p>
+    <p>Click to toggle • Multiple chakras • Smooth Play All</p>
   </div>
 
   <div class="grid" id="chakraGrid"></div>
@@ -170,6 +170,19 @@
       </select>
     </div>
 
+    <!-- NEW: Overlap / Transition time -->
+    <div class="control-row">
+      <label class="control-label" for="overlapSelect">Overlap</label>
+      <select id="overlapSelect">
+        <option value="0">None</option>
+        <option value="2">2 s</option>
+        <option value="4" selected>4 s</option>
+        <option value="6">6 s</option>
+        <option value="8">8 s</option>
+        <option value="10">10 s</option>
+      </select>
+    </div>
+
     <div class="control-row">
       <label class="control-label" for="toneStyle">Tone Style</label>
       <select id="toneStyle">
@@ -207,7 +220,7 @@
   </div>
 
   <div class="status" id="status" aria-live="polite"></div>
-  <div class="footer">Multi-select • Pure / Enhanced / Singing Bowl</div>
+  <div class="footer">Multi-select • Crossfade on Play All</div>
 
   <script>
     "use strict";
@@ -219,6 +232,7 @@
     let VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
     let durationPerChakra = 30;
     let mantrasPerChakra  = 2;
+    let overlapSeconds    = 4;          // NEW
     let toneStyle         = "enhanced";
 
     // ============================================================
@@ -291,16 +305,13 @@
     ];
 
     // ============================================================
-    // STATE – now supports multiple simultaneous tones
+    // STATE
     // ============================================================
     let audioCtx = null;
     let toneEnabled = true;
     let toneVolume = 0.28;
     let voiceVolume = 0.80;
-
-    // Map of currently playing tones: { [chakraName]: toneObject }
-    let activeTones = {};
-
+    let activeTones = {};               // polyphonic map
     let currentVoiceSource = null;
     let currentVoiceGain = null;
     let currentVoiceResolve = null;
@@ -326,6 +337,7 @@
     const apiKeyInput       = document.getElementById("apiKeyInput");
     const durationSelect    = document.getElementById("durationSelect");
     const mantraCountSelect = document.getElementById("mantraCount");
+    const overlapSelect     = document.getElementById("overlapSelect");
     const toneStyleSelect   = document.getElementById("toneStyle");
     const stopBtn           = document.getElementById("stopAll");
     const playAllBtn        = document.getElementById("playAll");
@@ -335,7 +347,7 @@
     const statusEl          = document.getElementById("status");
 
     // ============================================================
-    // LOAD / SAVE SETTINGS
+    // LOAD / SAVE
     // ============================================================
     function loadSettings() {
       ELEVENLABS_API_KEY = localStorage.getItem("chakra_elevenlabs_key") || "";
@@ -343,10 +355,12 @@
 
       durationPerChakra = parseInt(localStorage.getItem("chakra_duration") || "30", 10);
       mantrasPerChakra  = parseInt(localStorage.getItem("chakra_mantras")  || "2", 10);
+      overlapSeconds    = parseInt(localStorage.getItem("chakra_overlap")  || "4", 10);
       toneStyle         = localStorage.getItem("chakra_tone_style") || "enhanced";
 
       if (durationSelect) durationSelect.value = String(durationPerChakra);
       if (mantraCountSelect) mantraCountSelect.value = String(mantrasPerChakra);
+      if (overlapSelect) overlapSelect.value = String(overlapSeconds);
       if (toneStyleSelect) toneStyleSelect.value = toneStyle;
 
       if (!ELEVENLABS_API_KEY) {
@@ -372,20 +386,24 @@
       localStorage.setItem("chakra_mantras", String(mantrasPerChakra));
     }
 
+    function saveOverlap() {
+      overlapSeconds = parseInt(overlapSelect.value, 10);
+      localStorage.setItem("chakra_overlap", String(overlapSeconds));
+    }
+
     function saveToneStyle() {
       toneStyle = toneStyleSelect.value;
       localStorage.setItem("chakra_tone_style", toneStyle);
 
-      // Live-rebuild every currently playing tone with the new style
+      // Rebuild any currently playing tones with the new style
       const names = Object.keys(activeTones);
       if (names.length && toneEnabled) {
         names.forEach(name => {
           const ch = CHAKRAS.find(c => c.name === name);
           if (ch) {
-            // force recreate
             const old = activeTones[name];
             delete activeTones[name];
-            if (old) fadeOutTone(old, 0.4);
+            if (old) fadeOutTone(old, 0.35);
             startTone(ch);
           }
         });
@@ -450,7 +468,7 @@
     }
 
     // ============================================================
-    // CARD VISUALS (multi-select aware)
+    // CARD VISUALS
     // ============================================================
     function setCardPlaying(ch, isOn) {
       const card = document.querySelector(`.card[data-name="${ch.name}"]`);
@@ -473,7 +491,7 @@
     }
 
     // ============================================================
-    // TONE ENGINE – polyphonic
+    // TONE ENGINE (polyphonic)
     // ============================================================
     function getToneLayers(ch) {
       if (toneStyle === "pure") {
@@ -492,7 +510,6 @@
           { frequency: ch.freq * 0.50, gain: 0.16, detune: 0 }
         ];
       }
-      // Enhanced
       return [
         { frequency: ch.freq,     gain: 0.50,  detune: 0 },
         { frequency: ch.freq / 2, gain: 0.22,  detune: 0 },
@@ -589,11 +606,9 @@
         : Math.max(0.0001, toneVolume);
     }
 
-    // Start (or keep) a single chakra tone
     function startTone(ch) {
       if (!toneEnabled) return;
 
-      // Already running with same style → just ensure volume
       if (activeTones[ch.name] && !activeTones[ch.name].disposed &&
           activeTones[ch.name].style === toneStyle) {
         applyToneVolume();
@@ -601,9 +616,8 @@
         return;
       }
 
-      // Replace if different style
       if (activeTones[ch.name]) {
-        fadeOutTone(activeTones[ch.name], 0.4);
+        fadeOutTone(activeTones[ch.name], 0.35);
         delete activeTones[ch.name];
       }
 
@@ -621,7 +635,6 @@
       }
     }
 
-    // Stop only one chakra
     function stopToneFor(ch) {
       const tone = activeTones[ch.name];
       if (tone) {
@@ -631,7 +644,6 @@
       setCardPlaying(ch, false);
     }
 
-    // Stop every tone
     function stopAllTones() {
       Object.keys(activeTones).forEach(name => {
         fadeOutTone(activeTones[name], 0.45);
@@ -903,15 +915,14 @@
     }
 
     // ============================================================
-    // TOGGLE (main interaction)
+    // TOGGLE (manual multi-select)
     // ============================================================
     async function handleCardTap(ch) {
       ensureAudio();
 
-      // Already on → turn off
+      // Toggle off
       if (activeTones[ch.name] && !activeTones[ch.name].disposed) {
         stopToneFor(ch);
-        // If nothing left playing, clear the affirmation panel
         if (Object.keys(activeTones).length === 0) {
           clearAffirmation();
           setStatus("");
@@ -919,10 +930,9 @@
         return;
       }
 
-      // Turn on
+      // Toggle on
       startTone(ch);
 
-      // Speak the configured number of mantras while the tone stays on
       for (let m = 0; m < mantrasPerChakra; m++) {
         const { text, number } = getNextAffirmation(ch);
         showAffirmation(ch, text, number);
@@ -938,7 +948,7 @@
     }
 
     // ============================================================
-    // PLAY ALL (guided sequential journey)
+    // PLAY ALL with crossfade / overlap
     // ============================================================
     function stopEverything(clearPanel = true) {
       sessionToken++;
@@ -950,65 +960,89 @@
       setStatus("");
     }
 
-    async function playChakraSession(ch, token, labelPrefix = "") {
-      const start = performance.now();
-      const targetMs = durationPerChakra * 1000;
-
-      startTone(ch);
-
-      for (let m = 0; m < mantrasPerChakra; m++) {
-        if (token !== sessionToken) return false;
-
-        const { text, number } = getNextAffirmation(ch);
-        showAffirmation(ch, text, number);
-
-        const label = labelPrefix
-          ? `${labelPrefix} • Mantra ${m + 1}/${mantrasPerChakra}`
-          : `Mantra ${m + 1}/${mantrasPerChakra}`;
-
-        const ok = await speakWithElevenLabs(text, label);
-        if (!ok || token !== sessionToken) return false;
-
-        if (m < mantrasPerChakra - 1) {
-          setStatus(`${label} • Pause`);
-          await wait(1500);
-          if (token !== sessionToken) return false;
-        }
-      }
-
-      const elapsed = performance.now() - start;
-      const remaining = Math.max(0, targetMs - elapsed - 600);
-      if (remaining > 300 && token === sessionToken) {
-        setStatus("Holding tone...");
-        await wait(remaining);
-      }
-
-      // In guided mode we stop this chakra after its duration
-      if (token === sessionToken) {
-        stopToneFor(ch);
-      }
-      return token === sessionToken;
-    }
-
     async function playAllSequence(token) {
       for (let i = 0; i < CHAKRAS.length; i++) {
         if (!isPlayingAll || token !== sessionToken) return;
 
         const ch = CHAKRAS[i];
+        const isLast = i === CHAKRAS.length - 1;
         const label = `Chakra ${i + 1}/${CHAKRAS.length}`;
-        const ok = await playChakraSession(ch, token, label);
+        const startTime = performance.now();
 
-        if (!ok || token !== sessionToken) return;
+        // Start this tone (it will layer with the previous if overlap > 0)
+        startTone(ch);
+
+        // Speak mantras
+        for (let m = 0; m < mantrasPerChakra; m++) {
+          if (token !== sessionToken) return;
+
+          const { text, number } = getNextAffirmation(ch);
+          showAffirmation(ch, text, number);
+
+          const mLabel = `${label} • Mantra ${m + 1}/${mantrasPerChakra}`;
+          const ok = await speakWithElevenLabs(text, mLabel);
+          if (!ok || token !== sessionToken) return;
+
+          if (m < mantrasPerChakra - 1) {
+            setStatus(`${mLabel} • Pause`);
+            await wait(1400);
+            if (token !== sessionToken) return;
+          }
+        }
+
+        // Calculate remaining time for this chakra
+        const elapsed = performance.now() - startTime;
+        let remaining = Math.max(0, durationPerChakra * 1000 - elapsed);
+
+        if (!isLast && overlapSeconds > 0) {
+          // Leave room for the crossfade at the end
+          const blendMs = overlapSeconds * 1000;
+          const holdBeforeBlend = Math.max(0, remaining - blendMs);
+
+          if (holdBeforeBlend > 200) {
+            setStatus(`${label} • Holding...`);
+            await wait(holdBeforeBlend);
+            if (token !== sessionToken) return;
+          }
+
+          // Begin crossfade: start next tone first, then fade current
+          setStatus(`${label} • Blending into next...`);
+          const nextCh = CHAKRAS[i + 1];
+          startTone(nextCh);                       // new tone rises
+
+          // Fade the current one over the overlap time
+          if (activeTones[ch.name]) {
+            fadeOutTone(activeTones[ch.name], overlapSeconds);
+            delete activeTones[ch.name];
+            // Keep visual for a moment, then clear
+            setTimeout(() => setCardPlaying(ch, false), overlapSeconds * 400);
+          }
+
+          // Wait most of the overlap so the next iteration starts cleanly
+          await wait(Math.max(300, blendMs * 0.65));
+        } else {
+          // Last chakra or no overlap → normal hold then stop
+          if (remaining > 300) {
+            setStatus(`${label} • Holding...`);
+            await wait(remaining);
+          }
+          if (token === sessionToken) {
+            stopToneFor(ch);
+          }
+        }
       }
 
+      // Journey finished
       if (token === sessionToken) {
         isPlayingAll = false;
         playAllBtn.textContent = "Play All";
+        // Give any final fade a moment
+        await wait(overlapSeconds > 0 ? overlapSeconds * 600 : 400);
         stopAllTones();
         setStatus("Journey complete");
         setTimeout(() => {
           if (!isPlayingAll && token === sessionToken) setStatus("");
-        }, 3000);
+        }, 3200);
       }
     }
 
@@ -1047,11 +1081,7 @@
 
     toneToggle.addEventListener("change", e => {
       toneEnabled = e.target.checked;
-      if (!toneEnabled) {
-        stopAllTones();
-        return;
-      }
-      // Re-start any that were visually on? For simplicity we leave them off
+      if (!toneEnabled) stopAllTones();
     });
 
     voiceSelect.addEventListener("change", e => { VOICE_ID = e.target.value; });
@@ -1061,6 +1091,7 @@
 
     durationSelect.addEventListener("change", saveDuration);
     mantraCountSelect.addEventListener("change", saveMantraCount);
+    overlapSelect.addEventListener("change", saveOverlap);
     toneStyleSelect.addEventListener("change", saveToneStyle);
 
     // ============================================================
