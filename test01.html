@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>GPS Marker – AI All Categories</title>
+  <title>GPS Marker – Links + AI</title>
   <style>
     :root {
       --bg: #0f1419; --card: #1a2332; --accent: #3b82f6; --text: #e2e8f0;
@@ -99,7 +99,11 @@
       display: inline-block; font-size: 0.75rem; background: rgba(59,130,246,0.15);
       color: #93c5fd; padding: 2px 8px; border-radius: 6px; margin-right: 6px;
     }
-    .basic-website { display: inline-block; font-size: 0.84rem; color: #60a5fa; text-decoration: none; margin-top: 4px; }
+    .basic-links { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .basic-links a {
+      font-size: 0.8rem; color: #60a5fa; text-decoration: none;
+      background: rgba(96,165,250,0.12); padding: 4px 9px; border-radius: 8px;
+    }
     .basic-actions { display: flex; gap: 6px; flex-shrink: 0; }
     .ai-note {
       font-size: 0.82rem; color: #a5b4fc; margin-top: 6px;
@@ -119,6 +123,11 @@
     .guide-body { padding: 14px; }
     .guide-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
     .guide-meta { font-size: 0.82rem; color: var(--accent); margin-bottom: 8px; }
+    .guide-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+    .guide-links a {
+      font-size: 0.82rem; color: #60a5fa; text-decoration: none;
+      background: rgba(96,165,250,0.12); padding: 5px 10px; border-radius: 8px;
+    }
     .guide-actions { display: flex; gap: 8px; }
     .guide-actions .btn { margin: 0; padding: 11px; font-size: 0.9rem; }
 
@@ -146,7 +155,7 @@
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">AI ranking + notes + pictures on every category</p>
+  <p class="subtitle">AI + Google Maps links + websites</p>
 
   <div id="status">Requesting location…</div>
 
@@ -205,7 +214,7 @@
   <div id="markerList"></div>
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Gemini works on Food • Historical • Art • Adult</p>
+  <p class="footer">Every place has Google Maps + website links when available</p>
 
   <!-- Name sheet -->
   <div class="overlay" id="nameOverlay">
@@ -224,7 +233,7 @@
     <div class="sheet">
       <div class="label">Optional API Keys</div>
       <p style="font-size:0.88rem; color:var(--muted); margin-bottom:12px;">
-        Gemini key enables ranking, short notes and better pictures on <b>all</b> categories.
+        Gemini key enables ranking, notes and better pictures on all categories.
       </p>
       <div class="label">Google Places Key (optional)</div>
       <input type="password" id="googleKeyInput" placeholder="AIza..." />
@@ -275,7 +284,7 @@
     let googleKey = localStorage.getItem("gps_google_key") || "";
     let geminiKey = localStorage.getItem("gps_gemini_key") || "";
 
-    const STORAGE_KEY = "gps-marker-ai-all-v1";
+    const STORAGE_KEY = "gps-marker-links-v1";
 
     const $ = id => document.getElementById(id);
 
@@ -320,6 +329,13 @@
       return Math.abs(h);
     }
 
+    function mapsUrl(lat, lon, name) {
+      return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+    }
+    function searchUrl(name) {
+      return `https://www.google.com/search?q=${encodeURIComponent(name)}`;
+    }
+
     function save() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ markers, activeId }));
     }
@@ -362,7 +378,6 @@
       updateNav();
     }
 
-    // Compass
     function handleOrientation(event) {
       let heading = null;
       if (typeof event.webkitCompassHeading === "number") {
@@ -465,7 +480,7 @@
       });
     }
 
-    // ========== GENERIC GEMINI ENRICHMENT (works for every category) ==========
+    // Gemini enrichment (all categories)
     async function enrichWithGemini(places, landmarkName, category) {
       if (!geminiKey || !places.length) return places;
 
@@ -475,21 +490,27 @@
       ).join("\n");
 
       const categoryHints = {
-        food: "food & drink places. Focus on atmosphere, cuisine style and why someone would go.",
-        historical: "historical sites and landmarks. Focus on historical importance or interesting facts.",
-        art: "art venues, galleries and museums. Focus on the kind of art or experience.",
-        adult: "adult / erotic venues. Be direct but tasteful. Focus on the type of venue and vibe."
+        food: "food & drink places. Focus on atmosphere and cuisine.",
+        historical: "historical sites. Focus on importance or interesting facts.",
+        art: "art venues and museums. Focus on the type of art or experience.",
+        adult: "adult / erotic venues. Be direct but tasteful."
       };
 
-      const prompt = `You are a helpful local guide. Category: ${categoryHints[category] || category}.
+      const prompt = `You are a local guide. Category: ${categoryHints[category] || category}.
 
-For each place below:
+For each place:
 1. Write ONE short useful sentence (max 16 words).
-2. Suggest a short English image search phrase (3-6 words) that would find a good representative photo.
+2. Suggest a short image search phrase (3-6 words).
+3. If you know a real official website, include it. Otherwise leave website as null.
 
-Return ONLY valid JSON array:
+Return ONLY valid JSON:
 [
-  {"name": "Exact place name", "note": "short sentence", "imageQuery": "photo search phrase"}
+  {
+    "name": "Exact place name",
+    "note": "short sentence",
+    "imageQuery": "photo search phrase",
+    "website": "https://..." or null
+  }
 ]
 
 Places around "${landmarkName}":
@@ -503,7 +524,7 @@ ${listText}`;
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { temperature: 0.35, maxOutputTokens: 1400 }
+              generationConfig: { temperature: 0.3, maxOutputTokens: 1600 }
             })
           }
         );
@@ -521,17 +542,23 @@ ${listText}`;
           if (item.name) {
             map[item.name.toLowerCase().trim()] = {
               note: item.note || null,
-              imageQuery: item.imageQuery || null
+              imageQuery: item.imageQuery || null,
+              website: item.website && item.website.startsWith("http") ? item.website : null
             };
           }
         });
 
         const withExtra = places.map(p => {
           const extra = map[p.name.toLowerCase().trim()];
-          return extra ? { ...p, aiNote: extra.note, imageQuery: extra.imageQuery } : p;
+          if (!extra) return p;
+          return {
+            ...p,
+            aiNote: extra.note,
+            imageQuery: extra.imageQuery,
+            website: p.website || extra.website   // prefer real Overpass website
+          };
         });
 
-        // Put places Gemini liked first
         withExtra.sort((a, b) => {
           if (a.aiNote && !b.aiNote) return -1;
           if (!a.aiNote && b.aiNote) return 1;
@@ -541,7 +568,6 @@ ${listText}`;
         geminiUsed = true;
         return withExtra;
       } catch (err) {
-        console.warn("Gemini error", err);
         return places;
       }
     }
@@ -613,7 +639,7 @@ ${listText}`;
           name: tags.name, lat: plat, lon: plon,
           dist: distanceMeters(lat, lon, plat, plon),
           type: tags.amenity || tags.shop || tags.tourism || "",
-          website: tags.website || null
+          website: tags.website || tags["contact:website"] || null
         };
       }).filter(Boolean);
     }
@@ -636,7 +662,7 @@ ${listText}`;
       $("resultsSubtitle").textContent = `Around “${active.name}”`;
       $("radiusInfo").textContent = `Within ${selectedMiles} mile${selectedMiles === 1 ? "" : "s"}`;
       $("errorBox").classList.add("hidden");
-      $("resultsStatus").textContent = geminiKey ? "Searching + asking Gemini…" : "Searching…";
+      $("resultsStatus").textContent = geminiKey ? "Searching + Gemini…" : "Searching…";
       $("resultsStatus").className = "loading";
       $("resultsList").innerHTML = "";
       currentResults = [];
@@ -667,13 +693,13 @@ ${listText}`;
             lat: item.lat,
             lon: item.lon,
             dist: distanceMeters(active.lat, active.lng, item.lat, item.lon),
-            type: "historical"
+            type: "historical",
+            website: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title.replace(/ /g, "_"))}`
           }));
         }
 
-        // Apply Gemini to EVERY category
         if (geminiKey && places.length) {
-          $("resultsStatus").textContent = "Gemini is ranking, writing notes & choosing pictures…";
+          $("resultsStatus").textContent = "Gemini ranking + links…";
           places = await enrichWithGemini(places, active.name, cat);
         }
 
@@ -713,8 +739,14 @@ ${listText}`;
               <div class="guide-title">${i+1}. ${escapeHtml(p.name)}</div>
               <div class="guide-meta">${formatMiles(p.dist)} · ${escapeHtml(p.type || currentCategory)}</div>
               ${p.aiNote ? `<div class="ai-note">✦ ${escapeHtml(p.aiNote)}</div>` : ""}
-              ${p.website ? `<a href="${escapeHtml(p.website)}" target="_blank" style="color:#60a5fa;font-size:0.88rem;display:inline-block;margin-top:6px;">🌐 Website</a><br>` : ""}
-              <div class="guide-actions" style="margin-top:12px;">
+              
+              <div class="guide-links">
+                <a href="${mapsUrl(p.lat, p.lon, p.name)}" target="_blank">📍 Google Maps</a>
+                ${p.website ? `<a href="${escapeHtml(p.website)}" target="_blank">🌐 Website</a>` : ""}
+                <a href="${searchUrl(p.name)}" target="_blank">🔍 Google</a>
+              </div>
+
+              <div class="guide-actions">
                 <button class="btn btn-primary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go">Navigate</button>
                 <button class="btn btn-secondary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="save">Save</button>
               </div>
@@ -731,7 +763,11 @@ ${listText}`;
                   ${formatMiles(p.dist)}
                 </div>
                 ${p.aiNote ? `<div class="ai-note">✦ ${escapeHtml(p.aiNote)}</div>` : ""}
-                ${p.website ? `<a class="basic-website" href="${escapeHtml(p.website)}" target="_blank">🌐 Website</a>` : ""}
+                <div class="basic-links">
+                  <a href="${mapsUrl(p.lat, p.lon, p.name)}" target="_blank">📍 Maps</a>
+                  ${p.website ? `<a href="${escapeHtml(p.website)}" target="_blank">🌐 Web</a>` : ""}
+                  <a href="${searchUrl(p.name)}" target="_blank">🔍 Google</a>
+                </div>
               </div>
               <div class="basic-actions">
                 <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go">➤</button>
@@ -774,7 +810,7 @@ ${listText}`;
       localStorage.setItem("gps_google_key", googleKey);
       localStorage.setItem("gps_gemini_key", geminiKey);
       $("keysOverlay").classList.remove("show");
-      setStatus(geminiKey ? "Gemini key saved – AI active on all categories" : "Keys saved", "ok");
+      setStatus(geminiKey ? "Gemini key saved" : "Keys saved", "ok");
     };
 
     $("markerList").onclick = e => {
