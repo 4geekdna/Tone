@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ElevenLabs TTS Tester</title>
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --surface: #1a1a21;
+      --surface2: #24242e;
+      --border: #33333f;
+      --text: #e8e8ed;
+      --text-muted: #9b9ba8;
+      --accent: #7c5cff;
+      --accent-hover: #6a4aef;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 16px;
+      line-height: 1.5;
+    }
+    .container { max-width: 860px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 32px; }
+    header h1 { font-size: 1.85rem; font-weight: 700; margin-bottom: 6px; }
+    header p { color: var(--text-muted); font-size: 0.95rem; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h2 span {
+      background: var(--accent);
+      color: white;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    input[type="text"], input[type="password"], select, textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    textarea { min-height: 140px; resize: vertical; font-family: inherit; }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
+    .field { margin-bottom: 16px; }
+    .sliders {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px 24px;
+    }
+    @media (max-width: 600px) { .sliders { grid-template-columns: 1fr; } }
+    .slider-group { display: flex; flex-direction: column; gap: 6px; }
+    .slider-header { display: flex; justify-content: space-between; align-items: center; }
+    .slider-value {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(124, 92, 255, 0.15);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .checkbox-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .checkbox-row input { width: 18px; height: 18px; accent-color: var(--accent); }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+    .status {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .status.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+    }
+    .status.success {
+      display: block;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #86efac;
+    }
+    .status.info {
+      display: block;
+      background: rgba(124, 92, 255, 0.12);
+      border: 1px solid rgba(124, 92, 255, 0.35);
+      color: #c4b5fd;
+    }
+    .audio-section { display: none; margin-top: 8px; }
+    .audio-section.visible { display: block; }
+    audio { width: 100%; margin-top: 12px; border-radius: 8px; }
+    .char-count { text-align: right; font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+    .note { font-size: 0.8rem; color: var(--text-muted); margin-top: 12px; line-height: 1.4; }
+    .note strong { color: #fbbf24; }
+    .voice-list {
+      max-height: 180px;
+      overflow-y: auto;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 8px;
+      display: none;
+    }
+    .voice-list.visible { display: block; }
+    .voice-item {
+      padding: 8px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .voice-item:hover { background: #2e2e3a; }
+    .voice-item .id {
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    footer {
+      text-align: center;
+      margin-top: 32px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>ElevenLabs TTS Tester</h1>
+      <p>Paste your API key → choose voice & model → generate speech</p>
+    </header>
+
+    <!-- API Key -->
+    <div class="card">
+      <h2>1. API Key <span>Required</span></h2>
+      <div class="field">
+        <label for="apiKey">xi-api-key</label>
+        <input type="password" id="apiKey" placeholder="sk_xxxxxxxx..." autocomplete="off" />
+        <p class="note"><strong>Security:</strong> Key stays in your browser only. Clear it when finished.</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="saveKey()">Save Key</button>
+        <button class="btn-danger" onclick="clearKey()">Clear Key</button>
+      </div>
+    </div>
+
+    <!-- Voice & Model -->
+    <div class="card">
+      <h2>2. Voice & Model</h2>
+      <div class="row">
+        <div class="field">
+          <label for="voiceSelect">Popular Voices</label>
+          <select id="voiceSelect" onchange="onVoiceSelect()">
+            <option value="JBFqnCBsd6RMkjVDRZzb">George (British)</option>
+            <option value="EXAVITQu4vr4xnSDxMaL">Sarah (American)</option>
+            <option value="21m00Tcm4TlvDq8ikWAM">Rachel (American)</option>
+            <option value="pNInz6obpgDQGcFmaJgB">Adam (Deep)</option>
+            <option value="nPczCjzI2devNBz1zQrb">Brian</option>
+            <option value="pqHfZKP75CvOlQylNhV4">Bill</option>
+            <option value="IKne3meq5aSn9XLyUdCD">Charlie (Australian)</option>
+            <option value="onwK4e9ZLuTAKqWW03F9">Daniel (British)</option>
+            <option value="XB0fDUnXU5powFXDhCwa">Charlotte</option>
+            <option value="2EiwWnXFnvU5JabPnv8n">Clyde</option>
+            <option value="custom">— Custom Voice ID —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="modelSelect">Model</label>
+          <select id="modelSelect">
+            <option value="eleven_multilingual_v2">eleven_multilingual_v2</option>
+            <option value="eleven_v3">eleven_v3 (most expressive)</option>
+            <option value="eleven_turbo_v2_5">eleven_turbo_v2_5</option>
+            <option value="eleven_flash_v2_5">eleven_flash_v2_5 (fastest)</option>
+            <option value="eleven_turbo_v2">eleven_turbo_v2</option>
+            <option value="eleven_flash_v2">eleven_flash_v2</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" id="customVoiceField" style="display:none;">
+        <label for="customVoiceId">Custom Voice ID</label>
+        <input type="text" id="customVoiceId" placeholder="Paste voice_id here" />
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="fetchVoices()">Load My Voices</button>
+      </div>
+      <div id="voiceList" class="voice-list"></div>
+    </div>
+
+    <!-- Text -->
+    <div class="card">
+      <h2>3. Text</h2>
+      <div class="field">
+        <label for="textInput">Text to speak</label>
+        <textarea id="textInput">Hello! This is a quick test of the ElevenLabs text-to-speech API.</textarea>
+        <div class="char-count"><span id="charCount">0</span> characters</div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="card">
+      <h2>4. Voice Settings</h2>
+      <div class="sliders">
+        <div class="slider-group">
+          <div class="slider-header">
+            <label>Stability</label>
+            <span class="slider-value" id="stabilityVal">0.50</span>
+          </div>
+          <input type="range" id="stability" min="0" max="1" step="0.01" value="0.5" oninput="updateSlider('stability')">
+        </div>
+        <div class="slider-group">
+          <div class="slider-header">
+            <label>Similarity Boost</label>
+            <span class="slider-value" id="similarityVal">0.75</span>
+          </div>
+          <input type="range" id="similarity" min="0" max="1" step="0.01" value="0.75" oninput="updateSlider('similarity')">
+        </div>
+        <div class="slider-group">
+          <div class="slider-header">
+            <label>Style</label>
+            <span class="slider-value" id="styleVal">0.00</span>
+          </div>
+          <input type="range" id="style" min="0" max="1" step="0.01" value="0" oninput="updateSlider('style')">
+        </div>
+        <div class="slider-group">
+          <div class="checkbox-row" style="margin-top:18px;">
+            <input type="checkbox" id="speakerBoost" checked>
+            <label for="speakerBoost" style="margin:0;cursor:pointer;">Speaker Boost</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Generate -->
+    <div class="card">
+      <h2>5. Generate</h2>
+      <div class="btn-row">
+        <button class="btn-primary" id="generateBtn" onclick="generateSpeech()">
+          <span id="btnText">Generate Speech</span>
+        </button>
+        <button class="btn-secondary" id="downloadBtn" style="display:none;" onclick="downloadAudio()">Download MP3</button>
+      </div>
+      <div id="status" class="status"></div>
+      <div id="audioSection" class="audio-section">
+        <audio id="audioPlayer" controls></audio>
+      </div>
+    </div>
+
+    <footer>
+      Client-side only · <a href="https://elevenlabs.io/docs/api-reference/text-to-speech/convert" target="_blank" style="color:var(--accent)">API Docs</a>
+    </footer>
+  </div>
+
+  <script>
+    let currentAudioBlob = null;
+    let currentAudioUrl = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('elevenlabs_api_key');
+      if (saved) document.getElementById('apiKey').value = saved;
+      updateCharCount();
+      document.getElementById('textInput').addEventListener('input', updateCharCount);
+    });
+
+    function updateCharCount() {
+      document.getElementById('charCount').textContent =
+        document.getElementById('textInput').value.length.toLocaleString();
+    }
+
+    function updateSlider(which) {
+      const map = { stability: 'stabilityVal', similarity: 'similarityVal', style: 'styleVal' };
+      document.getElementById(map[which]).textContent =
+        parseFloat(document.getElementById(which).value).toFixed(2);
+    }
+
+    function onVoiceSelect() {
+      document.getElementById('customVoiceField').style.display =
+        document.getElementById('voiceSelect').value === 'custom' ? 'block' : 'none';
+    }
+
+    function saveKey() {
+      const key = document.getElementById('apiKey').value.trim();
+      if (!key) return showStatus('Enter an API key first.', 'error');
+      localStorage.setItem('elevenlabs_api_key', key);
+      showStatus('Key saved to localStorage.', 'success');
+    }
+
+    function clearKey() {
+      localStorage.removeItem('elevenlabs_api_key');
+      document.getElementById('apiKey').value = '';
+      showStatus('Key cleared.', 'info');
+    }
+
+    function getApiKey() { return document.getElementById('apiKey').value.trim(); }
+
+    function getVoiceId() {
+      const sel = document.getElementById('voiceSelect');
+      return sel.value === 'custom'
+        ? document.getElementById('customVoiceId').value.trim()
+        : sel.value;
+    }
+
+    function showStatus(msg, type) {
+      const el = document.getElementById('status');
+      el.className = 'status ' + type;
+      el.textContent = msg;
+    }
+
+    function setLoading(loading) {
+      const btn = document.getElementById('generateBtn');
+      const text = document.getElementById('btnText');
+      btn.disabled = loading;
+      text.innerHTML = loading
+        ? '<span class="spinner"></span> Generating…'
+        : 'Generate Speech';
+    }
+
+    async function fetchVoices() {
+      const key = getApiKey();
+      if (!key) return showStatus('Enter API key first.', 'error');
+      showStatus('Fetching voices…', 'info');
+      try {
+        const res = await fetch('https://api.elevenlabs.io/v1/voices', {
+          headers: { 'xi-api-key': key }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const list = document.getElementById('voiceList');
+        list.innerHTML = '';
+        list.classList.add('visible');
+        (data.voices || []).forEach(v => {
+          const div = document.createElement('div');
+          div.className = 'voice-item';
+          div.innerHTML = `<span>${v.name}</span><span class="id">${v.voice_id}</span>`;
+          div.onclick = () => {
+            document.getElementById('voiceSelect').value = 'custom';
+            document.getElementById('customVoiceField').style.display = 'block';
+            document.getElementById('customVoiceId').value = v.voice_id;
+            showStatus(`Selected: ${v.name}`, 'success');
+          };
+          list.appendChild(div);
+        });
+        showStatus(`Loaded ${data.voices?.length || 0} voices.`, 'success');
+      } catch (err) {
+        showStatus('Failed: ' + err.message, 'error');
+      }
+    }
+
+    async function generateSpeech() {
+      const key = getApiKey();
+      const voiceId = getVoiceId();
+      const text = document.getElementById('textInput').value.trim();
+      const model = document.getElementById('modelSelect').value;
+
+      if (!key) return showStatus('API key required.', 'error');
+      if (!voiceId) return showStatus('Select or enter a voice ID.', 'error');
+      if (!text) return showStatus('Enter some text.', 'error');
+
+      setLoading(true);
+      showStatus('Sending request…', 'info');
+      document.getElementById('audioSection').classList.remove('visible');
+      document.getElementById('downloadBtn').style.display = 'none';
+
+      if (currentAudioUrl) {
+        URL.revokeObjectURL(currentAudioUrl);
+        currentAudioUrl = null;
+      }
+
+      const body = {
+        text,
+        model_id: model,
+        voice_settings: {
+          stability: parseFloat(document.getElementById('stability').value),
+          similarity_boost: parseFloat(document.getElementById('similarity').value),
+          style: parseFloat(document.getElementById('style').value),
+          use_speaker_boost: document.getElementById('speakerBoost').checked
+        }
+      };
+
+      try {
+        const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+          method: 'POST',
+          headers: {
+            'Accept': 'audio/mpeg',
+            'Content-Type': 'application/json',
+            'xi-api-key': key
+          },
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+          let msg = `HTTP ${res.status}`;
+          try {
+            const err = await res.json();
+            msg = err.detail?.message || err.message || msg;
+          } catch {}
+          throw new Error(msg);
+        }
+
+        const blob = await res.blob();
+        currentAudioBlob = blob;
+        currentAudioUrl = URL.createObjectURL(blob);
+
+        const player = document.getElementById('audioPlayer');
+        player.src = currentAudioUrl;
+        document.getElementById('audioSection').classList.add('visible');
+        document.getElementById('downloadBtn').style.display = 'inline-flex';
+
+        showStatus('Success! Audio ready.', 'success');
+        player.play().catch(() => {});
+      } catch (err) {
+        showStatus('Error: ' + err.message, 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function downloadAudio() {
+      if (!currentAudioBlob) return;
+      const a = document.createElement('a');
+      a.href = currentAudioUrl;
+      a.download = `elevenlabs-${Date.now()}.mp3`;
+      a.click();
+    }
+  </script>
+</body>
+</html>
