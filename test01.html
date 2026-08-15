@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>GPS Marker – Optimized Gemini</title>
+  <title>GPS Marker – Cached Cards</title>
   <style>
     :root {
       --bg: #0f1419; --card: #1a2332; --accent: #3b82f6; --text: #e2e8f0;
@@ -150,6 +150,10 @@
       display: inline-block; font-size: 0.72rem; background: rgba(139,92,246,0.2);
       color: #c4b5fd; padding: 2px 8px; border-radius: 6px; margin-left: 6px;
     }
+    .cache-badge {
+      display: inline-block; font-size: 0.72rem; background: rgba(34,197,94,0.15);
+      color: #86efac; padding: 2px 8px; border-radius: 6px; margin-left: 6px;
+    }
     input[type="text"], input[type="password"] {
       width: 100%; padding: 12px; margin: 6px 0 14px;
       border-radius: 10px; border: 1px solid var(--border);
@@ -159,7 +163,7 @@
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Optimized Gemini • Short desc in Basic • Expanded + photos only in Extended</p>
+  <p class="subtitle">Cached cards • Optimized Gemini • Photos only in Extended</p>
 
   <div id="status">Requesting location…</div>
 
@@ -218,7 +222,7 @@
   <div id="markerList"></div>
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Pictures load only in Extended view • Optimized Gemini prompt</p>
+  <p class="footer">Results are cached • Switch views instantly</p>
 
   <!-- Name sheet -->
   <div class="overlay" id="nameOverlay">
@@ -283,13 +287,51 @@
     let viewMode = "basic";
     let selectedMiles = 1;
     let geminiUsed = false;
+    let fromCache = false;
     let deviceHeading = null;
 
     let googleKey = localStorage.getItem("gps_google_key") || "";
     let geminiKey = localStorage.getItem("gps_gemini_key") || "";
 
-    const STORAGE_KEY = "gps-marker-optimized-v1";
+    const STORAGE_KEY = "gps-marker-cached-v1";
+    const CACHE_KEY = "gps-marker-results-cache";
 
+    // ========== RESULTS CACHE ==========
+    let resultsCache = {};
+
+    function loadCache() {
+      try {
+        const raw = sessionStorage.getItem(CACHE_KEY);
+        if (raw) resultsCache = JSON.parse(raw);
+      } catch(e) { resultsCache = {}; }
+    }
+
+    function saveCache() {
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(resultsCache));
+      } catch(e) {}
+    }
+
+    function getCacheKey(cat, landmarkId, miles) {
+      return `${cat}|${landmarkId}|${miles}`;
+    }
+
+    function getCachedResults(cat, landmarkId, miles) {
+      const key = getCacheKey(cat, landmarkId, miles);
+      return resultsCache[key] || null;
+    }
+
+    function setCachedResults(cat, landmarkId, miles, places, usedGemini) {
+      const key = getCacheKey(cat, landmarkId, miles);
+      resultsCache[key] = {
+        places,
+        usedGemini,
+        timestamp: Date.now()
+      };
+      saveCache();
+    }
+
+    // ========== HELPERS ==========
     const $ = id => document.getElementById(id);
 
     function setStatus(msg, type = "") {
@@ -332,7 +374,6 @@
       for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i);
       return Math.abs(h);
     }
-
     function mapsUrl(lat, lon) {
       return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
     }
@@ -484,12 +525,11 @@
       });
     }
 
-    // ========== OPTIMIZED GEMINI ENRICHMENT ==========
+    // ========== OPTIMIZED GEMINI ==========
     async function enrichWithGemini(places, landmarkName, category) {
       if (!geminiKey || !places.length) return places;
 
       const top = places.slice(0, 12);
-
       const listText = top.map((p, i) =>
         `${i + 1}. ${p.name} | ${p.type || category} | ${formatMiles(p.dist)}`
       ).join("\n");
@@ -550,15 +590,12 @@ JSON format:
 
         const data = await res.json();
         let text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-        // Clean possible markdown wrappers just in case
         text = text.replace(/```json|```/g, "").trim();
         const jsonMatch = text.match(/\[[\s\S]*\]/);
         if (!jsonMatch) return places;
 
         const enriched = JSON.parse(jsonMatch[0]);
         const map = {};
-
         enriched.forEach(item => {
           if (item.name) {
             map[item.name.toLowerCase().trim()] = {
@@ -582,7 +619,6 @@ JSON format:
           };
         });
 
-        // Prefer places that received a description
         withExtra.sort((a, b) => {
           if (a.shortDesc && !b.shortDesc) return -1;
           if (!a.shortDesc && b.shortDesc) return 1;
@@ -591,7 +627,6 @@ JSON format:
 
         geminiUsed = true;
         return withExtra;
-
       } catch (err) {
         console.warn("Gemini enrichment failed:", err);
         return places;
@@ -670,6 +705,7 @@ JSON format:
       }).filter(Boolean);
     }
 
+    // ========== MAIN SEARCH WITH CACHE ==========
     async function searchCategory(cat) {
       const active = getActive();
       if (!active) return;
@@ -677,6 +713,7 @@ JSON format:
       const radius = Math.round(milesToMeters(selectedMiles));
       currentCategory = cat;
       geminiUsed = false;
+      fromCache = false;
 
       $("resultsOverlay").classList.add("show");
       $("resultsTitle").textContent = {
@@ -688,9 +725,21 @@ JSON format:
       $("resultsSubtitle").textContent = `Around “${active.name}”`;
       $("radiusInfo").textContent = `Within ${selectedMiles} mile${selectedMiles === 1 ? "" : "s"}`;
       $("errorBox").classList.add("hidden");
+      $("resultsList").innerHTML = "";
+
+      // ----- CHECK CACHE FIRST -----
+      const cached = getCachedResults(cat, active.id, selectedMiles);
+      if (cached && cached.places && cached.places.length) {
+        currentResults = cached.places;
+        geminiUsed = cached.usedGemini;
+        fromCache = true;
+        renderResults();
+        return;
+      }
+
+      // ----- NO CACHE → FETCH -----
       $("resultsStatus").textContent = geminiKey ? "Searching + Gemini…" : "Searching…";
       $("resultsStatus").className = "loading";
-      $("resultsList").innerHTML = "";
       currentResults = [];
 
       try {
@@ -731,6 +780,10 @@ JSON format:
 
         const maxDist = milesToMeters(selectedMiles) * 1.15;
         currentResults = places.filter(p => p.dist <= maxDist).slice(0, 15);
+
+        // Save to cache
+        setCachedResults(cat, active.id, selectedMiles, currentResults, geminiUsed);
+
         renderResults();
 
       } catch (err) {
@@ -750,14 +803,16 @@ JSON format:
         return;
       }
 
-      const badge = geminiUsed ? `<span class="gemini-badge">✦ Gemini</span>` : "";
-      $("resultsStatus").innerHTML = `${currentResults.length} places found${badge}`;
+      let badges = "";
+      if (geminiUsed) badges += `<span class="gemini-badge">✦ Gemini</span>`;
+      if (fromCache) badges += `<span class="cache-badge">⚡ Cached</span>`;
+
+      $("resultsStatus").innerHTML = `${currentResults.length} places found${badges}`;
       $("resultsStatus").className = "label";
 
       const emoji = { food: "🍽️", adult: "🔥", art: "🎨", historical: "🏛️" }[currentCategory] || "📍";
 
       if (viewMode === "extended") {
-        // Pictures load ONLY here
         $("resultsList").innerHTML = currentResults.map((p, i) => `
           <div class="guide-card">
             <img class="guide-img" src="${getImageUrl(p)}" alt="${escapeHtml(p.name)}" loading="lazy"
@@ -782,7 +837,6 @@ JSON format:
             </div>
           </div>`).join("");
       } else {
-        // Basic view – short description only, no pictures
         $("resultsList").innerHTML = currentResults.map(p => `
           <div class="basic-item">
             <div class="basic-top">
@@ -917,6 +971,7 @@ JSON format:
 
     // Start
     load();
+    loadCache();
     fullRefresh();
     startWatch();
     startCompass();
