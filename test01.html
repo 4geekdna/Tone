@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>GPS Marker – Food + Gemini</title>
+  <title>GPS Marker – Food + Gemini Images</title>
   <style>
     :root {
       --bg: #0f1419; --card: #1a2332; --accent: #3b82f6; --text: #e2e8f0;
@@ -108,9 +108,13 @@
     }
 
     .guide-card { background: #141c27; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 14px; }
+    .guide-img {
+      width: 100%; height: 160px; object-fit: cover; background: #1a2332;
+      display: block;
+    }
     .guide-img.placeholder {
       display: flex; align-items: center; justify-content: center;
-      height: 120px; font-size: 2rem; color: var(--muted);
+      height: 160px; font-size: 2.4rem; color: var(--muted);
       background: linear-gradient(135deg, #1a2332, #0f1419);
     }
     .guide-body { padding: 14px; }
@@ -143,7 +147,7 @@
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Food search powered by Overpass + optional Gemini enrichment</p>
+  <p class="subtitle">Food + Gemini ranking & relevant pictures</p>
 
   <div id="status">Requesting location…</div>
 
@@ -202,7 +206,7 @@
   <div id="markerList"></div>
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Food uses free Overpass + optional Gemini ranking & descriptions</p>
+  <p class="footer">Food uses Overpass + Gemini for ranking, notes & picture search terms</p>
 
   <!-- Name sheet -->
   <div class="overlay" id="nameOverlay">
@@ -221,11 +225,11 @@
     <div class="sheet">
       <div class="label">Optional API Keys</div>
       <p style="font-size:0.88rem; color:var(--muted); margin-bottom:12px;">
-        Leave empty to use free mode. Gemini key adds AI ranking + short descriptions for Food results.
+        Gemini key enables ranking, short notes, and better picture search terms for Food.
       </p>
       <div class="label">Google Places Key (optional)</div>
       <input type="password" id="googleKeyInput" placeholder="AIza..." />
-      <div class="label">Gemini Key (for Food enrichment)</div>
+      <div class="label">Gemini Key</div>
       <input type="password" id="geminiKeyInput" placeholder="AIza..." />
       <div style="display:flex; gap:10px; margin-top:10px;">
         <button class="btn btn-secondary" id="cancelKeysBtn" style="flex:1; margin:0;">Cancel</button>
@@ -271,7 +275,7 @@
     let googleKey = localStorage.getItem("gps_google_key") || "";
     let geminiKey = localStorage.getItem("gps_gemini_key") || "";
 
-    const STORAGE_KEY = "gps-marker-gemini-food";
+    const STORAGE_KEY = "gps-marker-gemini-images";
 
     const $ = id => document.getElementById(id);
 
@@ -309,6 +313,11 @@
     function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function hashCode(str) {
+      let h = 0;
+      for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i);
+      return Math.abs(h);
     }
 
     function save() {
@@ -393,7 +402,6 @@
       save();
     }
 
-    // Geolocation
     function onPos(pos) {
       current = {
         lat: pos.coords.latitude,
@@ -419,7 +427,7 @@
       });
     }
 
-    // ========== STRONG FREE FOOD SEARCH (Overpass) ==========
+    // ========== FREE FOOD SEARCH ==========
     async function searchFoodFree(lat, lon, radius) {
       const query = `
         [out:json][timeout:25];
@@ -461,7 +469,6 @@
         };
       }).filter(Boolean);
 
-      // Remove duplicates
       const seen = new Set();
       return places.filter(p => {
         const key = p.name.toLowerCase() + p.lat.toFixed(4);
@@ -471,29 +478,32 @@
       });
     }
 
-    // ========== GEMINI ENRICHMENT FOR FOOD ==========
+    // ========== GEMINI ENRICHMENT (notes + image search terms) ==========
     async function enrichWithGemini(places, landmarkName) {
       if (!geminiKey || !places.length) return places;
 
-      // Take top 12 by distance to keep the prompt reasonable
       const top = places.slice(0, 12);
 
       const listText = top.map((p, i) => 
         `${i+1}. ${p.name} (${p.type}${p.cuisine ? ", " + p.cuisine : ""}) – ${formatMiles(p.dist)}`
       ).join("\n");
 
-      const prompt = `You are a local food guide. Given this list of real nearby food & drink places around "${landmarkName}", do the following:
+      const prompt = `You are a local food guide and photo researcher. For each place below, do two things:
 
-1. Rank the best ones for a visitor (consider variety, likely quality, convenience).
-2. For each place you keep, write ONE short useful sentence (max 18 words) about why someone might go there or what to expect.
-3. Return ONLY valid JSON in this exact format (no markdown, no extra text):
+1. Write ONE short useful sentence (max 16 words) about why someone might go there.
+2. Suggest a short English image search phrase (3-6 words) that would find a good representative photo of this type of place (example: "cozy italian restaurant interior" or "modern sushi bar counter").
+
+Return ONLY valid JSON array like this (no markdown):
 
 [
-  {"name": "Exact place name", "note": "short helpful sentence"},
-  ...
+  {
+    "name": "Exact place name",
+    "note": "short helpful sentence",
+    "imageQuery": "good photo search phrase"
+  }
 ]
 
-Places:
+Places around "${landmarkName}":
 ${listText}`;
 
       try {
@@ -504,55 +514,64 @@ ${listText}`;
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                temperature: 0.4,
-                maxOutputTokens: 1024
-              }
+              generationConfig: { temperature: 0.35, maxOutputTokens: 1400 }
             })
           }
         );
 
         if (!res.ok) {
-          const errText = await res.text();
-          console.warn("Gemini error:", errText);
-          return places; // graceful fallback
+          console.warn("Gemini error:", await res.text());
+          return places;
         }
 
         const data = await res.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        
-        // Extract JSON even if Gemini wraps it
         const jsonMatch = text.match(/\[[\s\S]*\]/);
         if (!jsonMatch) return places;
 
         const enriched = JSON.parse(jsonMatch[0]);
-        const noteMap = {};
+        const map = {};
         enriched.forEach(item => {
-          if (item.name && item.note) {
-            noteMap[item.name.toLowerCase().trim()] = item.note;
+          if (item.name) {
+            map[item.name.toLowerCase().trim()] = {
+              note: item.note || null,
+              imageQuery: item.imageQuery || null
+            };
           }
         });
 
-        // Attach notes and re-order based on Gemini ranking when possible
-        const withNotes = places.map(p => {
-          const note = noteMap[p.name.toLowerCase().trim()];
-          return note ? { ...p, aiNote: note } : p;
+        const withExtra = places.map(p => {
+          const extra = map[p.name.toLowerCase().trim()];
+          if (!extra) return p;
+          return {
+            ...p,
+            aiNote: extra.note,
+            imageQuery: extra.imageQuery
+          };
         });
 
-        // Put places that received a note first (Gemini ranked them higher)
-        withNotes.sort((a, b) => {
+        // Put places Gemini ranked higher first
+        withExtra.sort((a, b) => {
           if (a.aiNote && !b.aiNote) return -1;
           if (!a.aiNote && b.aiNote) return 1;
           return a.dist - b.dist;
         });
 
         geminiUsed = true;
-        return withNotes;
+        return withExtra;
 
       } catch (err) {
         console.warn("Gemini enrichment failed:", err);
-        return places; // always fall back cleanly
+        return places;
       }
+    }
+
+    function getImageUrl(p) {
+      // Prefer Gemini's suggested search term, otherwise fall back
+      const query = p.imageQuery || p.cuisine || p.type || "restaurant food";
+      const seed = hashCode(p.name + query) % 10000;
+      // Free relevant photos via LoremFlickr
+      return `https://loremflickr.com/400/240/${encodeURIComponent(query)}?lock=${seed}`;
     }
 
     // ========== OTHER CATEGORIES ==========
@@ -579,7 +598,6 @@ ${listText}`;
       }).filter(Boolean);
     }
 
-    // ========== MAIN SEARCH FUNCTION ==========
     async function searchCategory(cat) {
       const active = getActive();
       if (!active) return;
@@ -607,12 +625,10 @@ ${listText}`;
         let places = [];
 
         if (cat === "food") {
-          // 1. Get real places from OpenStreetMap
           places = await searchFoodFree(active.lat, active.lng, radius);
 
-          // 2. Enrich with Gemini if key is present
           if (geminiKey && places.length) {
-            $("resultsStatus").textContent = "Gemini is ranking & describing…";
+            $("resultsStatus").textContent = "Gemini is ranking, writing notes & choosing pictures…";
             places = await enrichWithGemini(places, active.name);
           }
         } 
@@ -643,7 +659,6 @@ ${listText}`;
           }));
         }
 
-        // Final filter and sort
         const maxDist = milesToMeters(selectedMiles) * 1.15;
         currentResults = places
           .filter(p => p.dist <= maxDist)
@@ -673,11 +688,13 @@ ${listText}`;
       $("resultsStatus").className = "label";
 
       if (viewMode === "extended") {
-        $("resultsList").innerHTML = currentResults.map((p, i) => `
+        $("resultsList").innerHTML = currentResults.map((p, i) => {
+          const imgUrl = getImageUrl(p);
+          return `
           <div class="guide-card">
-            <div class="guide-img placeholder">
-              ${currentCategory === "food" ? "🍽️" : currentCategory === "adult" ? "🔥" : currentCategory === "art" ? "🎨" : "🏛️"}
-            </div>
+            <img class="guide-img" src="${imgUrl}" alt="${escapeHtml(p.name)}"
+                 loading="lazy"
+                 onerror="this.classList.add('placeholder'); this.src=''; this.outerHTML='<div class=\\'guide-img placeholder\\'>🍽️</div>';" />
             <div class="guide-body">
               <div class="guide-title">${i+1}. ${escapeHtml(p.name)}</div>
               <div class="guide-meta">${formatMiles(p.dist)} · ${escapeHtml(p.type || "")}${p.cuisine ? " · " + escapeHtml(p.cuisine) : ""}</div>
@@ -688,8 +705,8 @@ ${listText}`;
                 <button class="btn btn-secondary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="save">Save</button>
               </div>
             </div>
-          </div>
-        `).join("");
+          </div>`;
+        }).join("");
       } else {
         $("resultsList").innerHTML = currentResults.map(p => `
           <div class="basic-item">
@@ -745,7 +762,7 @@ ${listText}`;
       localStorage.setItem("gps_google_key", googleKey);
       localStorage.setItem("gps_gemini_key", geminiKey);
       $("keysOverlay").classList.remove("show");
-      setStatus(geminiKey ? "Gemini key saved – Food will be enriched" : "Keys saved", "ok");
+      setStatus(geminiKey ? "Gemini key saved" : "Keys saved", "ok");
     };
 
     $("markerList").onclick = e => {
