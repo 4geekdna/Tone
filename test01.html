@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>GPS Marker – Robust AI</title>
+  <title>GPS Marker – Multi-Mirror</title>
   <style>
     :root {
       --bg: #0f1419; --card: #1a2332; --accent: #3b82f6; --text: #e2e8f0;
@@ -163,7 +163,7 @@
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Robust AI • Cached cards • Photos only in Extended</p>
+  <p class="subtitle">Multi-mirror Overpass • Robust AI • Cached cards</p>
 
   <div id="status">Requesting location…</div>
 
@@ -222,7 +222,7 @@
   <div id="markerList"></div>
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">AI now falls back gracefully if Gemini fails</p>
+  <p class="footer">Tries multiple Overpass servers automatically</p>
 
   <!-- Name sheet -->
   <div class="overlay" id="nameOverlay">
@@ -293,8 +293,16 @@
     let googleKey = localStorage.getItem("gps_google_key") || "";
     let geminiKey = localStorage.getItem("gps_gemini_key") || "";
 
-    const STORAGE_KEY = "gps-marker-robust-v1";
+    const STORAGE_KEY = "gps-marker-multimirror-v1";
     const CACHE_KEY = "gps-marker-results-cache";
+
+    // Multiple public Overpass mirrors
+    const OVERPASS_MIRRORS = [
+      "https://overpass-api.de/api/interpreter",
+      "https://lz4.overpass-api.de/api/interpreter",
+      "https://z.overpass-api.de/api/interpreter",
+      "https://overpass.kumi.systems/api/interpreter"
+    ];
 
     let resultsCache = {};
 
@@ -511,7 +519,46 @@
       });
     }
 
-    // ========== ROBUST GEMINI ENRICHMENT ==========
+    // ========== MULTI-MIRROR OVERPASS FETCH ==========
+    async function fetchOverpass(query) {
+      let lastError = null;
+
+      for (let i = 0; i < OVERPASS_MIRRORS.length; i++) {
+        const url = OVERPASS_MIRRORS[i];
+        try {
+          $("resultsStatus").textContent = `Trying server ${i + 1}/${OVERPASS_MIRRORS.length}…`;
+
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 12000); // 12s timeout
+
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "data=" + encodeURIComponent(query),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeout);
+
+          if (!res.ok) {
+            lastError = new Error(`Server ${i + 1} returned ${res.status}`);
+            continue;
+          }
+
+          const data = await res.json();
+          return data; // success
+        } catch (err) {
+          lastError = err;
+          console.warn(`Overpass mirror ${i + 1} failed:`, err.message);
+          // try next mirror
+        }
+      }
+
+      // All mirrors failed
+      throw new Error("All map data servers are currently unavailable. Please try again in a minute.");
+    }
+
+    // ========== ROBUST GEMINI ==========
     async function enrichWithGemini(places, landmarkName, category) {
       if (!geminiKey || !places.length) return places;
 
@@ -558,8 +605,6 @@ ${listText}`;
         );
 
         if (!res.ok) {
-          const errText = await res.text();
-          console.warn("Gemini HTTP error:", res.status, errText);
           $("errorBox").textContent = `Gemini error (${res.status}). Showing basic results.`;
           $("errorBox").classList.remove("hidden");
           return places;
@@ -567,12 +612,10 @@ ${listText}`;
 
         const data = await res.json();
         let text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
         text = text.replace(/```json/gi, "").replace(/```/g, "").trim();
 
         const jsonMatch = text.match(/\[[\s\S]*\]/);
         if (!jsonMatch) {
-          console.warn("Gemini returned no JSON:", text.slice(0, 300));
           $("errorBox").textContent = "Gemini returned invalid format. Showing basic results.";
           $("errorBox").classList.remove("hidden");
           return places;
@@ -582,27 +625,21 @@ ${listText}`;
         try {
           enriched = JSON.parse(jsonMatch[0]);
         } catch (e) {
-          console.warn("JSON parse failed");
           return places;
         }
 
         if (!Array.isArray(enriched) || !enriched.length) return places;
 
-        // Fuzzy name matching
         const withExtra = places.map(p => {
           const pName = p.name.toLowerCase().trim();
-
           let match = enriched.find(e => (e.name || "").toLowerCase().trim() === pName);
-
           if (!match) {
             match = enriched.find(e => {
               const eName = (e.name || "").toLowerCase().trim();
               return eName.includes(pName) || pName.includes(eName);
             });
           }
-
           if (!match) return p;
-
           return {
             ...p,
             shortDesc: match.short || null,
@@ -622,7 +659,6 @@ ${listText}`;
         return withExtra;
 
       } catch (err) {
-        console.warn("Gemini failed:", err);
         $("errorBox").textContent = "Gemini request failed. Showing basic results.";
         $("errorBox").classList.remove("hidden");
         return places;
@@ -646,13 +682,9 @@ ${listText}`;
         );
         out center 35;
       `;
-      const res = await fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "data=" + encodeURIComponent(query)
-      });
-      if (!res.ok) throw new Error("Overpass network error");
-      const data = await res.json();
+
+      const data = await fetchOverpass(query);
+
       const places = (data.elements || []).map(el => {
         const plat = el.lat || (el.center && el.center.lat);
         const plon = el.lon || (el.center && el.center.lon);
@@ -680,11 +712,8 @@ ${listText}`;
 
     async function searchOverpass(lat, lon, radius, queryPart) {
       const query = `[out:json][timeout:20];(${queryPart});out center 20;`;
-      const res = await fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        body: "data=" + encodeURIComponent(query)
-      });
-      const data = await res.json();
+      const data = await fetchOverpass(query);
+
       return (data.elements || []).map(el => {
         const plat = el.lat || el.center?.lat;
         const plon = el.lon || el.center?.lon;
@@ -731,7 +760,7 @@ ${listText}`;
         return;
       }
 
-      $("resultsStatus").textContent = geminiKey ? "Searching + Gemini…" : "Searching…";
+      $("resultsStatus").textContent = "Searching…";
       $("resultsStatus").className = "loading";
       currentResults = [];
 
@@ -779,7 +808,7 @@ ${listText}`;
 
       } catch (err) {
         console.error(err);
-        $("errorBox").textContent = "Error: " + err.message;
+        $("errorBox").textContent = err.message || "Search failed. Please try again shortly.";
         $("errorBox").classList.remove("hidden");
         $("resultsStatus").textContent = "Search failed";
         $("resultsStatus").className = "empty-state";
