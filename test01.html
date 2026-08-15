@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>GPS Marker – Compass Arrow</title>
+  <title>GPS Marker – Optimized Gemini</title>
   <style>
     :root {
       --bg: #0f1419; --card: #1a2332; --accent: #3b82f6; --text: #e2e8f0;
@@ -99,12 +99,20 @@
       display: inline-block; font-size: 0.75rem; background: rgba(59,130,246,0.15);
       color: #93c5fd; padding: 2px 8px; border-radius: 6px; margin-right: 6px;
     }
-    .basic-website { display: inline-block; font-size: 0.84rem; color: #60a5fa; text-decoration: none; margin-top: 4px; }
+    .basic-desc {
+      font-size: 0.84rem; color: #cbd5e1; margin-top: 5px; line-height: 1.35;
+    }
+    .basic-links { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .basic-links a {
+      font-size: 0.8rem; color: #60a5fa; text-decoration: none;
+      background: rgba(96,165,250,0.12); padding: 4px 9px; border-radius: 8px;
+    }
     .basic-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
     .ai-note {
-      font-size: 0.82rem; color: #a5b4fc; margin-top: 6px;
-      background: rgba(99,102,241,0.12); padding: 8px 10px; border-radius: 8px;
-      border-left: 3px solid #818cf8;
+      font-size: 0.84rem; color: #a5b4fc; margin-top: 8px;
+      background: rgba(99,102,241,0.12); padding: 9px 11px; border-radius: 8px;
+      border-left: 3px solid #818cf8; line-height: 1.4;
     }
 
     .guide-card { background: #141c27; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 14px; }
@@ -119,6 +127,11 @@
     .guide-body { padding: 14px; }
     .guide-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
     .guide-meta { font-size: 0.82rem; color: var(--accent); margin-bottom: 8px; }
+    .guide-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+    .guide-links a {
+      font-size: 0.82rem; color: #60a5fa; text-decoration: none;
+      background: rgba(96,165,250,0.12); padding: 5px 10px; border-radius: 8px;
+    }
     .guide-actions { display: flex; gap: 8px; }
     .guide-actions .btn { margin: 0; padding: 11px; font-size: 0.9rem; }
 
@@ -146,7 +159,7 @@
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Arrow always points to the active waypoint</p>
+  <p class="subtitle">Optimized Gemini • Short desc in Basic • Expanded + photos only in Extended</p>
 
   <div id="status">Requesting location…</div>
 
@@ -205,7 +218,7 @@
   <div id="markerList"></div>
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Hold phone upright • Arrow points to active waypoint</p>
+  <p class="footer">Pictures load only in Extended view • Optimized Gemini prompt</p>
 
   <!-- Name sheet -->
   <div class="overlay" id="nameOverlay">
@@ -224,7 +237,7 @@
     <div class="sheet">
       <div class="label">Optional API Keys</div>
       <p style="font-size:0.88rem; color:var(--muted); margin-bottom:12px;">
-        Gemini key enables ranking, short notes & better pictures for Food.
+        Gemini key enables short + expanded descriptions on all categories.
       </p>
       <div class="label">Google Places Key (optional)</div>
       <input type="password" id="googleKeyInput" placeholder="AIza..." />
@@ -275,7 +288,7 @@
     let googleKey = localStorage.getItem("gps_google_key") || "";
     let geminiKey = localStorage.getItem("gps_gemini_key") || "";
 
-    const STORAGE_KEY = "gps-marker-compass-v1";
+    const STORAGE_KEY = "gps-marker-optimized-v1";
 
     const $ = id => document.getElementById(id);
 
@@ -320,6 +333,13 @@
       return Math.abs(h);
     }
 
+    function mapsUrl(lat, lon) {
+      return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+    }
+    function searchUrl(name) {
+      return `https://www.google.com/search?q=${encodeURIComponent(name)}`;
+    }
+
     function save() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ markers, activeId }));
     }
@@ -362,19 +382,15 @@
       updateNav();
     }
 
-    // ---------- COMPASS + ARROW ----------
     function handleOrientation(event) {
       let heading = null;
-
       if (typeof event.webkitCompassHeading === "number") {
-        // iOS
         heading = event.webkitCompassHeading;
       } else if (event.absolute === true && typeof event.alpha === "number") {
         heading = event.alpha;
       } else if (typeof event.alpha === "number") {
         heading = (360 - event.alpha) % 360;
       }
-
       if (heading !== null && !isNaN(heading)) {
         deviceHeading = heading;
         updateNav();
@@ -383,16 +399,13 @@
 
     function startCompass() {
       if (!window.DeviceOrientationEvent) return;
-
       if (typeof DeviceOrientationEvent.requestPermission === "function") {
-        // iOS 13+
         DeviceOrientationEvent.requestPermission()
           .then(state => {
             if (state === "granted") {
               window.addEventListener("deviceorientation", handleOrientation, true);
             }
-          })
-          .catch(() => {});
+          }).catch(() => {});
       } else {
         window.addEventListener("deviceorientation", handleOrientation, true);
         window.addEventListener("deviceorientationabsolute", handleOrientation, true);
@@ -409,12 +422,10 @@
       $("distance").textContent = formatMiles(dist);
       $("bearing").textContent = `${Math.round(geoBearing)}° ${cardinal(geoBearing)}`;
 
-      // Relative angle so the arrow always points at the waypoint
       let arrowAngle = geoBearing;
       if (deviceHeading !== null) {
         arrowAngle = (geoBearing - deviceHeading + 360) % 360;
       }
-
       $("arrow").style.transform = `rotate(${arrowAngle}deg)`;
     }
 
@@ -473,7 +484,127 @@
       });
     }
 
-    // Food + Gemini (same as before)
+    // ========== OPTIMIZED GEMINI ENRICHMENT ==========
+    async function enrichWithGemini(places, landmarkName, category) {
+      if (!geminiKey || !places.length) return places;
+
+      const top = places.slice(0, 12);
+
+      const listText = top.map((p, i) =>
+        `${i + 1}. ${p.name} | ${p.type || category} | ${formatMiles(p.dist)}`
+      ).join("\n");
+
+      const categoryGuide = {
+        food: "food & drink",
+        historical: "historical sites",
+        art: "art galleries / museums",
+        adult: "adult / erotic venues"
+      }[category] || category;
+
+      const prompt = `You are a concise local guide for ${categoryGuide}.
+
+Return a JSON array only. No markdown, no explanation.
+
+For each place provide:
+- name: exact name from the list
+- short: max 11 words (basic list)
+- long: max 25 words (expanded view)
+- imageQuery: 3-5 word photo search phrase
+- website: real official URL if known, otherwise null
+
+Places near "${landmarkName}":
+${listText}
+
+JSON format:
+[
+  {
+    "name": "",
+    "short": "",
+    "long": "",
+    "imageQuery": "",
+    "website": null
+  }
+]`;
+
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.25,
+                maxOutputTokens: 1600,
+                responseMimeType: "application/json"
+              }
+            })
+          }
+        );
+
+        if (!res.ok) {
+          console.warn("Gemini error:", await res.text());
+          return places;
+        }
+
+        const data = await res.json();
+        let text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+        // Clean possible markdown wrappers just in case
+        text = text.replace(/```json|```/g, "").trim();
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) return places;
+
+        const enriched = JSON.parse(jsonMatch[0]);
+        const map = {};
+
+        enriched.forEach(item => {
+          if (item.name) {
+            map[item.name.toLowerCase().trim()] = {
+              short: item.short || null,
+              long: item.long || null,
+              imageQuery: item.imageQuery || null,
+              website: (item.website && item.website.startsWith("http")) ? item.website : null
+            };
+          }
+        });
+
+        const withExtra = places.map(p => {
+          const extra = map[p.name.toLowerCase().trim()];
+          if (!extra) return p;
+          return {
+            ...p,
+            shortDesc: extra.short,
+            longDesc: extra.long,
+            imageQuery: extra.imageQuery,
+            website: p.website || extra.website
+          };
+        });
+
+        // Prefer places that received a description
+        withExtra.sort((a, b) => {
+          if (a.shortDesc && !b.shortDesc) return -1;
+          if (!a.shortDesc && b.shortDesc) return 1;
+          return a.dist - b.dist;
+        });
+
+        geminiUsed = true;
+        return withExtra;
+
+      } catch (err) {
+        console.warn("Gemini enrichment failed:", err);
+        return places;
+      }
+    }
+
+    function getImageUrl(p) {
+      const query = p.imageQuery || p.cuisine || p.type || currentCategory || "place";
+      const seed = hashCode(p.name + query) % 10000;
+      return `https://loremflickr.com/400/240/${encodeURIComponent(query)}?lock=${seed}`;
+    }
+
+    // Search helpers
     async function searchFoodFree(lat, lon, radius) {
       const query = `
         [out:json][timeout:25];
@@ -507,6 +638,7 @@
           cuisine: tags.cuisine || null
         };
       }).filter(Boolean);
+
       const seen = new Set();
       return places.filter(p => {
         const key = p.name.toLowerCase() + p.lat.toFixed(4);
@@ -514,70 +646,6 @@
         seen.add(key);
         return true;
       });
-    }
-
-    async function enrichWithGemini(places, landmarkName) {
-      if (!geminiKey || !places.length) return places;
-      const top = places.slice(0, 12);
-      const listText = top.map((p, i) => 
-        `${i+1}. ${p.name} (${p.type}${p.cuisine ? ", " + p.cuisine : ""}) – ${formatMiles(p.dist)}`
-      ).join("\n");
-
-      const prompt = `You are a local food guide. For each place return:
-1. One short useful sentence (max 16 words)
-2. A short image search phrase (3-6 words)
-
-Return ONLY valid JSON:
-[{"name":"Exact name","note":"short sentence","imageQuery":"photo search phrase"}]
-
-Places around "${landmarkName}":
-${listText}`;
-
-      try {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { temperature: 0.35, maxOutputTokens: 1400 }
-            })
-          }
-        );
-        if (!res.ok) return places;
-        const data = await res.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        const jsonMatch = text.match(/\[[\s\S]*\]/);
-        if (!jsonMatch) return places;
-
-        const enriched = JSON.parse(jsonMatch[0]);
-        const map = {};
-        enriched.forEach(item => {
-          if (item.name) map[item.name.toLowerCase().trim()] = item;
-        });
-
-        const withExtra = places.map(p => {
-          const extra = map[p.name.toLowerCase().trim()];
-          return extra ? { ...p, aiNote: extra.note, imageQuery: extra.imageQuery } : p;
-        });
-
-        withExtra.sort((a, b) => {
-          if (a.aiNote && !b.aiNote) return -1;
-          if (!a.aiNote && b.aiNote) return 1;
-          return a.dist - b.dist;
-        });
-        geminiUsed = true;
-        return withExtra;
-      } catch (e) {
-        return places;
-      }
-    }
-
-    function getImageUrl(p) {
-      const query = p.imageQuery || p.cuisine || p.type || "restaurant food";
-      const seed = hashCode(p.name + query) % 10000;
-      return `https://loremflickr.com/400/240/${encodeURIComponent(query)}?lock=${seed}`;
     }
 
     async function searchOverpass(lat, lon, radius, queryPart) {
@@ -597,7 +665,7 @@ ${listText}`;
           name: tags.name, lat: plat, lon: plon,
           dist: distanceMeters(lat, lon, plat, plon),
           type: tags.amenity || tags.shop || tags.tourism || "",
-          website: tags.website || null
+          website: tags.website || tags["contact:website"] || null
         };
       }).filter(Boolean);
     }
@@ -611,23 +679,25 @@ ${listText}`;
       geminiUsed = false;
 
       $("resultsOverlay").classList.add("show");
-      $("resultsTitle").textContent = { historical: "Historical Places", food: "Food & Drink", art: "Art & Museums", adult: "Adult / Erotic" }[cat];
+      $("resultsTitle").textContent = {
+        historical: "Historical Places",
+        food: "Food & Drink",
+        art: "Art & Museums",
+        adult: "Adult / Erotic"
+      }[cat];
       $("resultsSubtitle").textContent = `Around “${active.name}”`;
       $("radiusInfo").textContent = `Within ${selectedMiles} mile${selectedMiles === 1 ? "" : "s"}`;
       $("errorBox").classList.add("hidden");
-      $("resultsStatus").textContent = cat === "food" && geminiKey ? "Finding places + Gemini…" : "Searching…";
+      $("resultsStatus").textContent = geminiKey ? "Searching + Gemini…" : "Searching…";
       $("resultsStatus").className = "loading";
       $("resultsList").innerHTML = "";
       currentResults = [];
 
       try {
         let places = [];
+
         if (cat === "food") {
           places = await searchFoodFree(active.lat, active.lng, radius);
-          if (geminiKey && places.length) {
-            $("resultsStatus").textContent = "Gemini ranking & pictures…";
-            places = await enrichWithGemini(places, active.name);
-          }
         } else if (cat === "adult") {
           places = await searchOverpass(active.lat, active.lng, radius, `
             node["amenity"~"stripclub|brothel|swingerclub"](around:${radius},${active.lat},${active.lng});
@@ -645,15 +715,26 @@ ${listText}`;
           const res = await fetch(url);
           const data = await res.json();
           places = (data.query?.geosearch || []).map(item => ({
-            name: item.title, lat: item.lat, lon: item.lon,
-            dist: distanceMeters(active.lat, active.lng, item.lat, item.lon), type: "historical"
+            name: item.title,
+            lat: item.lat,
+            lon: item.lon,
+            dist: distanceMeters(active.lat, active.lng, item.lat, item.lon),
+            type: "historical",
+            website: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title.replace(/ /g, "_"))}`
           }));
+        }
+
+        if (geminiKey && places.length) {
+          $("resultsStatus").textContent = "Gemini writing short + expanded descriptions…";
+          places = await enrichWithGemini(places, active.name, cat);
         }
 
         const maxDist = milesToMeters(selectedMiles) * 1.15;
         currentResults = places.filter(p => p.dist <= maxDist).slice(0, 15);
         renderResults();
+
       } catch (err) {
+        console.error(err);
         $("errorBox").textContent = "Error: " + err.message;
         $("errorBox").classList.remove("hidden");
         $("resultsStatus").textContent = "Search failed";
@@ -668,35 +749,55 @@ ${listText}`;
         $("resultsList").innerHTML = "";
         return;
       }
+
       const badge = geminiUsed ? `<span class="gemini-badge">✦ Gemini</span>` : "";
       $("resultsStatus").innerHTML = `${currentResults.length} places found${badge}`;
       $("resultsStatus").className = "label";
 
+      const emoji = { food: "🍽️", adult: "🔥", art: "🎨", historical: "🏛️" }[currentCategory] || "📍";
+
       if (viewMode === "extended") {
+        // Pictures load ONLY here
         $("resultsList").innerHTML = currentResults.map((p, i) => `
           <div class="guide-card">
             <img class="guide-img" src="${getImageUrl(p)}" alt="${escapeHtml(p.name)}" loading="lazy"
-                 onerror="this.outerHTML='<div class=\\'guide-img placeholder\\'>🍽️</div>'" />
+                 onerror="this.outerHTML='<div class=\\'guide-img placeholder\\'>${emoji}</div>'" />
             <div class="guide-body">
               <div class="guide-title">${i+1}. ${escapeHtml(p.name)}</div>
-              <div class="guide-meta">${formatMiles(p.dist)} · ${escapeHtml(p.type || "")}${p.cuisine ? " · " + escapeHtml(p.cuisine) : ""}</div>
-              ${p.aiNote ? `<div class="ai-note">✦ ${escapeHtml(p.aiNote)}</div>` : ""}
-              ${p.website ? `<a href="${escapeHtml(p.website)}" target="_blank" style="color:#60a5fa;font-size:0.88rem;display:inline-block;margin-top:6px;">🌐 Website</a><br>` : ""}
-              <div class="guide-actions" style="margin-top:12px;">
+              <div class="guide-meta">${formatMiles(p.dist)} · ${escapeHtml(p.type || currentCategory)}</div>
+              
+              ${p.longDesc ? `<div class="ai-note">✦ ${escapeHtml(p.longDesc)}</div>` : 
+                (p.shortDesc ? `<div class="ai-note">✦ ${escapeHtml(p.shortDesc)}</div>` : "")}
+
+              <div class="guide-links">
+                <a href="${mapsUrl(p.lat, p.lon)}" target="_blank">📍 Google Maps</a>
+                ${p.website ? `<a href="${escapeHtml(p.website)}" target="_blank">🌐 Website</a>` : ""}
+                <a href="${searchUrl(p.name)}" target="_blank">🔍 Google</a>
+              </div>
+
+              <div class="guide-actions">
                 <button class="btn btn-primary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go">Navigate</button>
                 <button class="btn btn-secondary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="save">Save</button>
               </div>
             </div>
           </div>`).join("");
       } else {
+        // Basic view – short description only, no pictures
         $("resultsList").innerHTML = currentResults.map(p => `
           <div class="basic-item">
             <div class="basic-top">
               <div class="basic-info">
                 <div class="basic-name">${escapeHtml(p.name)}</div>
-                <div class="basic-meta"><span class="basic-type">${escapeHtml(p.type || currentCategory)}</span>${formatMiles(p.dist)}</div>
-                ${p.aiNote ? `<div class="ai-note">✦ ${escapeHtml(p.aiNote)}</div>` : ""}
-                ${p.website ? `<a class="basic-website" href="${escapeHtml(p.website)}" target="_blank">🌐 Website</a>` : ""}
+                <div class="basic-meta">
+                  <span class="basic-type">${escapeHtml(p.type || currentCategory)}</span>
+                  ${formatMiles(p.dist)}
+                </div>
+                ${p.shortDesc ? `<div class="basic-desc">${escapeHtml(p.shortDesc)}</div>` : ""}
+                <div class="basic-links">
+                  <a href="${mapsUrl(p.lat, p.lon)}" target="_blank">📍 Maps</a>
+                  ${p.website ? `<a href="${escapeHtml(p.website)}" target="_blank">🌐 Web</a>` : ""}
+                  <a href="${searchUrl(p.name)}" target="_blank">🔍 Google</a>
+                </div>
               </div>
               <div class="basic-actions">
                 <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go">➤</button>
@@ -716,7 +817,11 @@ ${listText}`;
     $("cancelNameBtn").onclick = () => $("nameOverlay").classList.remove("show");
     $("saveNameBtn").onclick = () => {
       const name = $("nameInput").value.trim() || `Spot ${markers.length + 1}`;
-      markers.push({ id: uid(), name, lat: current.lat, lng: current.lng, accuracy: current.accuracy, time: Date.now() });
+      markers.push({
+        id: uid(), name,
+        lat: current.lat, lng: current.lng,
+        accuracy: current.accuracy, time: Date.now()
+      });
       activeId = markers[markers.length - 1].id;
       $("nameOverlay").classList.remove("show");
       fullRefresh();
@@ -779,13 +884,26 @@ ${listText}`;
     });
 
     $("closeResultsBtn").onclick = () => $("resultsOverlay").classList.remove("show");
-    $("viewExtended").onclick = () => { viewMode = "extended"; $("viewExtended").classList.add("active"); $("viewBasic").classList.remove("active"); renderResults(); };
-    $("viewBasic").onclick = () => { viewMode = "basic"; $("viewBasic").classList.add("active"); $("viewExtended").classList.remove("active"); renderResults(); };
+
+    $("viewExtended").onclick = () => {
+      viewMode = "extended";
+      $("viewExtended").classList.add("active");
+      $("viewBasic").classList.remove("active");
+      renderResults();
+    };
+    $("viewBasic").onclick = () => {
+      viewMode = "basic";
+      $("viewBasic").classList.add("active");
+      $("viewExtended").classList.remove("active");
+      renderResults();
+    };
 
     $("resultsList").onclick = e => {
       const btn = e.target.closest("[data-action]");
       if (!btn) return;
-      const lat = +btn.dataset.lat, lon = +btn.dataset.lon, name = btn.dataset.name;
+      const lat = +btn.dataset.lat;
+      const lon = +btn.dataset.lon;
+      const name = btn.dataset.name;
       if (btn.dataset.action === "go") {
         window.open(`https://maps.apple.com/?daddr=${lat},${lon}&dirflg=w`, "_blank");
       } else {
@@ -797,7 +915,7 @@ ${listText}`;
       }
     };
 
-    // Start everything
+    // Start
     load();
     fullRefresh();
     startWatch();
