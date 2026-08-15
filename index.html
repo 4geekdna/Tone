@@ -123,7 +123,7 @@
 <body>
   <div class="header">
     <h1>Chakra Tone Player</h1>
-    <p>Crystal • Tibetan • Warm Metal bowls</p>
+    <p>Slow, relaxing mantras • Crystal / Tibetan / Warm bowls</p>
   </div>
 
   <div class="grid" id="chakraGrid"></div>
@@ -148,6 +148,13 @@
     <div class="control-row">
       <label class="control-label" for="apiKeyInput">API Key</label>
       <input type="password" id="apiKeyInput" placeholder="Paste ElevenLabs API key here" autocomplete="off" spellcheck="false" />
+    </div>
+
+    <!-- NEW: Voice Speed -->
+    <div class="control-row">
+      <label class="control-label" for="voiceSpeedInput">Voice Speed</label>
+      <input type="number" id="voiceSpeedInput" min="0.60" max="1.20" step="0.05" value="0.85" />
+      <span class="unit">×</span>
     </div>
 
     <div class="control-row">
@@ -179,7 +186,6 @@
       <span class="unit">sec</span>
     </div>
 
-    <!-- Expanded Tone Styles -->
     <div class="control-row">
       <label class="control-label" for="toneStyle">Tone Style</label>
       <select id="toneStyle">
@@ -219,7 +225,7 @@
   </div>
 
   <div class="status" id="status" aria-live="polite"></div>
-  <div class="footer">Crystal • Tibetan Metal • Warm Metal bowls</div>
+  <div class="footer">Slower voice • Crystal / Tibetan / Warm Metal</div>
 
   <script>
     "use strict";
@@ -234,6 +240,7 @@
     let mantraGapSeconds  = 2;
     let overlapSeconds    = 7;
     let toneStyle         = "crystal";
+    let voiceSpeed        = 0.85;   // NEW – slower = more relaxing
 
     // ============================================================
     // CHAKRAS
@@ -286,6 +293,7 @@
     const toneToggle        = document.getElementById("toneToggle");
     const voiceSelect       = document.getElementById("voiceSelect");
     const apiKeyInput       = document.getElementById("apiKeyInput");
+    const voiceSpeedInput   = document.getElementById("voiceSpeedInput");
     const durationInput     = document.getElementById("durationInput");
     const mantraCountSelect = document.getElementById("mantraCount");
     const mantraGapInput    = document.getElementById("mantraGapInput");
@@ -312,12 +320,14 @@
       mantraGapSeconds  = clamp(parseFloat(localStorage.getItem("chakra_mantra_gap") || "2"), 0, 20);
       overlapSeconds    = clamp(parseFloat(localStorage.getItem("chakra_overlap") || "7"), 0, 30);
       toneStyle         = localStorage.getItem("chakra_tone_style") || "crystal";
+      voiceSpeed        = clamp(parseFloat(localStorage.getItem("chakra_voice_speed") || "0.85"), 0.60, 1.20);
 
       durationInput.value     = durationPerChakra;
       mantraCountSelect.value = mantrasPerChakra;
       mantraGapInput.value    = mantraGapSeconds;
       overlapInput.value      = overlapSeconds;
       toneStyleSelect.value   = toneStyle;
+      voiceSpeedInput.value   = voiceSpeed;
 
       if (!ELEVENLABS_API_KEY) setStatus("Paste your ElevenLabs API key above to use natural voice");
     }
@@ -328,6 +338,12 @@
       localStorage.setItem("chakra_elevenlabs_key", val);
       setStatus(val ? "API key saved" : "API key cleared");
       setTimeout(() => { if (statusEl.textContent.includes("API key")) setStatus(""); }, 1800);
+    }
+
+    function saveVoiceSpeed() {
+      voiceSpeed = clamp(parseFloat(voiceSpeedInput.value) || 0.85, 0.60, 1.20);
+      voiceSpeedInput.value = voiceSpeed;
+      localStorage.setItem("chakra_voice_speed", String(voiceSpeed));
     }
 
     function saveDuration() {
@@ -356,7 +372,6 @@
     function saveToneStyle() {
       toneStyle = toneStyleSelect.value;
       localStorage.setItem("chakra_tone_style", toneStyle);
-      // Rebuild any currently playing tones
       Object.keys(activeTones).forEach(name => {
         const ch = CHAKRAS.find(c => c.name === name);
         if (ch) {
@@ -441,10 +456,9 @@
     }
 
     // ============================================================
-    // TONE ENGINE – 3 warm bowl types + pure + enhanced
+    // TONE ENGINE
     // ============================================================
     function getToneLayers(ch) {
-      // Crystal Bowl – clear, pure, glassy
       if (toneStyle === "crystal") {
         return [
           { frequency: ch.freq * 1.00, gain: 0.46, detune: 0 },
@@ -455,8 +469,6 @@
           { frequency: ch.freq * 6.00, gain: 0.018, detune: 0.4 }
         ];
       }
-
-      // Tibetan Metal – classic complex metal bowl
       if (toneStyle === "tibetan") {
         return [
           { frequency: ch.freq * 1.00, gain: 0.38, detune: 0 },
@@ -467,8 +479,6 @@
           { frequency: ch.freq * 0.50, gain: 0.20, detune: 0 }
         ];
       }
-
-      // Warm Metal Bowl – darker, warmer, strong body
       if (toneStyle === "warm") {
         return [
           { frequency: ch.freq * 1.00, gain: 0.36, detune: 0 },
@@ -479,16 +489,13 @@
           { frequency: ch.freq * 0.25, gain: 0.10, detune: 0 }
         ];
       }
-
-      // Pure Tone
       if (toneStyle === "pure") {
         return [
           { frequency: ch.freq,     gain: 0.72, detune: 0 },
           { frequency: ch.freq / 2, gain: 0.12, detune: 0 }
         ];
       }
-
-      // Enhanced (default rich)
+      // Enhanced
       return [
         { frequency: ch.freq,     gain: 0.50,  detune: 0 },
         { frequency: ch.freq / 2, gain: 0.22,  detune: 0 },
@@ -530,7 +537,6 @@
         oscillatorNodes.push({ osc, gain });
       }
 
-      // Gentle LFO – lighter on pure crystal
       const lfoDepth = (toneStyle === "pure" || toneStyle === "crystal") ? 0.015 : 0.032;
       const lfo = audioCtx.createOscillator();
       const lfoGain = audioCtx.createGain();
@@ -638,7 +644,7 @@
     function restoreToneVolume() { isSpeaking = false; applyToneVolume(); }
 
     // ============================================================
-    // VOICE ENGINE
+    // VOICE ENGINE – now respects voiceSpeed
     // ============================================================
     function resolveCurrentVoice(result) {
       if (!currentVoiceResolve) return;
@@ -754,7 +760,9 @@
         const utt = new SpeechSynthesisUtterance(text);
         currentUtterance = utt;
         currentVoiceResolve = resolve;
-        utt.rate = 0.88; utt.pitch = 1.0; utt.volume = voiceVolume;
+        utt.rate = voiceSpeed;          // ← uses the new speed setting
+        utt.pitch = 1.0;
+        utt.volume = voiceVolume;
         fadeToneForSpeech();
         setStatus("Using device voice...");
         const finish = ok => {
@@ -793,7 +801,13 @@
           body: JSON.stringify({
             text,
             model_id: "eleven_multilingual_v2",
-            voice_settings: { stability: 0.50, similarity_boost: 0.75 }
+            voice_settings: {
+              stability: 0.58,           // slightly higher for calmer delivery
+              similarity_boost: 0.75,
+              style: 0.12,
+              use_speaker_boost: true
+            },
+            speed: voiceSpeed            // ← slower / more relaxing
           })
         });
         if (!response.ok) throw new Error(`ElevenLabs ${response.status}`);
@@ -844,7 +858,7 @@
     }
 
     // ============================================================
-    // TOGGLE
+    // TOGGLE + PLAY ALL (unchanged logic)
     // ============================================================
     async function handleCardTap(ch) {
       ensureAudio();
@@ -871,9 +885,6 @@
       setStatus("");
     }
 
-    // ============================================================
-    // PLAY ALL – matched linear crossfade
-    // ============================================================
     function stopEverything(clearPanel = true) {
       sessionToken++;
       isPlayingAll = false;
@@ -929,7 +940,6 @@
           const now = audioCtx.currentTime;
           const targetLevel = desiredToneLevel();
 
-          // Fade out current
           if (activeTones[ch.name]) {
             const oldTone = activeTones[ch.name];
             try {
@@ -946,7 +956,6 @@
             }, blendMs * 0.85);
           }
 
-          // Fade in next
           if (activeTones[nextCh.name]) {
             fadeOutTone(activeTones[nextCh.name], 0.3);
             delete activeTones[nextCh.name];
@@ -1018,6 +1027,9 @@
     voiceSelect.addEventListener("change", e => { VOICE_ID = e.target.value; });
     apiKeyInput.addEventListener("change", saveApiKey);
     apiKeyInput.addEventListener("blur", saveApiKey);
+
+    voiceSpeedInput.addEventListener("change", saveVoiceSpeed);
+    voiceSpeedInput.addEventListener("blur", saveVoiceSpeed);
 
     durationInput.addEventListener("change", saveDuration);
     durationInput.addEventListener("blur", saveDuration);
