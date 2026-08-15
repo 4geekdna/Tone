@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>GPS Marker – Cached Cards</title>
+  <title>GPS Marker – Robust AI</title>
   <style>
     :root {
       --bg: #0f1419; --card: #1a2332; --accent: #3b82f6; --text: #e2e8f0;
@@ -163,7 +163,7 @@
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Cached cards • Optimized Gemini • Photos only in Extended</p>
+  <p class="subtitle">Robust AI • Cached cards • Photos only in Extended</p>
 
   <div id="status">Requesting location…</div>
 
@@ -222,7 +222,7 @@
   <div id="markerList"></div>
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Results are cached • Switch views instantly</p>
+  <p class="footer">AI now falls back gracefully if Gemini fails</p>
 
   <!-- Name sheet -->
   <div class="overlay" id="nameOverlay">
@@ -293,10 +293,9 @@
     let googleKey = localStorage.getItem("gps_google_key") || "";
     let geminiKey = localStorage.getItem("gps_gemini_key") || "";
 
-    const STORAGE_KEY = "gps-marker-cached-v1";
+    const STORAGE_KEY = "gps-marker-robust-v1";
     const CACHE_KEY = "gps-marker-results-cache";
 
-    // ========== RESULTS CACHE ==========
     let resultsCache = {};
 
     function loadCache() {
@@ -305,33 +304,20 @@
         if (raw) resultsCache = JSON.parse(raw);
       } catch(e) { resultsCache = {}; }
     }
-
     function saveCache() {
-      try {
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify(resultsCache));
-      } catch(e) {}
+      try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(resultsCache)); } catch(e) {}
     }
-
     function getCacheKey(cat, landmarkId, miles) {
       return `${cat}|${landmarkId}|${miles}`;
     }
-
     function getCachedResults(cat, landmarkId, miles) {
-      const key = getCacheKey(cat, landmarkId, miles);
-      return resultsCache[key] || null;
+      return resultsCache[getCacheKey(cat, landmarkId, miles)] || null;
     }
-
     function setCachedResults(cat, landmarkId, miles, places, usedGemini) {
-      const key = getCacheKey(cat, landmarkId, miles);
-      resultsCache[key] = {
-        places,
-        usedGemini,
-        timestamp: Date.now()
-      };
+      resultsCache[getCacheKey(cat, landmarkId, miles)] = { places, usedGemini, timestamp: Date.now() };
       saveCache();
     }
 
-    // ========== HELPERS ==========
     const $ = id => document.getElementById(id);
 
     function setStatus(msg, type = "") {
@@ -525,7 +511,7 @@
       });
     }
 
-    // ========== OPTIMIZED GEMINI ==========
+    // ========== ROBUST GEMINI ENRICHMENT ==========
     async function enrichWithGemini(places, landmarkName, category) {
       if (!geminiKey || !places.length) return places;
 
@@ -543,79 +529,86 @@
 
       const prompt = `You are a concise local guide for ${categoryGuide}.
 
-Return a JSON array only. No markdown, no explanation.
+Return ONLY a valid JSON array. No markdown, no explanation, no extra text.
 
 For each place provide:
-- name: exact name from the list
-- short: max 11 words (basic list)
-- long: max 25 words (expanded view)
+- name: copy the exact name from the list
+- short: max 11 words
+- long: max 25 words
 - imageQuery: 3-5 word photo search phrase
 - website: real official URL if known, otherwise null
 
 Places near "${landmarkName}":
-${listText}
-
-JSON format:
-[
-  {
-    "name": "",
-    "short": "",
-    "long": "",
-    "imageQuery": "",
-    "website": null
-  }
-]`;
+${listText}`;
 
       try {
         const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(geminiKey)}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: {
-                temperature: 0.25,
-                maxOutputTokens: 1600,
-                responseMimeType: "application/json"
+                temperature: 0.2,
+                maxOutputTokens: 1800
               }
             })
           }
         );
 
         if (!res.ok) {
-          console.warn("Gemini error:", await res.text());
+          const errText = await res.text();
+          console.warn("Gemini HTTP error:", res.status, errText);
+          $("errorBox").textContent = `Gemini error (${res.status}). Showing basic results.`;
+          $("errorBox").classList.remove("hidden");
           return places;
         }
 
         const data = await res.json();
         let text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        text = text.replace(/```json|```/g, "").trim();
+
+        text = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+
         const jsonMatch = text.match(/\[[\s\S]*\]/);
-        if (!jsonMatch) return places;
+        if (!jsonMatch) {
+          console.warn("Gemini returned no JSON:", text.slice(0, 300));
+          $("errorBox").textContent = "Gemini returned invalid format. Showing basic results.";
+          $("errorBox").classList.remove("hidden");
+          return places;
+        }
 
-        const enriched = JSON.parse(jsonMatch[0]);
-        const map = {};
-        enriched.forEach(item => {
-          if (item.name) {
-            map[item.name.toLowerCase().trim()] = {
-              short: item.short || null,
-              long: item.long || null,
-              imageQuery: item.imageQuery || null,
-              website: (item.website && item.website.startsWith("http")) ? item.website : null
-            };
-          }
-        });
+        let enriched;
+        try {
+          enriched = JSON.parse(jsonMatch[0]);
+        } catch (e) {
+          console.warn("JSON parse failed");
+          return places;
+        }
 
+        if (!Array.isArray(enriched) || !enriched.length) return places;
+
+        // Fuzzy name matching
         const withExtra = places.map(p => {
-          const extra = map[p.name.toLowerCase().trim()];
-          if (!extra) return p;
+          const pName = p.name.toLowerCase().trim();
+
+          let match = enriched.find(e => (e.name || "").toLowerCase().trim() === pName);
+
+          if (!match) {
+            match = enriched.find(e => {
+              const eName = (e.name || "").toLowerCase().trim();
+              return eName.includes(pName) || pName.includes(eName);
+            });
+          }
+
+          if (!match) return p;
+
           return {
             ...p,
-            shortDesc: extra.short,
-            longDesc: extra.long,
-            imageQuery: extra.imageQuery,
-            website: p.website || extra.website
+            shortDesc: match.short || null,
+            longDesc: match.long || null,
+            imageQuery: match.imageQuery || null,
+            website: p.website || (match.website && match.website.startsWith("http") ? match.website : null)
           };
         });
 
@@ -627,8 +620,11 @@ JSON format:
 
         geminiUsed = true;
         return withExtra;
+
       } catch (err) {
-        console.warn("Gemini enrichment failed:", err);
+        console.warn("Gemini failed:", err);
+        $("errorBox").textContent = "Gemini request failed. Showing basic results.";
+        $("errorBox").classList.remove("hidden");
         return places;
       }
     }
@@ -639,7 +635,6 @@ JSON format:
       return `https://loremflickr.com/400/240/${encodeURIComponent(query)}?lock=${seed}`;
     }
 
-    // Search helpers
     async function searchFoodFree(lat, lon, radius) {
       const query = `
         [out:json][timeout:25];
@@ -705,7 +700,6 @@ JSON format:
       }).filter(Boolean);
     }
 
-    // ========== MAIN SEARCH WITH CACHE ==========
     async function searchCategory(cat) {
       const active = getActive();
       if (!active) return;
@@ -727,7 +721,7 @@ JSON format:
       $("errorBox").classList.add("hidden");
       $("resultsList").innerHTML = "";
 
-      // ----- CHECK CACHE FIRST -----
+      // Cache check
       const cached = getCachedResults(cat, active.id, selectedMiles);
       if (cached && cached.places && cached.places.length) {
         currentResults = cached.places;
@@ -737,7 +731,6 @@ JSON format:
         return;
       }
 
-      // ----- NO CACHE → FETCH -----
       $("resultsStatus").textContent = geminiKey ? "Searching + Gemini…" : "Searching…";
       $("resultsStatus").className = "loading";
       currentResults = [];
@@ -774,16 +767,14 @@ JSON format:
         }
 
         if (geminiKey && places.length) {
-          $("resultsStatus").textContent = "Gemini writing short + expanded descriptions…";
+          $("resultsStatus").textContent = "Gemini writing descriptions…";
           places = await enrichWithGemini(places, active.name, cat);
         }
 
         const maxDist = milesToMeters(selectedMiles) * 1.15;
         currentResults = places.filter(p => p.dist <= maxDist).slice(0, 15);
 
-        // Save to cache
         setCachedResults(cat, active.id, selectedMiles, currentResults, geminiUsed);
-
         renderResults();
 
       } catch (err) {
