@@ -1,13 +1,725 @@
-✦
-Gemini Chat
-        gemini-3.7-flash
-        gemini-3.6-flash
-        gemini-3.5-flash
-        gemini-3.5-flash-lite
-        gemini-2.5-flash
-      
-⚙
-🗑
-Chat with Gemini
-Enter your API key in settings (⚙), then start a conversation. History is kept only for this session.
-➤
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>GPS Marker – Fixed Food Search</title>
+  <style>
+    :root {
+      --bg: #0f1419; --card: #1a2332; --accent: #3b82f6; --text: #e2e8f0;
+      --muted: #94a3b8; --danger: #ef4444; --border: #2d3748; --active: #1e3a5f; --success: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100dvh;
+      padding: 16px; padding-bottom: 50px; line-height: 1.45;
+    }
+    h1 { font-size: 1.35rem; font-weight: 700; margin-bottom: 2px; }
+    .subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 16px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 16px; margin-bottom: 14px;
+    }
+    .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 6px; }
+    .coords { font-family: ui-monospace, monospace; font-size: 0.9rem; word-break: break-all; }
+    .row { display: flex; gap: 10px; margin-top: 10px; }
+    .stat { flex: 1; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 10px; text-align: center; }
+    .stat .value { font-size: 1.1rem; font-weight: 600; }
+    .stat .unit { font-size: 0.7rem; color: var(--muted); }
+    .btn {
+      display: block; width: 100%; border: none; border-radius: 14px; padding: 15px;
+      font-size: 1.02rem; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: transparent; color: var(--danger); border: 1px solid rgba(239,68,68,0.35); }
+    .btn:disabled { opacity: 0.45; }
+
+    #status { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; min-height: 1.2em; }
+    #status.error { color: var(--danger); }
+    #status.ok { color: var(--success); }
+
+    .arrow-wrap { display: flex; justify-content: center; height: 80px; margin: 8px 0; }
+    #arrow { width: 54px; height: 54px; transition: transform 0.25s ease; }
+
+    .marker-item {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 14px; padding: 12px 14px; margin-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    }
+    .marker-item.active { background: var(--active); border-color: var(--accent); }
+    .marker-info { flex: 1; min-width: 0; }
+    .marker-name { font-weight: 600; font-size: 1.02rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .marker-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .marker-actions { display: flex; gap: 6px; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05); color: var(--text); font-size: 0.95rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .icon-btn.delete { color: var(--danger); }
+
+    .overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.78);
+      z-index: 100; align-items: flex-end; justify-content: center; padding: 12px;
+    }
+    .overlay.show { display: flex; }
+    .sheet {
+      background: var(--card); border-radius: 20px 20px 16px 16px; padding: 18px;
+      width: 100%; max-width: 460px; max-height: 92vh; overflow-y: auto;
+    }
+
+    .distance-selector { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+    .dist-btn {
+      flex: 1; min-width: 52px; border: 1px solid var(--border); background: rgba(255,255,255,0.05);
+      color: var(--muted); padding: 9px 4px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; text-align: center;
+    }
+    .dist-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+    .category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+    .cat-btn {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 14px;
+      padding: 15px 8px; color: var(--text); font-size: 0.95rem; font-weight: 600; text-align: center;
+    }
+
+    .view-toggle { display: flex; gap: 6px; margin: 12px 0; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 12px; }
+    .view-btn { flex: 1; border: none; background: transparent; color: var(--muted); padding: 10px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; }
+    .view-btn.active { background: var(--accent); color: white; }
+
+    .basic-item {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 14px; padding: 13px 14px; margin-bottom: 10px;
+    }
+    .basic-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .basic-info { flex: 1; min-width: 0; }
+    .basic-name { font-weight: 600; font-size: 1.05rem; margin-bottom: 3px; }
+    .basic-meta { font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; }
+    .basic-type {
+      display: inline-block; font-size: 0.75rem; background: rgba(59,130,246,0.15);
+      color: #93c5fd; padding: 2px 8px; border-radius: 6px; margin-right: 6px;
+    }
+    .basic-website { display: inline-block; font-size: 0.84rem; color: #60a5fa; text-decoration: none; margin-top: 4px; }
+    .basic-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .guide-card { background: #141c27; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 14px; }
+    .guide-img.placeholder {
+      display: flex; align-items: center; justify-content: center;
+      height: 120px; font-size: 2rem; color: var(--muted);
+      background: linear-gradient(135deg, #1a2332, #0f1419);
+    }
+    .guide-body { padding: 14px; }
+    .guide-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
+    .guide-meta { font-size: 0.82rem; color: var(--accent); margin-bottom: 8px; }
+    .guide-actions { display: flex; gap: 8px; }
+    .guide-actions .btn { margin: 0; padding: 11px; font-size: 0.9rem; }
+
+    .empty-state { text-align: center; color: var(--muted); padding: 28px 10px; }
+    .section-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 18px 0 10px; }
+    .footer { text-align: center; font-size: 0.72rem; color: var(--muted); margin-top: 20px; }
+    .hidden { display: none !important; }
+    .loading { text-align: center; padding: 30px 10px; color: var(--muted); }
+    .radius-info { font-size: 0.84rem; color: var(--accent); margin-bottom: 10px; font-weight: 500; }
+    .error-box {
+      background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35);
+      border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
+      font-size: 0.85rem; color: #fca5a5;
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%; padding: 12px; margin: 6px 0 14px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.07); color: var(--text); font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>GPS Marker</h1>
+  <p class="subtitle">Fixed Food search + clear error messages</p>
+
+  <div id="status">Requesting location…</div>
+
+  <div class="card">
+    <div class="label">Current Location</div>
+    <div class="coords" id="currentCoords">—</div>
+    <div class="row">
+      <div class="stat"><div class="value" id="accuracy">—</div><div class="unit">accuracy</div></div>
+      <div class="stat"><div class="value" id="lastUpdate">—</div><div class="unit">last update</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Active Landmark</div>
+    <div id="activeName" style="font-weight:600; font-size:1.1rem; margin-bottom:4px;">None selected</div>
+    <div class="coords" id="activeCoords" style="margin-bottom:8px;">—</div>
+
+    <div id="navSection" class="hidden">
+      <div class="arrow-wrap">
+        <svg id="arrow" viewBox="0 0 64 64" fill="none">
+          <path d="M32 6 L48 42 L32 34 L16 42 Z" fill="#3b82f6"/>
+          <circle cx="32" cy="32" r="4" fill="#e2e8f0"/>
+        </svg>
+      </div>
+      <div class="row">
+        <div class="stat"><div class="value" id="distance">—</div><div class="unit">distance</div></div>
+        <div class="stat"><div class="value" id="bearing">—</div><div class="unit">bearing</div></div>
+      </div>
+    </div>
+
+    <div id="categoryAround" class="hidden" style="margin-top:14px;">
+      <div class="label" style="margin-bottom:8px;">Search distance</div>
+      <div class="distance-selector">
+        <button class="dist-btn" data-miles="0.5">0.5 mi</button>
+        <button class="dist-btn active" data-miles="1">1 mi</button>
+        <button class="dist-btn" data-miles="1.5">1.5 mi</button>
+        <button class="dist-btn" data-miles="2">2 mi</button>
+        <button class="dist-btn" data-miles="3">3 mi</button>
+      </div>
+
+      <div class="label" style="margin:12px 0 8px;">Explore around this landmark</div>
+      <div class="category-grid">
+        <button class="cat-btn" data-cat="historical">🏛️ Historical</button>
+        <button class="cat-btn" data-cat="food">🍽️ Food</button>
+        <button class="cat-btn" data-cat="art">🎨 Art</button>
+        <button class="cat-btn" data-cat="adult">🔥 Adult / Erotic</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="markBtn" disabled>Mark Current Location</button>
+  <button class="btn btn-secondary" id="mapsBtn" disabled>Open in Maps</button>
+  <button class="btn btn-secondary" id="keysBtn">⚙️ API Keys</button>
+
+  <div class="section-title">Saved Markers</div>
+  <div id="markerList"></div>
+  <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
+
+  <p class="footer">Food search has been strengthened</p>
+
+  <!-- Name sheet -->
+  <div class="overlay" id="nameOverlay">
+    <div class="sheet">
+      <div class="label">Name this location</div>
+      <input type="text" id="nameInput" placeholder="e.g. Hotel, Car..." maxlength="40" />
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary" id="cancelNameBtn" style="flex:1; margin:0;">Cancel</button>
+        <button class="btn btn-primary" id="saveNameBtn" style="flex:1; margin:0;">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Keys sheet -->
+  <div class="overlay" id="keysOverlay">
+    <div class="sheet">
+      <div class="label">Optional API Keys</div>
+      <p style="font-size:0.88rem; color:var(--muted); margin-bottom:12px;">
+        Leave empty to use free mode (recommended until keys are working).
+      </p>
+      <div class="label">Google Places Key</div>
+      <input type="password" id="googleKeyInput" placeholder="AIza..." />
+      <div class="label">Gemini Key</div>
+      <input type="password" id="geminiKeyInput" placeholder="AIza..." />
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button class="btn btn-secondary" id="cancelKeysBtn" style="flex:1; margin:0;">Cancel</button>
+        <button class="btn btn-primary" id="saveKeysBtn" style="flex:1; margin:0;">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results sheet -->
+  <div class="overlay" id="resultsOverlay">
+    <div class="sheet">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div>
+          <div class="label" style="margin:0;" id="resultsTitle">Results</div>
+          <div style="font-size:0.8rem; color:var(--muted);" id="resultsSubtitle"></div>
+        </div>
+        <button class="icon-btn" id="closeResultsBtn" style="width:32px;height:32px;">✕</button>
+      </div>
+
+      <div class="radius-info" id="radiusInfo"></div>
+      <div id="errorBox" class="error-box hidden"></div>
+
+      <div class="view-toggle">
+        <button class="view-btn" id="viewExtended">Extended</button>
+        <button class="view-btn active" id="viewBasic">Basic List</button>
+      </div>
+
+      <div id="resultsStatus" class="loading">Loading…</div>
+      <div id="resultsList"></div>
+    </div>
+  </div>
+
+  <script>
+    let current = null;
+    let markers = [];
+    let activeId = null;
+    let currentResults = [];
+    let currentCategory = "";
+    let viewMode = "basic";
+    let selectedMiles = 1;
+
+    let googleKey = localStorage.getItem("gps_google_key") || "";
+    let geminiKey = localStorage.getItem("gps_gemini_key") || "";
+
+    const STORAGE_KEY = "gps-marker-fixed-food";
+
+    const $ = id => document.getElementById(id);
+
+    function setStatus(msg, type = "") {
+      $("status").textContent = msg;
+      $("status").className = type;
+    }
+    function fmtCoord(n) { return n.toFixed(6); }
+    function fmtTime(ts) {
+      return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+    function distanceMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180, Δλ = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+    function formatMiles(m) {
+      const mi = m / 1609.344;
+      if (mi < 0.1) return Math.round(mi * 5280) + " ft";
+      return mi < 10 ? mi.toFixed(2) + " mi" : mi.toFixed(1) + " mi";
+    }
+    function milesToMeters(mi) { return mi * 1609.344; }
+    function bearingDegrees(lat1, lon1, lat2, lon2) {
+      const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180, Δλ = (lon2 - lon1) * Math.PI / 180;
+      const y = Math.sin(Δλ) * Math.cos(φ2);
+      const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+      return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    }
+    function cardinal(deg) {
+      const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+      return dirs[Math.round(deg / 22.5) % 16];
+    }
+    function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ markers, activeId }));
+    }
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const d = JSON.parse(raw);
+          markers = d.markers || [];
+          activeId = d.activeId || null;
+        }
+      } catch(e) {}
+    }
+
+    function getActive() { return markers.find(m => m.id === activeId) || null; }
+
+    function updateCurrent() {
+      if (!current) return;
+      $("currentCoords").textContent = `${fmtCoord(current.lat)}, ${fmtCoord(current.lng)}`;
+      $("accuracy").textContent = current.accuracy < 1000 ? `±${Math.round(current.accuracy)} m` : `±${(current.accuracy/1000).toFixed(1)} km`;
+      $("lastUpdate").textContent = fmtTime(current.time);
+      $("markBtn").disabled = false;
+    }
+
+    function updateActive() {
+      const a = getActive();
+      if (!a) {
+        $("activeName").textContent = "None selected";
+        $("activeCoords").textContent = "—";
+        $("navSection").classList.add("hidden");
+        $("categoryAround").classList.add("hidden");
+        $("mapsBtn").disabled = true;
+        return;
+      }
+      $("activeName").textContent = a.name;
+      $("activeCoords").textContent = `${fmtCoord(a.lat)}, ${fmtCoord(a.lng)}`;
+      $("navSection").classList.remove("hidden");
+      $("categoryAround").classList.remove("hidden");
+      $("mapsBtn").disabled = false;
+      updateNav();
+    }
+
+    function updateNav() {
+      const a = getActive();
+      if (!current || !a) return;
+      const dist = distanceMeters(current.lat, current.lng, a.lat, a.lng);
+      const brg = bearingDegrees(current.lat, current.lng, a.lat, a.lng);
+      $("distance").textContent = formatMiles(dist);
+      $("bearing").textContent = `${Math.round(brg)}° ${cardinal(brg)}`;
+      $("arrow").style.transform = `rotate(${brg}deg)`;
+    }
+
+    function renderMarkers() {
+      if (!markers.length) {
+        $("markerList").innerHTML = `<div class="empty-state">No markers yet</div>`;
+        $("clearAllBtn").style.display = "none";
+        return;
+      }
+      $("clearAllBtn").style.display = "block";
+      const sorted = [...markers].sort((a,b) => b.time - a.time);
+      $("markerList").innerHTML = sorted.map(m => {
+        const dist = current ? formatMiles(distanceMeters(current.lat, current.lng, m.lat, m.lng)) : "—";
+        return `
+          <div class="marker-item ${m.id === activeId ? "active" : ""}" data-id="${m.id}">
+            <div class="marker-info">
+              <div class="marker-name">${escapeHtml(m.name)}</div>
+              <div class="marker-meta">${dist} · ${fmtTime(m.time)}</div>
+            </div>
+            <div class="marker-actions">
+              <button class="icon-btn" data-action="nav">➤</button>
+              <button class="icon-btn delete" data-action="del">✕</button>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    function fullRefresh() {
+      updateActive();
+      renderMarkers();
+      save();
+    }
+
+    // Geolocation
+    function onPos(pos) {
+      current = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+        time: pos.timestamp || Date.now()
+      };
+      setStatus("Live tracking active", "ok");
+      updateCurrent();
+      updateNav();
+      renderMarkers();
+    }
+    function onErr(err) {
+      setStatus(err.code === 1 ? "Permission denied" : "Location error", "error");
+    }
+    function startWatch() {
+      if (!navigator.geolocation) {
+        setStatus("Geolocation not supported", "error");
+        return;
+      }
+      navigator.geolocation.watchPosition(onPos, onErr, {
+        enableHighAccuracy: true, maximumAge: 2000, timeout: 12000
+      });
+    }
+
+    // ========== STRONG FREE FOOD SEARCH ==========
+    async function searchFoodFree(lat, lon, radius) {
+      // Broader and more reliable query
+      const query = `
+        [out:json][timeout:25];
+        (
+          node["amenity"~"restaurant|cafe|fast_food|bar|pub|biergarten|food_court"]["name"](around:${radius},${lat},${lon});
+          way["amenity"~"restaurant|cafe|fast_food|bar|pub|biergarten"]["name"](around:${radius},${lat},${lon});
+          node["shop"="bakery"]["name"](around:${radius},${lat},${lon});
+        );
+        out center 30;
+      `;
+
+      const res = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "data=" + encodeURIComponent(query)
+      });
+
+      if (!res.ok) throw new Error("Overpass network error");
+
+      const data = await res.json();
+      const places = (data.elements || []).map(el => {
+        const plat = el.lat || (el.center && el.center.lat);
+        const plon = el.lon || (el.center && el.center.lon);
+        if (!plat || !plon) return null;
+
+        const tags = el.tags || {};
+        const name = tags.name || tags.brand || tags.operator;
+        if (!name) return null;
+
+        return {
+          name: name,
+          lat: plat,
+          lon: plon,
+          dist: distanceMeters(lat, lon, plat, plon),
+          type: tags.amenity || tags.shop || "food",
+          website: tags.website || tags["contact:website"] || null
+        };
+      }).filter(Boolean);
+
+      // Remove duplicates
+      const seen = new Set();
+      return places.filter(p => {
+        const key = p.name.toLowerCase() + p.lat.toFixed(4);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    // ========== OTHER CATEGORIES ==========
+    async function searchOverpass(lat, lon, radius, queryPart) {
+      const query = `[out:json][timeout:20];(${queryPart});out center 20;`;
+      const res = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: "data=" + encodeURIComponent(query)
+      });
+      const data = await res.json();
+      return (data.elements || []).map(el => {
+        const plat = el.lat || el.center?.lat;
+        const plon = el.lon || el.center?.lon;
+        if (!plat || !plon) return null;
+        const tags = el.tags || {};
+        const name = tags.name;
+        if (!name) return null;
+        return {
+          name, lat: plat, lon: plon,
+          dist: distanceMeters(lat, lon, plat, plon),
+          type: tags.amenity || tags.shop || tags.tourism || "",
+          website: tags.website || null
+        };
+      }).filter(Boolean);
+    }
+
+    // ========== MAIN SEARCH FUNCTION ==========
+    async function searchCategory(cat) {
+      const active = getActive();
+      if (!active) return;
+
+      const radius = Math.round(milesToMeters(selectedMiles));
+      currentCategory = cat;
+
+      $("resultsOverlay").classList.add("show");
+      $("resultsTitle").textContent = {
+        historical: "Historical Places",
+        food: "Food & Drink",
+        art: "Art & Museums",
+        adult: "Adult / Erotic"
+      }[cat];
+      $("resultsSubtitle").textContent = `Around “${active.name}”`;
+      $("radiusInfo").textContent = `Within ${selectedMiles} mile${selectedMiles === 1 ? "" : "s"}`;
+      $("errorBox").classList.add("hidden");
+      $("resultsStatus").textContent = "Searching…";
+      $("resultsStatus").className = "loading";
+      $("resultsList").innerHTML = "";
+      currentResults = [];
+
+      try {
+        let places = [];
+
+        if (cat === "food") {
+          // Always use the strong free search for reliability
+          places = await searchFoodFree(active.lat, active.lng, radius);
+        } 
+        else if (cat === "adult") {
+          places = await searchOverpass(active.lat, active.lng, radius, `
+            node["amenity"~"stripclub|brothel|swingerclub"](around:${radius},${active.lat},${active.lng});
+            node["shop"~"erotic|sex"](around:${radius},${active.lat},${active.lng});
+            node["name"~"sex shop|strip|erotic|swingers|fetish|peep|love hotel",i](around:${radius},${active.lat},${active.lng});
+          `);
+        } 
+        else if (cat === "art") {
+          places = await searchOverpass(active.lat, active.lng, radius, `
+            node["tourism"~"museum|gallery|artwork"](around:${radius},${active.lat},${active.lng});
+            way["tourism"~"museum|gallery|artwork"](around:${radius},${active.lat},${active.lng});
+            node["amenity"="arts_centre"](around:${radius},${active.lat},${active.lng});
+          `);
+        } 
+        else if (cat === "historical") {
+          const url = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${active.lat}|${active.lng}&gsradius=${radius}&gslimit=15&format=json&origin=*`;
+          const res = await fetch(url);
+          const data = await res.json();
+          places = (data.query?.geosearch || []).map(item => ({
+            name: item.title,
+            lat: item.lat,
+            lon: item.lon,
+            dist: distanceMeters(active.lat, active.lng, item.lat, item.lon),
+            type: "historical"
+          }));
+        }
+
+        // Final filter and sort
+        const maxDist = milesToMeters(selectedMiles) * 1.1;
+        currentResults = places
+          .filter(p => p.dist <= maxDist)
+          .sort((a, b) => a.dist - b.dist)
+          .slice(0, 15);
+
+        renderResults();
+
+      } catch (err) {
+        console.error(err);
+        $("errorBox").textContent = "Error: " + err.message;
+        $("errorBox").classList.remove("hidden");
+        $("resultsStatus").textContent = "Search failed";
+        $("resultsStatus").className = "empty-state";
+      }
+    }
+
+    function renderResults() {
+      if (!currentResults.length) {
+        $("resultsStatus").textContent = "No places found in this distance. Try increasing the search radius.";
+        $("resultsStatus").className = "empty-state";
+        $("resultsList").innerHTML = "";
+        return;
+      }
+
+      $("resultsStatus").textContent = `${currentResults.length} places found`;
+      $("resultsStatus").className = "label";
+
+      if (viewMode === "extended") {
+        $("resultsList").innerHTML = currentResults.map((p, i) => `
+          <div class="guide-card">
+            <div class="guide-img placeholder">
+              ${currentCategory === "food" ? "🍽️" : currentCategory === "adult" ? "🔥" : currentCategory === "art" ? "🎨" : "🏛️"}
+            </div>
+            <div class="guide-body">
+              <div class="guide-title">${i+1}. ${escapeHtml(p.name)}</div>
+              <div class="guide-meta">${formatMiles(p.dist)} · ${escapeHtml(p.type || "")}</div>
+              ${p.website ? `<a href="${escapeHtml(p.website)}" target="_blank" style="color:#60a5fa;font-size:0.88rem;">🌐 Website</a><br><br>` : ""}
+              <div class="guide-actions">
+                <button class="btn btn-primary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go">Navigate</button>
+                <button class="btn btn-secondary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="save">Save</button>
+              </div>
+            </div>
+          </div>
+        `).join("");
+      } else {
+        $("resultsList").innerHTML = currentResults.map(p => `
+          <div class="basic-item">
+            <div class="basic-top">
+              <div class="basic-info">
+                <div class="basic-name">${escapeHtml(p.name)}</div>
+                <div class="basic-meta">
+                  <span class="basic-type">${escapeHtml(p.type || currentCategory)}</span>
+                  ${formatMiles(p.dist)}
+                </div>
+                ${p.website ? `<a class="basic-website" href="${escapeHtml(p.website)}" target="_blank">🌐 Website</a>` : ""}
+              </div>
+              <div class="basic-actions">
+                <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go">➤</button>
+                <button class="icon-btn" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="save">＋</button>
+              </div>
+            </div>
+          </div>
+        `).join("");
+      }
+    }
+
+    // Events
+    $("markBtn").onclick = () => {
+      if (!current) return;
+      $("nameInput").value = "";
+      $("nameOverlay").classList.add("show");
+    };
+    $("cancelNameBtn").onclick = () => $("nameOverlay").classList.remove("show");
+    $("saveNameBtn").onclick = () => {
+      const name = $("nameInput").value.trim() || `Spot ${markers.length + 1}`;
+      markers.push({
+        id: uid(), name,
+        lat: current.lat, lng: current.lng,
+        accuracy: current.accuracy, time: Date.now()
+      });
+      activeId = markers[markers.length - 1].id;
+      $("nameOverlay").classList.remove("show");
+      fullRefresh();
+      setStatus(`Saved “${name}”`, "ok");
+    };
+
+    $("keysBtn").onclick = () => {
+      $("googleKeyInput").value = googleKey;
+      $("geminiKeyInput").value = geminiKey;
+      $("keysOverlay").classList.add("show");
+    };
+    $("cancelKeysBtn").onclick = () => $("keysOverlay").classList.remove("show");
+    $("saveKeysBtn").onclick = () => {
+      googleKey = $("googleKeyInput").value.trim();
+      geminiKey = $("geminiKeyInput").value.trim();
+      localStorage.setItem("gps_google_key", googleKey);
+      localStorage.setItem("gps_gemini_key", geminiKey);
+      $("keysOverlay").classList.remove("show");
+      setStatus("Keys saved", "ok");
+    };
+
+    $("markerList").onclick = e => {
+      const item = e.target.closest(".marker-item");
+      if (!item) return;
+      const id = item.dataset.id;
+      const btn = e.target.closest("[data-action]");
+      if (btn) {
+        if (btn.dataset.action === "nav") { activeId = id; fullRefresh(); }
+        else if (btn.dataset.action === "del") {
+          if (confirm("Delete this marker?")) {
+            markers = markers.filter(m => m.id !== id);
+            if (activeId === id) activeId = markers[0]?.id || null;
+            fullRefresh();
+          }
+        }
+      } else { activeId = id; fullRefresh(); }
+    };
+
+    $("mapsBtn").onclick = () => {
+      const a = getActive();
+      if (a) window.open(`https://maps.apple.com/?daddr=${a.lat},${a.lng}&dirflg=w`, "_blank");
+    };
+
+    $("clearAllBtn").onclick = () => {
+      if (confirm("Delete ALL markers?")) {
+        markers = []; activeId = null; fullRefresh();
+      }
+    };
+
+    document.querySelectorAll(".dist-btn").forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll(".dist-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedMiles = parseFloat(btn.dataset.miles);
+      };
+    });
+
+    document.querySelectorAll(".cat-btn").forEach(btn => {
+      btn.onclick = () => searchCategory(btn.dataset.cat);
+    });
+
+    $("closeResultsBtn").onclick = () => $("resultsOverlay").classList.remove("show");
+
+    $("viewExtended").onclick = () => {
+      viewMode = "extended";
+      $("viewExtended").classList.add("active");
+      $("viewBasic").classList.remove("active");
+      renderResults();
+    };
+    $("viewBasic").onclick = () => {
+      viewMode = "basic";
+      $("viewBasic").classList.add("active");
+      $("viewExtended").classList.remove("active");
+      renderResults();
+    };
+
+    $("resultsList").onclick = e => {
+      const btn = e.target.closest("[data-action]");
+      if (!btn) return;
+      const lat = +btn.dataset.lat;
+      const lon = +btn.dataset.lon;
+      const name = btn.dataset.name;
+      if (btn.dataset.action === "go") {
+        window.open(`https://maps.apple.com/?daddr=${lat},${lon}&dirflg=w`, "_blank");
+      } else {
+        markers.push({ id: uid(), name, lat, lng: lon, accuracy: 20, time: Date.now() });
+        activeId = markers[markers.length - 1].id;
+        fullRefresh();
+        $("resultsOverlay").classList.remove("show");
+        setStatus(`Saved “${name}”`, "ok");
+      }
+    };
+
+    // Init
+    load();
+    fullRefresh();
+    startWatch();
+  </script>
+</body>
+</html>
