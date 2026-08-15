@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>GPS Marker – Fixed Food Search</title>
+  <title>GPS Marker – Food + Gemini</title>
   <style>
     :root {
       --bg: #0f1419; --card: #1a2332; --accent: #3b82f6; --text: #e2e8f0;
@@ -101,6 +101,11 @@
     }
     .basic-website { display: inline-block; font-size: 0.84rem; color: #60a5fa; text-decoration: none; margin-top: 4px; }
     .basic-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .ai-note {
+      font-size: 0.82rem; color: #a5b4fc; margin-top: 6px;
+      background: rgba(99,102,241,0.12); padding: 8px 10px; border-radius: 8px;
+      border-left: 3px solid #818cf8;
+    }
 
     .guide-card { background: #141c27; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 14px; }
     .guide-img.placeholder {
@@ -125,6 +130,10 @@
       border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
       font-size: 0.85rem; color: #fca5a5;
     }
+    .gemini-badge {
+      display: inline-block; font-size: 0.72rem; background: rgba(139,92,246,0.2);
+      color: #c4b5fd; padding: 2px 8px; border-radius: 6px; margin-left: 6px;
+    }
     input[type="text"], input[type="password"] {
       width: 100%; padding: 12px; margin: 6px 0 14px;
       border-radius: 10px; border: 1px solid var(--border);
@@ -134,7 +143,7 @@
 </head>
 <body>
   <h1>GPS Marker</h1>
-  <p class="subtitle">Fixed Food search + clear error messages</p>
+  <p class="subtitle">Food search powered by Overpass + optional Gemini enrichment</p>
 
   <div id="status">Requesting location…</div>
 
@@ -193,7 +202,7 @@
   <div id="markerList"></div>
   <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
 
-  <p class="footer">Food search has been strengthened</p>
+  <p class="footer">Food uses free Overpass + optional Gemini ranking & descriptions</p>
 
   <!-- Name sheet -->
   <div class="overlay" id="nameOverlay">
@@ -212,11 +221,11 @@
     <div class="sheet">
       <div class="label">Optional API Keys</div>
       <p style="font-size:0.88rem; color:var(--muted); margin-bottom:12px;">
-        Leave empty to use free mode (recommended until keys are working).
+        Leave empty to use free mode. Gemini key adds AI ranking + short descriptions for Food results.
       </p>
-      <div class="label">Google Places Key</div>
+      <div class="label">Google Places Key (optional)</div>
       <input type="password" id="googleKeyInput" placeholder="AIza..." />
-      <div class="label">Gemini Key</div>
+      <div class="label">Gemini Key (for Food enrichment)</div>
       <input type="password" id="geminiKeyInput" placeholder="AIza..." />
       <div style="display:flex; gap:10px; margin-top:10px;">
         <button class="btn btn-secondary" id="cancelKeysBtn" style="flex:1; margin:0;">Cancel</button>
@@ -257,11 +266,12 @@
     let currentCategory = "";
     let viewMode = "basic";
     let selectedMiles = 1;
+    let geminiUsed = false;
 
     let googleKey = localStorage.getItem("gps_google_key") || "";
     let geminiKey = localStorage.getItem("gps_gemini_key") || "";
 
-    const STORAGE_KEY = "gps-marker-fixed-food";
+    const STORAGE_KEY = "gps-marker-gemini-food";
 
     const $ = id => document.getElementById(id);
 
@@ -409,17 +419,17 @@
       });
     }
 
-    // ========== STRONG FREE FOOD SEARCH ==========
+    // ========== STRONG FREE FOOD SEARCH (Overpass) ==========
     async function searchFoodFree(lat, lon, radius) {
-      // Broader and more reliable query
       const query = `
         [out:json][timeout:25];
         (
           node["amenity"~"restaurant|cafe|fast_food|bar|pub|biergarten|food_court"]["name"](around:${radius},${lat},${lon});
           way["amenity"~"restaurant|cafe|fast_food|bar|pub|biergarten"]["name"](around:${radius},${lat},${lon});
           node["shop"="bakery"]["name"](around:${radius},${lat},${lon});
+          node["amenity"="ice_cream"]["name"](around:${radius},${lat},${lon});
         );
-        out center 30;
+        out center 35;
       `;
 
       const res = await fetch("https://overpass-api.de/api/interpreter", {
@@ -446,7 +456,8 @@
           lon: plon,
           dist: distanceMeters(lat, lon, plat, plon),
           type: tags.amenity || tags.shop || "food",
-          website: tags.website || tags["contact:website"] || null
+          website: tags.website || tags["contact:website"] || null,
+          cuisine: tags.cuisine || null
         };
       }).filter(Boolean);
 
@@ -458,6 +469,90 @@
         seen.add(key);
         return true;
       });
+    }
+
+    // ========== GEMINI ENRICHMENT FOR FOOD ==========
+    async function enrichWithGemini(places, landmarkName) {
+      if (!geminiKey || !places.length) return places;
+
+      // Take top 12 by distance to keep the prompt reasonable
+      const top = places.slice(0, 12);
+
+      const listText = top.map((p, i) => 
+        `${i+1}. ${p.name} (${p.type}${p.cuisine ? ", " + p.cuisine : ""}) – ${formatMiles(p.dist)}`
+      ).join("\n");
+
+      const prompt = `You are a local food guide. Given this list of real nearby food & drink places around "${landmarkName}", do the following:
+
+1. Rank the best ones for a visitor (consider variety, likely quality, convenience).
+2. For each place you keep, write ONE short useful sentence (max 18 words) about why someone might go there or what to expect.
+3. Return ONLY valid JSON in this exact format (no markdown, no extra text):
+
+[
+  {"name": "Exact place name", "note": "short helpful sentence"},
+  ...
+]
+
+Places:
+${listText}`;
+
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.4,
+                maxOutputTokens: 1024
+              }
+            })
+          }
+        );
+
+        if (!res.ok) {
+          const errText = await res.text();
+          console.warn("Gemini error:", errText);
+          return places; // graceful fallback
+        }
+
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        
+        // Extract JSON even if Gemini wraps it
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) return places;
+
+        const enriched = JSON.parse(jsonMatch[0]);
+        const noteMap = {};
+        enriched.forEach(item => {
+          if (item.name && item.note) {
+            noteMap[item.name.toLowerCase().trim()] = item.note;
+          }
+        });
+
+        // Attach notes and re-order based on Gemini ranking when possible
+        const withNotes = places.map(p => {
+          const note = noteMap[p.name.toLowerCase().trim()];
+          return note ? { ...p, aiNote: note } : p;
+        });
+
+        // Put places that received a note first (Gemini ranked them higher)
+        withNotes.sort((a, b) => {
+          if (a.aiNote && !b.aiNote) return -1;
+          if (!a.aiNote && b.aiNote) return 1;
+          return a.dist - b.dist;
+        });
+
+        geminiUsed = true;
+        return withNotes;
+
+      } catch (err) {
+        console.warn("Gemini enrichment failed:", err);
+        return places; // always fall back cleanly
+      }
     }
 
     // ========== OTHER CATEGORIES ==========
@@ -491,6 +586,7 @@
 
       const radius = Math.round(milesToMeters(selectedMiles));
       currentCategory = cat;
+      geminiUsed = false;
 
       $("resultsOverlay").classList.add("show");
       $("resultsTitle").textContent = {
@@ -502,7 +598,7 @@
       $("resultsSubtitle").textContent = `Around “${active.name}”`;
       $("radiusInfo").textContent = `Within ${selectedMiles} mile${selectedMiles === 1 ? "" : "s"}`;
       $("errorBox").classList.add("hidden");
-      $("resultsStatus").textContent = "Searching…";
+      $("resultsStatus").textContent = cat === "food" && geminiKey ? "Finding places + asking Gemini…" : "Searching…";
       $("resultsStatus").className = "loading";
       $("resultsList").innerHTML = "";
       currentResults = [];
@@ -511,8 +607,14 @@
         let places = [];
 
         if (cat === "food") {
-          // Always use the strong free search for reliability
+          // 1. Get real places from OpenStreetMap
           places = await searchFoodFree(active.lat, active.lng, radius);
+
+          // 2. Enrich with Gemini if key is present
+          if (geminiKey && places.length) {
+            $("resultsStatus").textContent = "Gemini is ranking & describing…";
+            places = await enrichWithGemini(places, active.name);
+          }
         } 
         else if (cat === "adult") {
           places = await searchOverpass(active.lat, active.lng, radius, `
@@ -542,10 +644,9 @@
         }
 
         // Final filter and sort
-        const maxDist = milesToMeters(selectedMiles) * 1.1;
+        const maxDist = milesToMeters(selectedMiles) * 1.15;
         currentResults = places
           .filter(p => p.dist <= maxDist)
-          .sort((a, b) => a.dist - b.dist)
           .slice(0, 15);
 
         renderResults();
@@ -567,7 +668,8 @@
         return;
       }
 
-      $("resultsStatus").textContent = `${currentResults.length} places found`;
+      const badge = geminiUsed ? `<span class="gemini-badge">✦ Gemini</span>` : "";
+      $("resultsStatus").innerHTML = `${currentResults.length} places found${badge}`;
       $("resultsStatus").className = "label";
 
       if (viewMode === "extended") {
@@ -578,9 +680,10 @@
             </div>
             <div class="guide-body">
               <div class="guide-title">${i+1}. ${escapeHtml(p.name)}</div>
-              <div class="guide-meta">${formatMiles(p.dist)} · ${escapeHtml(p.type || "")}</div>
-              ${p.website ? `<a href="${escapeHtml(p.website)}" target="_blank" style="color:#60a5fa;font-size:0.88rem;">🌐 Website</a><br><br>` : ""}
-              <div class="guide-actions">
+              <div class="guide-meta">${formatMiles(p.dist)} · ${escapeHtml(p.type || "")}${p.cuisine ? " · " + escapeHtml(p.cuisine) : ""}</div>
+              ${p.aiNote ? `<div class="ai-note">✦ ${escapeHtml(p.aiNote)}</div>` : ""}
+              ${p.website ? `<a href="${escapeHtml(p.website)}" target="_blank" style="color:#60a5fa;font-size:0.88rem;display:inline-block;margin-top:6px;">🌐 Website</a><br>` : ""}
+              <div class="guide-actions" style="margin-top:12px;">
                 <button class="btn btn-primary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="go">Navigate</button>
                 <button class="btn btn-secondary" style="flex:1" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${escapeHtml(p.name)}" data-action="save">Save</button>
               </div>
@@ -597,6 +700,7 @@
                   <span class="basic-type">${escapeHtml(p.type || currentCategory)}</span>
                   ${formatMiles(p.dist)}
                 </div>
+                ${p.aiNote ? `<div class="ai-note">✦ ${escapeHtml(p.aiNote)}</div>` : ""}
                 ${p.website ? `<a class="basic-website" href="${escapeHtml(p.website)}" target="_blank">🌐 Website</a>` : ""}
               </div>
               <div class="basic-actions">
@@ -641,7 +745,7 @@
       localStorage.setItem("gps_google_key", googleKey);
       localStorage.setItem("gps_gemini_key", geminiKey);
       $("keysOverlay").classList.remove("show");
-      setStatus("Keys saved", "ok");
+      setStatus(geminiKey ? "Gemini key saved – Food will be enriched" : "Keys saved", "ok");
     };
 
     $("markerList").onclick = e => {
