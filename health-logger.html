@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Health Logger</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 500px; margin: 2rem auto; padding: 1rem; background: #f4f4f5; }
+        .card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 1rem; }
+        h2 { margin-top: 0; color: #111; font-size: 1.4rem;}
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.9em; color: #444; }
+        select, input { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; background: #fff;}
+        button { width: 100%; padding: 14px; margin-top: 15px; border-radius: 8px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; transition: opacity 0.2s; }
+        button:active { opacity: 0.8; }
+        .btn-primary { background: #007aff; color: white; }
+        .btn-secondary { background: #34c759; color: white; margin-top: 10px; }
+        .btn-danger { background: #ff3b30; color: white; margin-top: 10px; }
+        .log-list { margin-top: 15px; max-height: 250px; overflow-y: auto; font-size: 0.95em; }
+        .log-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        input[type="file"] { display: none; }
+        .file-upload-label { display: block; text-align: center; background: #e5e5ea; color: #333; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px;}
+        .input-group { display: flex; gap: 10px; margin-top: 5px; }
+        .add-btn { width: auto; margin-top: 0; padding: 0 15px; background: #e5e5ea; color: #333; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Log Entry</h2>
+        <label>Metric Category</label>
+        <div class="input-group">
+            <select id="metric" style="flex-grow: 1; margin-top: 0;">
+                <option value="Heart Rate">Heart Rate (bpm)</option>
+                <option value="Sleep">Sleep (hours)</option>
+                <option value="HRV">HRV (ms)</option>
+                <option value="Custom Note">Custom Note</option>
+            </select>
+            <button class="add-btn" onclick="toggleCategoryInput()" title="Add custom category">+</button>
+        </div>
+        
+        <div class="input-group" id="addCategoryGroup" style="display: none; margin-top: 10px;">
+            <input type="text" id="newCategoryInput" placeholder="New category name..." style="margin-top: 0;">
+            <button class="btn-primary" style="width: auto; margin-top: 0; padding: 0 15px;" onclick="saveNewCategory()">Save</button>
+            <button class="btn-danger" style="width: auto; margin-top: 0; padding: 0 15px;" onclick="cancelNewCategory()">X</button>
+        </div>
+        
+        <label>Value</label>
+        <input type="text" id="val" placeholder="e.g. 65" required>
+        
+        <button class="btn-primary" onclick="addLog()">Add to Current Session</button>
+    </div>
+
+    <div class="card">
+        <h2>Current Session Data</h2>
+        <div id="logs" class="log-list">No data recorded yet.</div>
+        
+        <button class="btn-secondary" onclick="exportCSV()">Download as CSV</button>
+        <label class="file-upload-label">
+            <input type="file" id="csvFileInput" accept=".csv" onchange="importCSV(event)">
+            Import Existing CSV
+        </label>
+        <button class="btn-danger" onclick="clearSession()">Clear Session</button>
+    </div>
+
+    <script>
+        let sessionLogs = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
+            const metricSelect = document.getElementById('metric');
+            savedCategories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                metricSelect.appendChild(opt);
+            });
+        });
+
+        function toggleCategoryInput() {
+            document.getElementById('addCategoryGroup').style.display = 'flex';
+            document.getElementById('newCategoryInput').focus();
+        }
+
+        function cancelNewCategory() {
+            document.getElementById('addCategoryGroup').style.display = 'none';
+            document.getElementById('newCategoryInput').value = '';
+        }
+
+        function saveNewCategory() {
+            const inputElement = document.getElementById('newCategoryInput');
+            const newCat = inputElement.value;
+            if(newCat && newCat.trim() !== '') {
+                const cleanCat = newCat.trim();
+                const metricSelect = document.getElementById('metric');
+                
+                let exists = false;
+                for(let i=0; i<metricSelect.options.length; i++) {
+                    if(metricSelect.options[i].value.toLowerCase() === cleanCat.toLowerCase()) {
+                        exists = true;
+                        break;
+                    }
+                }
+                
+                if(!exists) {
+                    const opt = document.createElement('option');
+                    opt.value = cleanCat;
+                    opt.textContent = cleanCat;
+                    metricSelect.appendChild(opt);
+                    
+                    const savedCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
+                    savedCategories.push(cleanCat);
+                    localStorage.setItem('customCategories', JSON.stringify(savedCategories));
+                    
+                    metricSelect.value = cleanCat;
+                    cancelNewCategory();
+                } else {
+                    alert("Category already exists!");
+                }
+            }
+        }
+
+        function addLog() {
+            const metric = document.getElementById('metric').value;
+            const val = document.getElementById('val').value;
+            if(!val) return alert("Please enter a value");
+            
+            const now = new Date();
+            const tzOffset = now.getTimezoneOffset() * 60000;
+            const timestamp = (new Date(now - tzOffset)).toISOString().slice(0, -1);
+            
+            sessionLogs.push({ timestamp, metric, value: val });
+            document.getElementById('val').value = '';
+            renderLogs();
+        }
+
+        function renderLogs() {
+            const container = document.getElementById('logs');
+            if(sessionLogs.length === 0) {
+                container.innerHTML = 'No data recorded yet.';
+                return;
+            }
+            const displayLogs = [...sessionLogs].reverse();
+            container.innerHTML = displayLogs.map(log => {
+                const dateObj = new Date(log.timestamp);
+                const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                return `<div class="log-item">
+                    <span><strong>${log.metric}:</strong> ${log.value}</span>
+                    <span style="color:#888;">${timeStr}</span>
+                </div>`;
+            }).join('');
+        }
+
+        function exportCSV() {
+            if(sessionLogs.length === 0) return alert("No data to export.");
+            
+            let csvContent = "Timestamp,Metric,Value\n";
+            sessionLogs.forEach(row => {
+                const cleanMetric = row.metric.replace(/"/g, '""');
+                const cleanValue = row.value.replace(/"/g, '""');
+                csvContent += `${row.timestamp},"${cleanMetric}","${cleanValue}"\n`;
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            
+            const dateStr = new Date().toISOString().split('T')[0];
+            link.setAttribute("href", url);
+            link.setAttribute("download", `health_log_${dateStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function clearSession() {
+            if(confirm("Clear current logs? Make sure you have downloaded them first!")) {
+                sessionLogs = [];
+                renderLogs();
+            }
+        }
+
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                
+                let addedCount = 0;
+                for(let i = 1; i < lines.length; i++) {
+                    if(!lines[i].trim()) continue;
+                    
+                    const row = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+                    if(row && row.length >= 3) {
+                        sessionLogs.push({
+                            timestamp: row[0].replace(/^"|"$/g, ''),
+                            metric: row[1].replace(/^"|"$/g, ''),
+                            value: row[2].replace(/^"|"$/g, '')
+                        });
+                        addedCount++;
+                    }
+                }
+                
+                sessionLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                renderLogs();
+                alert(`Successfully imported ${addedCount} logs!`);
+                event.target.value = ''; 
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
