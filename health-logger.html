@@ -15,8 +15,15 @@
         .btn-primary { background: #007aff; color: white; }
         .btn-secondary { background: #34c759; color: white; margin-top: 10px; }
         .btn-danger { background: #ff3b30; color: white; margin-top: 10px; }
-        .log-list { margin-top: 15px; max-height: 250px; overflow-y: auto; font-size: 0.95em; }
-        .log-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        
+        .log-list { margin-top: 15px; max-height: 350px; overflow-y: auto; font-size: 0.95em; }
+        .log-item { display: flex; flex-direction: column; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .log-details { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .log-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .btn-small { padding: 6px 12px; font-size: 0.85em; border-radius: 6px; border: none; cursor: pointer; color: white; margin-top: 0; width: auto; font-weight: 600;}
+        .btn-edit { background: #ff9500; }
+        .btn-delete { background: #ff3b30; }
+
         input[type="file"] { display: none; }
         .file-upload-label { display: block; text-align: center; background: #e5e5ea; color: #333; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px;}
         .input-group { display: flex; gap: 10px; margin-top: 5px; }
@@ -46,7 +53,7 @@
         <label>Value</label>
         <input type="text" id="val" placeholder="e.g. 65" required>
         
-        <button class="btn-primary" onclick="addLog()">Add to Current Session</button>
+        <button class="btn-primary" id="submitBtn" onclick="addOrUpdateLog()">Add to Current Session</button>
     </div>
 
     <div class="card">
@@ -62,9 +69,12 @@
     </div>
 
     <script>
-        let sessionLogs = [];
+        // Initialize from LocalStorage or create empty array
+        let sessionLogs = JSON.parse(localStorage.getItem('savedSessionLogs')) || [];
+        let editingId = null;
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Load custom categories
             const savedCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
             const metricSelect = document.getElementById('metric');
             savedCategories.forEach(cat => {
@@ -73,8 +83,12 @@
                 opt.textContent = cat;
                 metricSelect.appendChild(opt);
             });
+
+            // Render any loaded logs
+            renderLogs();
         });
 
+        // --- Category Management ---
         function toggleCategoryInput() {
             document.getElementById('addCategoryGroup').style.display = 'flex';
             document.getElementById('newCategoryInput').focus();
@@ -118,18 +132,67 @@
             }
         }
 
-        function addLog() {
+        // --- Log Management ---
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        }
+
+        function saveAndRender() {
+            localStorage.setItem('savedSessionLogs', JSON.stringify(sessionLogs));
+            renderLogs();
+        }
+
+        function addOrUpdateLog() {
             const metric = document.getElementById('metric').value;
             const val = document.getElementById('val').value;
             if(!val) return alert("Please enter a value");
             
-            const now = new Date();
-            const tzOffset = now.getTimezoneOffset() * 60000;
-            const timestamp = (new Date(now - tzOffset)).toISOString().slice(0, -1);
+            if (editingId) {
+                // Update existing item
+                const index = sessionLogs.findIndex(log => log.id === editingId);
+                if (index !== -1) {
+                    sessionLogs[index].metric = metric;
+                    sessionLogs[index].value = val;
+                }
+                editingId = null;
+                document.getElementById('submitBtn').innerText = "Add to Current Session";
+            } else {
+                // Add new item
+                const now = new Date();
+                const tzOffset = now.getTimezoneOffset() * 60000;
+                const timestamp = (new Date(now - tzOffset)).toISOString().slice(0, -1);
+                const id = generateId();
+                sessionLogs.push({ id, timestamp, metric, value: val });
+            }
             
-            sessionLogs.push({ timestamp, metric, value: val });
             document.getElementById('val').value = '';
-            renderLogs();
+            saveAndRender();
+        }
+
+        function editLog(id) {
+            const log = sessionLogs.find(l => l.id === id);
+            if(!log) return;
+            
+            document.getElementById('metric').value = log.metric;
+            document.getElementById('val').value = log.value;
+            editingId = id;
+            
+            document.getElementById('submitBtn').innerText = "Update Entry";
+            window.scrollTo(0, 0); // Scroll to top for easier editing on mobile
+        }
+
+        function deleteLog(id) {
+            if(confirm("Delete this entry?")) {
+                sessionLogs = sessionLogs.filter(l => l.id !== id);
+                
+                // If the user deletes the item they were currently editing, reset the form
+                if (editingId === id) {
+                    editingId = null;
+                    document.getElementById('val').value = '';
+                    document.getElementById('submitBtn').innerText = "Add to Current Session";
+                }
+                saveAndRender();
+            }
         }
 
         function renderLogs() {
@@ -138,17 +201,27 @@
                 container.innerHTML = 'No data recorded yet.';
                 return;
             }
+            
             const displayLogs = [...sessionLogs].reverse();
             container.innerHTML = displayLogs.map(log => {
                 const dateObj = new Date(log.timestamp);
+                const dateStr = dateObj.toLocaleDateString([], {month: 'short', day: 'numeric'});
                 const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                return `<div class="log-item">
-                    <span><strong>${log.metric}:</strong> ${log.value}</span>
-                    <span style="color:#888;">${timeStr}</span>
+                return `
+                <div class="log-item">
+                    <div class="log-details">
+                        <span><strong>${log.metric}:</strong> ${log.value}</span>
+                        <span style="color:#888;">${dateStr}, ${timeStr}</span>
+                    </div>
+                    <div class="log-actions">
+                        <button class="btn-small btn-edit" onclick="editLog('${log.id}')">Edit</button>
+                        <button class="btn-small btn-delete" onclick="deleteLog('${log.id}')">Delete</button>
+                    </div>
                 </div>`;
             }).join('');
         }
 
+        // --- Data Import/Export ---
         function exportCSV() {
             if(sessionLogs.length === 0) return alert("No data to export.");
             
@@ -174,7 +247,9 @@
         function clearSession() {
             if(confirm("Clear current logs? Make sure you have downloaded them first!")) {
                 sessionLogs = [];
-                renderLogs();
+                editingId = null;
+                document.getElementById('submitBtn').innerText = "Add to Current Session";
+                saveAndRender();
             }
         }
 
@@ -194,6 +269,7 @@
                     const row = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
                     if(row && row.length >= 3) {
                         sessionLogs.push({
+                            id: generateId(),
                             timestamp: row[0].replace(/^"|"$/g, ''),
                             metric: row[1].replace(/^"|"$/g, ''),
                             value: row[2].replace(/^"|"$/g, '')
@@ -203,7 +279,7 @@
                 }
                 
                 sessionLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                renderLogs();
+                saveAndRender();
                 alert(`Successfully imported ${addedCount} logs!`);
                 event.target.value = ''; 
             };
