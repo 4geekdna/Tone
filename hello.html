@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hello World • Tone</title>
+  <style>
+    :root {
+      --bg: #0c0d12;
+      --surface: #161822;
+      --border: #2a2e42;
+      --text: #f0f1f5;
+      --text-muted: #9ca3af;
+      --accent: #a78bfa;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(167, 139, 250, 0.22), transparent),
+        radial-gradient(ellipse 50% 40% at 80% 100%, rgba(244, 114, 182, 0.1), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px;
+      text-align: center;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    }
+
+    .emoji {
+      font-size: 56px;
+      margin-bottom: 18px;
+      line-height: 1;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #e0e7ff 0%, #c4b5fd 50%, #f9a8d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    p {
+      color: var(--text-muted);
+      font-size: 16px;
+      line-height: 1.55;
+      margin-bottom: 28px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #0c0d12;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 12px 22px;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .meta {
+      margin-top: 32px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .meta a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="emoji">👋</div>
+    <h1>Hello, World!</h1>
+    <p>
+      A simple starter page living in the<br>
+      <strong>4geekdna / Tone</strong> repository.
+    </p>
+    <a class="btn" href="index.html">← Back to Index</a>
+    <div class="meta">
+      <a href="https://github.com/4geekdna/Tone" target="_blank" rel="noopener">github.com/4geekdna/Tone</a>
+    </div>
+  </div>
+</body>
+</html>
