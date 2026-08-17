@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>My Bar v0.2</title>
+  <title>My Bar v0.3</title>
   <style>
     :root {
       --bg: #0c0d12;
@@ -65,7 +65,7 @@
       margin: 0 auto;
     }
 
-    header { text-align: center; margin-bottom: 24px; }
+    header { text-align: center; margin-bottom: 20px; }
 
     .back {
       display: inline-flex;
@@ -75,7 +75,7 @@
       text-decoration: none;
       font-size: 14px;
       font-weight: 500;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     h1 {
@@ -95,14 +95,14 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px;
+      padding: 16px;
       margin-bottom: 20px;
     }
 
     .capture-buttons {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 10px;
     }
 
     .btn {
@@ -110,7 +110,7 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 14px 12px;
+      padding: 14px 10px;
       border: none;
       border-radius: 12px;
       font-size: 15px;
@@ -120,8 +120,6 @@
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       text-align: center;
-      position: relative;
-      overflow: hidden;
     }
 
     .btn:active { opacity: 0.85; transform: scale(0.98); }
@@ -133,50 +131,89 @@
     .btn-gallery {
       background: #1e293b;
       border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
     }
 
-    /* Full-size transparent file input over the button */
-    .btn input[type="file"] {
+    .btn-gallery input[type="file"] {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
       opacity: 0;
+      font-size: 16px;
       cursor: pointer;
-      font-size: 16px; /* iOS needs non-zero */
     }
 
     .status {
       text-align: center;
       font-size: 13px;
       color: var(--text-muted);
-      margin-top: 14px;
+      margin-top: 12px;
       min-height: 1.4em;
       padding: 8px 10px;
       border-radius: 8px;
       background: rgba(255,255,255,0.03);
-      border: 1px solid transparent;
+      border: 1px solid var(--border);
     }
 
-    .status.active {
-      border-color: var(--border);
-      color: var(--text);
+    .status.error { color: var(--danger); border-color: rgba(248,113,113,0.35); }
+    .status.ok { color: var(--success); border-color: rgba(52,211,153,0.35); }
+
+    /* Live camera panel */
+    .camera-panel {
+      display: none;
+      margin-top: 14px;
     }
 
-    .status.error {
-      color: var(--danger);
-      border-color: rgba(248,113,113,0.3);
+    .camera-panel.active { display: block; }
+
+    .video-wrap {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #000;
+      aspect-ratio: 3 / 4;
+      max-height: 55vh;
     }
 
-    .status.ok {
-      color: var(--success);
-      border-color: rgba(52,211,153,0.3);
+    #liveVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
+    .camera-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+      align-items: center;
+    }
+
+    .btn-shutter {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      background: var(--accent);
+      margin: 0 auto;
+      box-shadow: 0 0 0 3px rgba(167,139,250,0.35);
+    }
+
+    .btn-secondary {
+      background: #1e293b;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      padding: 12px 8px;
+    }
+
+    /* Preview + form */
     .preview-wrap {
       display: none;
-      margin-top: 16px;
-      padding-top: 16px;
+      margin-top: 14px;
+      padding-top: 14px;
       border-top: 1px solid var(--border);
     }
 
@@ -207,21 +244,17 @@
       border-radius: 10px;
       padding: 12px 14px;
       color: var(--text);
-      font-size: 16px; /* prevents iOS zoom */
+      font-size: 16px;
       outline: none;
     }
 
-    input[type="text"]:focus, select:focus {
-      border-color: var(--accent);
-    }
+    input[type="text"]:focus, select:focus { border-color: var(--accent); }
 
     .btn-add {
       width: 100%;
       background: var(--success);
       color: #0c0d12;
       margin-top: 8px;
-      position: static;
-      overflow: visible;
     }
 
     .btn-cancel {
@@ -230,8 +263,6 @@
       border: 1px solid var(--border);
       color: var(--text-muted);
       margin-top: 8px;
-      position: static;
-      overflow: visible;
     }
 
     .hint {
@@ -262,11 +293,7 @@
       border-radius: 999px;
     }
 
-    .drink-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+    .drink-list { display: flex; flex-direction: column; gap: 10px; }
 
     .drink-card {
       display: flex;
@@ -298,10 +325,7 @@
       text-overflow: ellipsis;
     }
 
-    .drink-meta {
-      font-size: 12.5px;
-      color: var(--text-muted);
-    }
+    .drink-meta { font-size: 12.5px; color: var(--text-muted); }
 
     .icon-btn {
       width: 36px;
@@ -332,7 +356,7 @@
   </style>
 </head>
 <body>
-  <div class="version-badge">v0.2</div>
+  <div class="version-badge">v0.3</div>
 
   <div class="container">
     <header>
@@ -342,20 +366,30 @@
     </header>
 
     <div class="capture-card">
-      <div class="capture-buttons">
-        <label class="btn btn-camera" id="cameraLabel">
-          📷 Take Photo
-          <input type="file" id="cameraInput" accept="image/*" capture="environment">
-        </label>
+      <div class="capture-buttons" id="mainButtons">
+        <button class="btn btn-camera" id="openCameraBtn" type="button">📷 Take Photo</button>
 
-        <label class="btn btn-gallery" id="galleryLabel">
+        <label class="btn btn-gallery">
           🖼️ From Photos
           <input type="file" id="galleryInput" accept="image/*">
         </label>
       </div>
 
-      <div class="status active" id="status">Ready — take or choose a photo</div>
+      <div class="status" id="status">Ready — take or choose a photo</div>
 
+      <!-- In-app live camera -->
+      <div class="camera-panel" id="cameraPanel">
+        <div class="video-wrap">
+          <video id="liveVideo" playsinline autoplay muted></video>
+        </div>
+        <div class="camera-actions">
+          <button class="btn btn-secondary" id="closeCameraBtn" type="button">Cancel</button>
+          <button class="btn-shutter" id="shutterBtn" type="button" title="Capture"></button>
+          <button class="btn btn-secondary" id="switchCamBtn" type="button">Flip</button>
+        </div>
+      </div>
+
+      <!-- Preview + name form -->
       <div class="preview-wrap" id="previewWrap">
         <img class="preview-img" id="previewImg" alt="Bottle preview">
 
@@ -415,7 +449,7 @@
 
         <button class="btn btn-add" id="addBtn" type="button">Add to My Bar</button>
         <button class="btn btn-cancel" id="cancelBtn" type="button">Cancel</button>
-        <p class="hint">Type a name, then tap <strong>Add to My Bar</strong> to save it below.</p>
+        <p class="hint">Type a name, then tap <strong>Add to My Bar</strong>.</p>
       </div>
     </div>
 
@@ -436,11 +470,16 @@
     "use strict";
 
     var DB_NAME = "ToneBarDB";
-    var DB_VERSION = 1;
     var STORE_NAME = "bottles";
 
-    var cameraInput = document.getElementById("cameraInput");
+    var openCameraBtn = document.getElementById("openCameraBtn");
     var galleryInput = document.getElementById("galleryInput");
+    var cameraPanel = document.getElementById("cameraPanel");
+    var liveVideo = document.getElementById("liveVideo");
+    var shutterBtn = document.getElementById("shutterBtn");
+    var closeCameraBtn = document.getElementById("closeCameraBtn");
+    var switchCamBtn = document.getElementById("switchCamBtn");
+    var mainButtons = document.getElementById("mainButtons");
     var previewWrap = document.getElementById("previewWrap");
     var previewImg = document.getElementById("previewImg");
     var drinkName = document.getElementById("drinkName");
@@ -454,12 +493,12 @@
 
     var currentDataUrl = null;
     var db = null;
-    var processing = false;
-    var lastHandledKey = "";
+    var mediaStream = null;
+    var facingMode = "environment"; // back camera first
 
     function setStatus(msg, type) {
       statusEl.textContent = msg || "";
-      statusEl.className = "status active" + (type ? " " + type : "");
+      statusEl.className = "status" + (type ? " " + type : "");
     }
 
     function escapeHtml(str) {
@@ -473,19 +512,17 @@
     function formatDate(iso) {
       try {
         return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-      } catch (e) {
-        return "";
-      }
+      } catch (e) { return ""; }
     }
 
     function openDB() {
       return new Promise(function (resolve, reject) {
         if (db) return resolve(db);
-        var request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onerror = function () { reject(request.error || new Error("DB open failed")); };
-        request.onsuccess = function () { db = request.result; resolve(db); };
-        request.onupgradeneeded = function (event) {
-          var database = event.target.result;
+        var req = indexedDB.open(DB_NAME, 1);
+        req.onerror = function () { reject(req.error); };
+        req.onsuccess = function () { db = req.result; resolve(db); };
+        req.onupgradeneeded = function (e) {
+          var database = e.target.result;
           if (!database.objectStoreNames.contains(STORE_NAME)) {
             database.createObjectStore(STORE_NAME, { keyPath: "id" });
           }
@@ -497,8 +534,7 @@
       return openDB().then(function (database) {
         return new Promise(function (resolve, reject) {
           var tx = database.transaction(STORE_NAME, "readonly");
-          var store = tx.objectStore(STORE_NAME);
-          var req = store.getAll();
+          var req = tx.objectStore(STORE_NAME).getAll();
           req.onsuccess = function () { resolve(req.result || []); };
           req.onerror = function () { reject(req.error); };
         });
@@ -509,8 +545,7 @@
       return openDB().then(function (database) {
         return new Promise(function (resolve, reject) {
           var tx = database.transaction(STORE_NAME, "readwrite");
-          var store = tx.objectStore(STORE_NAME);
-          var req = store.add(item);
+          var req = tx.objectStore(STORE_NAME).add(item);
           req.onsuccess = function () { resolve(item); };
           req.onerror = function () { reject(req.error); };
         });
@@ -521,8 +556,7 @@
       return openDB().then(function (database) {
         return new Promise(function (resolve, reject) {
           var tx = database.transaction(STORE_NAME, "readwrite");
-          var store = tx.objectStore(STORE_NAME);
-          var req = store.delete(id);
+          var req = tx.objectStore(STORE_NAME).delete(id);
           req.onsuccess = function () { resolve(); };
           req.onerror = function () { reject(req.error); };
         });
@@ -530,59 +564,140 @@
     }
 
     function renderList() {
-      getAllItems()
-        .then(function (items) {
-          items.sort(function (a, b) {
-            return (b.addedAt || "").localeCompare(a.addedAt || "");
-          });
-          countBadge.textContent = items.length;
-          drinkList.querySelectorAll(".drink-card").forEach(function (el) { el.remove(); });
+      getAllItems().then(function (items) {
+        items.sort(function (a, b) {
+          return (b.addedAt || "").localeCompare(a.addedAt || "");
+        });
+        countBadge.textContent = items.length;
+        drinkList.querySelectorAll(".drink-card").forEach(function (el) { el.remove(); });
 
-          if (items.length === 0) {
-            emptyState.style.display = "block";
-            return;
+        if (!items.length) {
+          emptyState.style.display = "block";
+          return;
+        }
+        emptyState.style.display = "none";
+
+        items.forEach(function (item) {
+          var card = document.createElement("div");
+          card.className = "drink-card";
+          card.innerHTML =
+            '<img class="drink-thumb" src="' + item.image + '" alt="' + escapeHtml(item.name) + '">' +
+            '<div class="drink-info">' +
+              '<div class="drink-name">' + escapeHtml(item.name) + '</div>' +
+              '<div class="drink-meta">' + escapeHtml(item.category) + ' · ' + formatDate(item.addedAt) + '</div>' +
+            '</div>' +
+            '<button class="icon-btn delete" data-id="' + escapeHtml(item.id) + '" type="button">🗑️</button>';
+          drinkList.appendChild(card);
+        });
+
+        drinkList.querySelectorAll(".icon-btn.delete").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            deleteItemFromDB(btn.getAttribute("data-id")).then(renderList);
+          });
+        });
+      }).catch(function () {
+        setStatus("Could not load collection", "error");
+      });
+    }
+
+    function stopCamera() {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(function (t) { t.stop(); });
+        mediaStream = null;
+      }
+      liveVideo.srcObject = null;
+      cameraPanel.classList.remove("active");
+      mainButtons.style.display = "grid";
+    }
+
+    function startCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setStatus("Camera API not available in this browser", "error");
+        return;
+      }
+
+      setStatus("Starting camera…");
+      stopCamera();
+
+      var constraints = {
+        audio: false,
+        video: {
+          facingMode: { ideal: facingMode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      };
+
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then(function (stream) {
+          mediaStream = stream;
+          liveVideo.srcObject = stream;
+          liveVideo.setAttribute("playsinline", true);
+          liveVideo.muted = true;
+          var playPromise = liveVideo.play();
+          if (playPromise && playPromise.catch) {
+            playPromise.catch(function () {});
           }
-          emptyState.style.display = "none";
-
-          items.forEach(function (item) {
-            var card = document.createElement("div");
-            card.className = "drink-card";
-            card.innerHTML =
-              '<img class="drink-thumb" src="' + item.image + '" alt="' + escapeHtml(item.name) + '">' +
-              '<div class="drink-info">' +
-                '<div class="drink-name">' + escapeHtml(item.name) + '</div>' +
-                '<div class="drink-meta">' + escapeHtml(item.category) + ' · ' + formatDate(item.addedAt) + '</div>' +
-              '</div>' +
-              '<button class="icon-btn delete" data-id="' + escapeHtml(item.id) + '" type="button">🗑️</button>';
-            drinkList.appendChild(card);
-          });
-
-          drinkList.querySelectorAll(".icon-btn.delete").forEach(function (btn) {
-            btn.addEventListener("click", function () {
-              removeItem(btn.getAttribute("data-id"));
-            });
-          });
+          mainButtons.style.display = "none";
+          previewWrap.classList.remove("active");
+          cameraPanel.classList.add("active");
+          setStatus("Point at a bottle, then tap the purple shutter", "ok");
         })
         .catch(function (err) {
           console.error(err);
-          setStatus("Could not load collection", "error");
+          var msg = "Camera permission denied or unavailable";
+          if (err && err.name === "NotAllowedError") {
+            msg = "Camera permission denied — allow camera for this site in Settings";
+          } else if (err && err.name === "NotFoundError") {
+            msg = "No camera found on this device";
+          }
+          setStatus(msg, "error");
         });
+    }
+
+    function captureFrame() {
+      if (!liveVideo.videoWidth) {
+        setStatus("Camera not ready yet — wait a second", "error");
+        return;
+      }
+
+      var maxSize = 720;
+      var vw = liveVideo.videoWidth;
+      var vh = liveVideo.videoHeight;
+      var width = vw;
+      var height = vh;
+
+      if (width > maxSize || height > maxSize) {
+        if (width > height) {
+          height = Math.round((height * maxSize) / width);
+          width = maxSize;
+        } else {
+          width = Math.round((width * maxSize) / height);
+          height = maxSize;
+        }
+      }
+
+      var canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(liveVideo, 0, 0, width, height);
+      var dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+
+      stopCamera();
+      showPreview(dataUrl);
     }
 
     function showPreview(dataUrl) {
       currentDataUrl = dataUrl;
-      previewImg.onload = function () {
-        previewWrap.classList.add("active");
-        setStatus("Photo ready — enter a name below", "ok");
-        setTimeout(function () { drinkName.focus(); }, 120);
-        // Scroll preview into view on phone
-        previewWrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      };
-      previewImg.onerror = function () {
-        setStatus("Preview failed to display", "error");
-      };
       previewImg.src = dataUrl;
+      previewWrap.classList.add("active");
       drinkName.value = "";
+      setStatus("Photo captured — enter a name", "ok");
+      setTimeout(function () {
+        drinkName.focus();
+        previewWrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 100);
     }
 
     function hidePreview() {
@@ -592,15 +707,53 @@
       setStatus("Ready — take or choose a photo");
     }
 
+    function handleGalleryFile(file) {
+      if (!file) return;
+      setStatus("Loading photo…");
+
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var maxSize = 720;
+          var width = img.naturalWidth || img.width;
+          var height = img.naturalHeight || img.height;
+          if (width > maxSize || height > maxSize) {
+            if (width > height) {
+              height = Math.round((height * maxSize) / width);
+              width = maxSize;
+            } else {
+              width = Math.round((width * maxSize) / height);
+              height = maxSize;
+            }
+          }
+          var canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          var dataUrl = canvas.toDataURL("image/jpeg", 0.75);
+          URL.revokeObjectURL(url);
+          showPreview(dataUrl);
+        } catch (e) {
+          showPreview(url);
+        }
+      };
+      img.onerror = function () {
+        setStatus("Could not load that photo", "error");
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    }
+
     function addItem() {
       var name = (drinkName.value || "").trim();
       if (!name) {
-        setStatus("Please enter a drink name first", "error");
+        setStatus("Enter a drink name first", "error");
         drinkName.focus();
         return;
       }
       if (!currentDataUrl) {
-        setStatus("No photo selected", "error");
+        setStatus("No photo", "error");
         return;
       }
 
@@ -619,162 +772,35 @@
         .then(function () {
           hidePreview();
           renderList();
-          setStatus('Saved “' + name + '” to collection', "ok");
+          setStatus('Saved “' + name + '”', "ok");
           setTimeout(function () {
             setStatus("Ready — take or choose a photo");
-          }, 2200);
+          }, 2000);
         })
-        .catch(function (err) {
-          console.error(err);
-          setStatus("Save failed — try again", "error");
+        .catch(function () {
+          setStatus("Save failed", "error");
         })
         .finally(function () {
           addBtn.disabled = false;
         });
     }
 
-    function removeItem(id) {
-      deleteItemFromDB(id)
-        .then(function () {
-          renderList();
-          setStatus("Removed", "ok");
-          setTimeout(function () {
-            setStatus("Ready — take or choose a photo");
-          }, 1500);
-        })
-        .catch(function () {
-          setStatus("Could not remove", "error");
-        });
-    }
-
-    function fileKey(file) {
-      return (file.name || "") + "|" + file.size + "|" + (file.lastModified || "");
-    }
-
-    function handleFile(file) {
-      if (!file || processing) return;
-
-      var key = fileKey(file);
-      if (key === lastHandledKey) return;
-      lastHandledKey = key;
-      processing = true;
-
-      setStatus("Processing photo (" + Math.round(file.size / 1024) + " KB)…");
-
-      var objectUrl = null;
-      try {
-        objectUrl = URL.createObjectURL(file);
-      } catch (e) {
-        processing = false;
-        setStatus("Could not open photo", "error");
-        return;
-      }
-
-      var img = new Image();
-
-      img.onload = function () {
-        try {
-          var maxSize = 720;
-          var width = img.naturalWidth || img.width;
-          var height = img.naturalHeight || img.height;
-
-          if (!width || !height) {
-            showPreview(objectUrl);
-            processing = false;
-            return;
-          }
-
-          if (width > maxSize || height > maxSize) {
-            if (width > height) {
-              height = Math.round((height * maxSize) / width);
-              width = maxSize;
-            } else {
-              width = Math.round((width * maxSize) / height);
-              height = maxSize;
-            }
-          }
-
-          var canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-          var ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, width, height);
-          var dataUrl = canvas.toDataURL("image/jpeg", 0.75);
-          try { URL.revokeObjectURL(objectUrl); } catch (e) {}
-          showPreview(dataUrl);
-        } catch (err) {
-          console.error(err);
-          showPreview(objectUrl);
-        }
-        processing = false;
-      };
-
-      img.onerror = function () {
-        // Fallback for HEIC / odd formats
-        setStatus("Trying alternate load…");
-        var reader = new FileReader();
-        reader.onload = function (e) {
-          showPreview(e.target.result);
-          processing = false;
-          try { URL.revokeObjectURL(objectUrl); } catch (err) {}
-        };
-        reader.onerror = function () {
-          setStatus("Could not load this photo. Try From Photos.", "error");
-          processing = false;
-          try { URL.revokeObjectURL(objectUrl); } catch (err) {}
-        };
-        reader.readAsDataURL(file);
-      };
-
-      img.src = objectUrl;
-    }
-
-    function checkInputsForFile() {
-      var cam = cameraInput.files && cameraInput.files[0];
-      var gal = galleryInput.files && galleryInput.files[0];
-      if (cam) {
-        setStatus("Found camera photo…");
-        handleFile(cam);
-      } else if (gal) {
-        setStatus("Found gallery photo…");
-        handleFile(gal);
-      }
-    }
-
-    // Primary listeners
-    cameraInput.addEventListener("change", function () {
-      setStatus("Camera change event…");
-      if (cameraInput.files && cameraInput.files[0]) {
-        handleFile(cameraInput.files[0]);
-      } else {
-        setStatus("Camera returned but no file", "error");
-      }
+    // Events
+    openCameraBtn.addEventListener("click", startCamera);
+    closeCameraBtn.addEventListener("click", function () {
+      stopCamera();
+      setStatus("Ready — take or choose a photo");
+    });
+    shutterBtn.addEventListener("click", captureFrame);
+    switchCamBtn.addEventListener("click", function () {
+      facingMode = facingMode === "environment" ? "user" : "environment";
+      startCamera();
     });
 
     galleryInput.addEventListener("change", function () {
-      setStatus("Gallery change event…");
-      if (galleryInput.files && galleryInput.files[0]) {
-        handleFile(galleryInput.files[0]);
-      }
-    });
-
-    // iOS fix: when returning from camera, change often doesn't fire.
-    // Check again when the page becomes visible / focused.
-    document.addEventListener("visibilitychange", function () {
-      if (document.visibilityState === "visible") {
-        setStatus("Back from camera — checking for photo…");
-        setTimeout(checkInputsForFile, 300);
-        setTimeout(checkInputsForFile, 800);
-      }
-    });
-
-    window.addEventListener("focus", function () {
-      setTimeout(checkInputsForFile, 200);
-      setTimeout(checkInputsForFile, 600);
-    });
-
-    window.addEventListener("pageshow", function () {
-      setTimeout(checkInputsForFile, 200);
+      var file = galleryInput.files && galleryInput.files[0];
+      if (file) handleGalleryFile(file);
+      galleryInput.value = "";
     });
 
     addBtn.addEventListener("click", addItem);
@@ -787,11 +813,16 @@
       }
     });
 
-    openDB()
-      .then(function () { renderList(); })
-      .catch(function () {
-        setStatus("Storage unavailable", "error");
-      });
+    // Stop camera if user leaves the page
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden") {
+        // keep stream if possible; optional stop
+      }
+    });
+
+    openDB().then(renderList).catch(function () {
+      setStatus("Storage unavailable", "error");
+    });
   </script>
 </body>
 </html>
