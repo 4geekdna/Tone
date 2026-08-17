@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>My Bar v0.5</title>
+  <title>My Bar v0.6</title>
   <style>
     :root {
       --bg: #0c0d12; --surface: #161822; --border: #2a2e42;
@@ -33,10 +33,7 @@
     }
     .container { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; }
     header { text-align: center; margin-bottom: 18px; }
-    .back {
-      display: inline-flex; color: var(--accent); text-decoration: none;
-      font-size: 14px; font-weight: 500; margin-bottom: 12px;
-    }
+    .back { display: inline-flex; color: var(--accent); text-decoration: none; font-size: 14px; font-weight: 500; margin-bottom: 12px; }
     h1 {
       font-size: 26px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px;
       background: linear-gradient(135deg, #e0e7ff, #c4b5fd, #f9a8d4);
@@ -55,7 +52,7 @@
       cursor: pointer; position: relative; overflow: hidden;
       -webkit-tap-highlight-color: transparent;
     }
-    .pick-btn:active { opacity: 0.88; transform: scale(0.99); }
+    .pick-btn:active { opacity: 0.88; }
     .pick-btn input[type=file] {
       position: absolute; inset: 0; width: 100%; height: 100%;
       opacity: 0; font-size: 20px; cursor: pointer;
@@ -64,14 +61,14 @@
       margin-top: 14px; text-align: center; font-size: 13px;
       color: var(--text-muted); padding: 10px; border-radius: 10px;
       border: 1px solid var(--border); background: rgba(255,255,255,0.03);
-      line-height: 1.45; min-height: 1.4em;
+      line-height: 1.45;
     }
     .status.ok { color: var(--success); border-color: rgba(52,211,153,0.35); }
     .status.error { color: var(--danger); border-color: rgba(248,113,113,0.35); }
     .preview { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
     .preview.active { display: block; }
     .preview img {
-      width: 100%; max-height: 280px; object-fit: contain;
+      width: 100%; max-height: 260px; object-fit: contain;
       border-radius: 12px; background: #0a0b10; margin-bottom: 14px;
     }
     label.lbl { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
@@ -81,14 +78,16 @@
       font-size: 16px; outline: none; margin-bottom: 12px;
     }
     input[type=text]:focus, select:focus { border-color: var(--accent); }
-    .row-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .btn {
-      border: none; border-radius: 12px; padding: 14px 12px;
-      font-size: 15px; font-weight: 600; cursor: pointer; color: #fff;
-      -webkit-tap-highlight-color: transparent;
+    .btn-add {
+      width: 100%; border: none; border-radius: 12px; padding: 16px;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      background: var(--success); color: #0c0d12; margin-bottom: 8px;
     }
-    .btn-add { background: var(--success); color: #0c0d12; }
-    .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+    .btn-cancel {
+      width: 100%; border-radius: 12px; padding: 12px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+    }
     .section-title {
       font-size: 13px; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 12px;
@@ -130,7 +129,7 @@
   </style>
 </head>
 <body>
-  <div class="version-badge">v0.5</div>
+  <div class="version-badge">v0.6</div>
 
   <div class="container">
     <header>
@@ -140,47 +139,32 @@
     </header>
 
     <div class="card">
-      <!--
-        No capture attribute on purpose.
-        On iPhone this opens an action sheet:
-        Take Photo | Photo Library | Browse
-        This is the most reliable path on iOS Safari.
-      -->
       <label class="pick-btn">
         📷 Add Photo
         <input type="file" id="photoInput" accept="image/*">
       </label>
 
-      <div class="status" id="status">Tap Add Photo — then choose Take Photo or Photo Library</div>
-      <p class="tip">On iPhone you’ll get a menu: <strong>Take Photo</strong> or <strong>Photo Library</strong>.</p>
+      <div class="status" id="status">1) Add Photo &nbsp;→&nbsp; 2) Name it &nbsp;→&nbsp; 3) Tap Add to Bar</div>
+      <p class="tip">On iPhone: choose <strong>Photo Library</strong> or <strong>Take Photo</strong> from the menu.</p>
 
       <div class="preview" id="preview">
         <img id="previewImg" alt="Preview">
-        <label class="lbl" for="drinkName">Drink / Bottle name</label>
-        <input type="text" id="drinkName" placeholder="e.g. Grey Goose, Macallan 12…" list="suggestions" autocomplete="off">
+        <label class="lbl" for="drinkName">Drink / Bottle name (optional)</label>
+        <input type="text" id="drinkName" placeholder="Leave blank for “Bottle”" list="suggestions" autocomplete="off">
         <datalist id="suggestions">
           <option value="Grey Goose Vodka">
-          <option value="Belvedere Vodka">
-          <option value="Tito's Handmade Vodka">
           <option value="Macallan 12">
-          <option value="Glenfiddich 12">
-          <option value="Johnnie Walker Black">
           <option value="Jameson Irish Whiskey">
           <option value="Jack Daniel's">
-          <option value="Maker's Mark">
-          <option value="Hennessy VS">
           <option value="Patrón Silver">
-          <option value="Don Julio Blanco">
-          <option value="Casamigos Blanco">
           <option value="Tanqueray Gin">
-          <option value="Bombay Sapphire">
-          <option value="Hendrick's Gin">
-          <option value="Campari">
+          <option value="Hennessy VS">
+          <option value="Casamigos Blanco">
           <option value="Aperol">
-          <option value="Baileys Irish Cream">
-          <option value="Champagne / Prosecco">
+          <option value="Campari">
           <option value="Red Wine">
           <option value="White Wine">
+          <option value="Champagne">
           <option value="Beer">
         </datalist>
 
@@ -196,13 +180,11 @@
           <option value="Wine">Wine</option>
           <option value="Champagne / Sparkling">Champagne / Sparkling</option>
           <option value="Beer">Beer</option>
-          <option value="Other">Other</option>
+          <option value="Other" selected>Other</option>
         </select>
 
-        <div class="row-btns">
-          <button class="btn btn-cancel" id="cancelBtn" type="button">Cancel</button>
-          <button class="btn btn-add" id="addBtn" type="button">Add to Bar</button>
-        </div>
+        <button class="btn-add" id="addBtn" type="button">✓ Add to My Collection</button>
+        <button class="btn-cancel" id="cancelBtn" type="button">Cancel</button>
       </div>
     </div>
 
@@ -211,13 +193,14 @@
       <span class="count" id="count">0</span>
     </div>
     <div class="list" id="list">
-      <div class="empty" id="empty">🍾<br><br>No bottles yet.<br>Add a photo, name it, then tap Add to Bar.</div>
+      <div class="empty" id="empty">🍾<br><br>No bottles yet.<br>Add a photo, then tap <strong>Add to My Collection</strong>.</div>
     </div>
   </div>
 
   <script>
     "use strict";
 
+    var LS_KEY = "tone_bar_v6";
     var input = document.getElementById("photoInput");
     var statusEl = document.getElementById("status");
     var preview = document.getElementById("preview");
@@ -231,7 +214,6 @@
     var countEl = document.getElementById("count");
 
     var currentDataUrl = null;
-    var db = null;
     var lastKey = "";
 
     function setStatus(msg, type) {
@@ -243,73 +225,74 @@
       return String(s).replace(/&/g,"&").replace(/</g,"<").replace(/>/g,">").replace(/"/g,""");
     }
 
-    function openDB() {
-      return new Promise(function (resolve, reject) {
-        if (db) return resolve(db);
-        var req = indexedDB.open("ToneBarDB", 1);
-        req.onerror = function () { reject(req.error); };
-        req.onsuccess = function () { db = req.result; resolve(db); };
-        req.onupgradeneeded = function (e) {
-          var d = e.target.result;
-          if (!d.objectStoreNames.contains("bottles")) d.createObjectStore("bottles", { keyPath: "id" });
-        };
-      });
+    // Simple, reliable storage (localStorage first — works more often on iOS Safari)
+    function loadItems() {
+      try {
+        var raw = localStorage.getItem(LS_KEY);
+        if (!raw) return [];
+        var arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+      } catch (e) {
+        console.error(e);
+        return [];
+      }
     }
 
-    function allItems() {
-      return openDB().then(function (d) {
-        return new Promise(function (resolve, reject) {
-          var r = d.transaction("bottles", "readonly").objectStore("bottles").getAll();
-          r.onsuccess = function () { resolve(r.result || []); };
-          r.onerror = function () { reject(r.error); };
-        });
-      });
-    }
-
-    function saveItem(item) {
-      return openDB().then(function (d) {
-        return new Promise(function (resolve, reject) {
-          var r = d.transaction("bottles", "readwrite").objectStore("bottles").add(item);
-          r.onsuccess = function () { resolve(); };
-          r.onerror = function () { reject(r.error); };
-        });
-      });
-    }
-
-    function deleteItem(id) {
-      return openDB().then(function (d) {
-        return new Promise(function (resolve, reject) {
-          var r = d.transaction("bottles", "readwrite").objectStore("bottles").delete(id);
-          r.onsuccess = function () { resolve(); };
-          r.onerror = function () { reject(r.error); };
-        });
-      });
+    function saveItems(items) {
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify(items));
+        return true;
+      } catch (e) {
+        console.error("localStorage save failed", e);
+        // Quota exceeded — try removing oldest images' full data
+        try {
+          if (items.length > 1) {
+            var trimmed = items.slice(-5); // keep newest 5
+            localStorage.setItem(LS_KEY, JSON.stringify(trimmed));
+            return true;
+          }
+        } catch (e2) {}
+        return false;
+      }
     }
 
     function render() {
-      allItems().then(function (items) {
-        items.sort(function (a, b) { return (b.addedAt || "").localeCompare(a.addedAt || ""); });
-        countEl.textContent = items.length;
-        list.querySelectorAll(".item").forEach(function (el) { el.remove(); });
-        if (!items.length) { empty.style.display = "block"; return; }
-        empty.style.display = "none";
-        items.forEach(function (it) {
-          var el = document.createElement("div");
-          el.className = "item";
-          el.innerHTML =
-            '<img src="' + it.image + '" alt="">' +
-            '<div class="info"><div class="name">' + esc(it.name) + '</div>' +
-            '<div class="meta">' + esc(it.category) + '</div></div>' +
-            '<button class="del" data-id="' + esc(it.id) + '" type="button">🗑️</button>';
-          list.appendChild(el);
-        });
-        list.querySelectorAll(".del").forEach(function (btn) {
-          btn.onclick = function () {
-            deleteItem(btn.getAttribute("data-id")).then(render);
-          };
-        });
-      }).catch(function () {
-        setStatus("Could not load collection", "error");
+      var items = loadItems();
+      items.sort(function (a, b) {
+        return (b.addedAt || "").localeCompare(a.addedAt || "");
+      });
+
+      countEl.textContent = String(items.length);
+      list.querySelectorAll(".item").forEach(function (el) { el.remove(); });
+
+      if (!items.length) {
+        empty.style.display = "block";
+        return;
+      }
+
+      empty.style.display = "none";
+
+      items.forEach(function (it) {
+        var el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML =
+          '<img src="' + it.image + '" alt="">' +
+          '<div class="info">' +
+            '<div class="name">' + esc(it.name) + '</div>' +
+            '<div class="meta">' + esc(it.category) + '</div>' +
+          '</div>' +
+          '<button class="del" type="button" data-id="' + esc(it.id) + '">🗑️</button>';
+        list.appendChild(el);
+      });
+
+      list.querySelectorAll(".del").forEach(function (btn) {
+        btn.onclick = function () {
+          var id = btn.getAttribute("data-id");
+          var items = loadItems().filter(function (x) { return x.id !== id; });
+          saveItems(items);
+          render();
+          setStatus("Removed", "ok");
+        };
       });
     }
 
@@ -318,9 +301,8 @@
       previewImg.src = dataUrl;
       preview.classList.add("active");
       drinkName.value = "";
-      setStatus("Photo loaded — enter a name, then Add to Bar", "ok");
+      setStatus("Photo ready — tap Add to My Collection", "ok");
       setTimeout(function () {
-        drinkName.focus();
         preview.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }, 50);
     }
@@ -329,7 +311,7 @@
       currentDataUrl = null;
       preview.classList.remove("active");
       previewImg.removeAttribute("src");
-      setStatus("Tap Add Photo — then choose Take Photo or Photo Library");
+      setStatus("1) Add Photo  →  2) Name it  →  3) Tap Add to Bar");
     }
 
     function processFile(file) {
@@ -338,23 +320,24 @@
         return;
       }
 
-      var key = (file.name || "") + "|" + file.size + "|" + (file.lastModified || "");
+      var key = (file.name || "img") + "|" + file.size + "|" + (file.lastModified || Date.now());
       if (key === lastKey) return;
       lastKey = key;
 
-      setStatus("Got photo (“ + Math.round(file.size / 1024) + " KB) — processing…");
+      setStatus("Processing photo (" + Math.round(file.size / 1024) + " KB)…");
 
       var url;
       try { url = URL.createObjectURL(file); }
       catch (e) {
-        setStatus("Could not open file", "error");
+        setStatus("Could not open photo", "error");
         return;
       }
 
       var img = new Image();
       img.onload = function () {
         try {
-          var max = 800;
+          // Smaller images so localStorage can hold more bottles
+          var max = 480;
           var w = img.naturalWidth || img.width;
           var h = img.naturalHeight || img.height;
           if (w > max || h > max) {
@@ -364,19 +347,19 @@
           var c = document.createElement("canvas");
           c.width = w; c.height = h;
           c.getContext("2d").drawImage(img, 0, 0, w, h);
-          var dataUrl = c.toDataURL("image/jpeg", 0.8);
+          var dataUrl = c.toDataURL("image/jpeg", 0.65);
           try { URL.revokeObjectURL(url); } catch (e) {}
           showPreview(dataUrl);
         } catch (e) {
+          console.error(e);
           showPreview(url);
         }
       };
       img.onerror = function () {
-        // Fallback: FileReader
         var reader = new FileReader();
-        reader.onload = function (e) { showPreview(e.target.result); };
+        reader.onload = function (ev) { showPreview(ev.target.result); };
         reader.onerror = function () {
-          setStatus("Could not read this image", "error");
+          setStatus("Could not read photo", "error");
           try { URL.revokeObjectURL(url); } catch (e) {}
         };
         reader.readAsDataURL(file);
@@ -387,68 +370,68 @@
     function onFiles() {
       var file = input.files && input.files[0];
       if (file) processFile(file);
-      else setStatus("No photo chosen", "error");
     }
 
     input.addEventListener("change", onFiles);
     input.addEventListener("input", onFiles);
 
-    // iOS recovery: check again when returning from camera
     function recheck() {
       if (input.files && input.files[0]) processFile(input.files[0]);
     }
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState === "visible") {
-        setTimeout(recheck, 200);
-        setTimeout(recheck, 700);
-        setTimeout(recheck, 1500);
+        setTimeout(recheck, 250);
+        setTimeout(recheck, 900);
       }
     });
     window.addEventListener("focus", function () {
-      setTimeout(recheck, 200);
-      setTimeout(recheck, 800);
-    });
-    window.addEventListener("pageshow", function () {
-      setTimeout(recheck, 200);
+      setTimeout(recheck, 250);
     });
 
     addBtn.addEventListener("click", function () {
+      if (!currentDataUrl) {
+        setStatus("No photo to save — add a photo first", "error");
+        return;
+      }
+
       var name = (drinkName.value || "").trim();
-      if (!name) { setStatus("Enter a name first", "error"); drinkName.focus(); return; }
-      if (!currentDataUrl) { setStatus("No photo", "error"); return; }
+      if (!name) name = "Bottle";
 
-      addBtn.disabled = true;
-      setStatus("Saving…");
-
-      saveItem({
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      var items = loadItems();
+      items.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         name: name,
-        category: drinkCategory.value,
+        category: drinkCategory.value || "Other",
         image: currentDataUrl,
         addedAt: new Date().toISOString()
-      }).then(function () {
-        hidePreview();
-        render();
-        setStatus('Saved “' + name + '”', "ok");
-        setTimeout(function () {
-          setStatus("Tap Add Photo — then choose Take Photo or Photo Library");
-        }, 2000);
-      }).catch(function () {
-        setStatus("Save failed", "error");
-      }).finally(function () {
-        addBtn.disabled = false;
       });
+
+      var ok = saveItems(items);
+      if (!ok) {
+        setStatus("Storage full — delete some bottles and try again", "error");
+        return;
+      }
+
+      hidePreview();
+      render();
+      setStatus('Added “' + name + '” to My Collection ✓', "ok");
+
+      // Scroll to collection
+      setTimeout(function () {
+        document.getElementById("list").scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
     });
 
     cancelBtn.addEventListener("click", hidePreview);
 
     drinkName.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") { e.preventDefault(); addBtn.click(); }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addBtn.click();
+      }
     });
 
-    openDB().then(render).catch(function () {
-      setStatus("Storage unavailable", "error");
-    });
+    render();
   </script>
 </body>
 </html>
