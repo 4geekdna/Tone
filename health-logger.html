@@ -1,326 +1,496 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Offline Health Logger</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 500px; margin: 2rem auto; padding: 1rem; background: #f4f4f5; }
-        .card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 1rem; }
-        h2 { margin-top: 0; color: #111; font-size: 1.4rem;}
-        label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.9em; color: #444; }
-        select, input { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; background: #fff;}
-        button { width: 100%; padding: 14px; margin-top: 15px; border-radius: 8px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; transition: opacity 0.2s; }
-        button:active { opacity: 0.8; }
-        .btn-primary { background: #007aff; color: white; }
-        .btn-secondary { background: #34c759; color: white; margin-top: 10px; }
-        .btn-danger { background: #ff3b30; color: white; margin-top: 10px; }
-        
-        .log-list { margin-top: 15px; max-height: 350px; overflow-y: auto; font-size: 0.95em; }
-        .log-item { display: flex; flex-direction: column; padding: 12px 0; border-bottom: 1px solid #eee; }
-        .log-details { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .log-actions { display: flex; gap: 8px; justify-content: flex-end; }
-        .btn-small { padding: 6px 12px; font-size: 0.85em; border-radius: 6px; border: none; cursor: pointer; color: white; margin-top: 0; width: auto; font-weight: 600;}
-        .btn-edit { background: #ff9500; }
-        .btn-delete { background: #ff3b30; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>My Bar v0.9</title>
+  <style>
+    :root {
+      --bg: #0c0d12; --surface: #161822; --border: #2a2e42;
+      --text: #f0f1f5; --text-muted: #9ca3af; --accent: #a78bfa;
+      --accent-soft: rgba(167,139,250,0.15); --success: #34d399;
+      --danger: #f87171; --radius: 16px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100dvh;
+      padding: 16px; padding-top: max(16px, env(safe-area-inset-top));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(167,139,250,0.16), transparent),
+        radial-gradient(ellipse 40% 30% at 90% 90%, rgba(244,114,182,0.07), transparent);
+    }
+    .version-badge {
+      position: fixed; top: max(8px, env(safe-area-inset-top)); right: 12px; z-index: 50;
+      font-size: 11px; color: #6b7280; background: rgba(12,13,18,0.85);
+      padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border);
+    }
+    .container { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 18px; }
+    .back { display: inline-flex; color: var(--accent); text-decoration: none; font-size: 14px; font-weight: 500; margin-bottom: 12px; }
+    h1 {
+      font-size: 26px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px;
+      background: linear-gradient(135deg, #e0e7ff, #c4b5fd, #f9a8d4);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .subtitle { color: var(--text-muted); font-size: 14px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px; margin-bottom: 20px;
+    }
+    .pick-btn {
+      display: block; width: 100%; text-align: center;
+      background: linear-gradient(135deg, #7c3aed, #a78bfa);
+      color: #fff; font-size: 17px; font-weight: 700;
+      padding: 18px 16px; border-radius: 14px; border: none;
+      cursor: pointer; position: relative; overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pick-btn:active { opacity: 0.88; }
+    .pick-btn input[type=file] {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      opacity: 0; font-size: 20px; cursor: pointer;
+    }
+    .status {
+      margin-top: 14px; text-align: center; font-size: 13px;
+      color: var(--text-muted); padding: 10px; border-radius: 10px;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.03);
+      line-height: 1.45;
+    }
+    .status.ok { color: var(--success); border-color: rgba(52,211,153,0.35); }
+    .status.error { color: var(--danger); border-color: rgba(248,113,113,0.35); }
+    .tip {
+      margin-top: 10px; font-size: 12.5px; color: var(--text-muted);
+      text-align: center; line-height: 1.45;
+    }
 
-        input[type="file"] { display: none; }
-        .file-upload-label { display: block; text-align: center; background: #e5e5ea; color: #333; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px;}
-        .input-group { display: flex; gap: 10px; margin-top: 5px; }
-        .add-btn { width: auto; margin-top: 0; padding: 0 15px; background: #e5e5ea; color: #333; }
-    </style>
+    .preview {
+      display: none;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .preview.active { display: block; }
+    .preview img {
+      width: 100%; max-height: 220px; object-fit: contain;
+      border-radius: 12px; background: #0a0b10; margin-bottom: 16px;
+    }
+
+    /* Prominent name entry box */
+    .name-box {
+      background: rgba(167, 139, 250, 0.12);
+      border: 2px solid var(--accent);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.12);
+    }
+    .name-box .lbl {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+      color: #e9d5ff;
+      margin-bottom: 10px;
+      letter-spacing: 0.01em;
+    }
+    .name-box input[type=text] {
+      width: 100%;
+      background: #0c0d12;
+      border: 2px solid #c4b5fd;
+      border-radius: 12px;
+      padding: 16px 14px;
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 600;
+      outline: none;
+      margin-bottom: 0;
+    }
+    .name-box input[type=text]::placeholder {
+      color: #7c6fa0;
+      font-weight: 500;
+    }
+    .name-box input[type=text]:focus {
+      border-color: #ddd6fe;
+      box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.25);
+    }
+
+    label.lbl {
+      display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px;
+    }
+    select {
+      width: 100%; background: #0f111a; border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; color: var(--text);
+      font-size: 16px; outline: none; margin-bottom: 14px;
+    }
+    select:focus { border-color: var(--accent); }
+
+    .btn-save {
+      width: 100%; border: none; border-radius: 12px; padding: 18px;
+      font-size: 17px; font-weight: 700; cursor: pointer;
+      background: var(--success); color: #0c0d12; margin-bottom: 8px;
+    }
+    .btn-cancel {
+      width: 100%; border-radius: 12px; padding: 12px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+    }
+
+    .section-title {
+      font-size: 13px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .count {
+      background: var(--accent-soft); color: var(--accent);
+      font-size: 12px; padding: 2px 9px; border-radius: 999px;
+    }
+    .list { display: flex; flex-direction: column; gap: 10px; }
+    .item {
+      display: flex; gap: 12px; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 12px;
+    }
+    .item img {
+      width: 64px; height: 64px; border-radius: 10px;
+      object-fit: cover; background: #0a0b10; flex-shrink: 0;
+    }
+    .item .info { flex: 1; min-width: 0; }
+    .item .name {
+      font-weight: 650; font-size: 15.5px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .item .meta { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+    .del {
+      width: 36px; height: 36px; border: none; border-radius: 10px;
+      background: rgba(255,255,255,0.06); font-size: 16px; cursor: pointer;
+      flex-shrink: 0;
+    }
+    .empty {
+      text-align: center; padding: 36px 16px; color: var(--text-muted);
+      font-size: 14.5px; background: var(--surface);
+      border: 1px dashed var(--border); border-radius: var(--radius);
+    }
+  </style>
 </head>
 <body>
-    <div class="card">
-        <h2>Log Entry</h2>
-        <label>Metric Category</label>
-        <div class="input-group">
-            <select id="metric" style="flex-grow: 1; margin-top: 0;">
-                <option value="Heart Rate">Heart Rate (bpm)</option>
-                <option value="Sleep">Sleep (hours)</option>
-                <option value="HRV">HRV (ms)</option>
-                <option value="Steps">Steps</option>
-                <option value="Custom Note">Custom Note</option>
-            </select>
-            <button class="add-btn" onclick="toggleCategoryInput()" title="Add custom category">+</button>
-        </div>
-        
-        <div class="input-group" id="addCategoryGroup" style="display: none; margin-top: 10px;">
-            <input type="text" id="newCategoryInput" placeholder="New category name..." style="margin-top: 0;">
-            <button class="btn-primary" style="width: auto; margin-top: 0; padding: 0 15px;" onclick="saveNewCategory()">Save</button>
-            <button class="btn-danger" style="width: auto; margin-top: 0; padding: 0 15px;" onclick="cancelNewCategory()">X</button>
-        </div>
-        
-        <label>Value</label>
-        <input type="text" id="val" placeholder="e.g. 65" required>
-        
-        <button class="btn-primary" id="submitBtn" onclick="addOrUpdateLog()">Add to Current Session</button>
-    </div>
+  <div class="version-badge">v0.9</div>
+
+  <div class="container">
+    <header>
+      <a class="back" href="index.html">← Back to Index</a>
+      <h1>My Bar</h1>
+      <p class="subtitle">Photograph bottles • Build your drink collection</p>
+    </header>
 
     <div class="card">
-        <h2>Current Session Data</h2>
-        <div id="logs" class="log-list">No data recorded yet.</div>
-        
-        <button class="btn-secondary" onclick="exportCSV()">Download as CSV</button>
-        <label class="file-upload-label">
-            <input type="file" id="csvFileInput" accept=".csv" onchange="importCSV(event)">
-            Import Existing CSV
-        </label>
-        <button class="btn-danger" onclick="clearSession()">Clear Session</button>
+      <label class="pick-btn">
+        📷 Add Photo
+        <input type="file" id="photoInput" accept="image/*">
+      </label>
+
+      <div class="status" id="status">1) Add Photo &nbsp;→&nbsp; 2) Enter name &nbsp;→&nbsp; 3) Tap Save</div>
+      <p class="tip">On iPhone: choose <strong>Photo Library</strong> or <strong>Take Photo</strong>.</p>
+
+      <div class="preview" id="preview">
+        <img id="previewImg" alt="Preview">
+
+        <!-- Highly visible name field -->
+        <div class="name-box">
+          <label class="lbl" for="drinkName">✏️ Type the bottle name here</label>
+          <input type="text" id="drinkName" placeholder="Example: Grey Goose Vodka" list="suggestions" autocomplete="off">
+        </div>
+
+        <datalist id="suggestions">
+          <option value="Grey Goose Vodka">
+          <option value="Belvedere Vodka">
+          <option value="Macallan 12">
+          <option value="Glenfiddich 12">
+          <option value="Johnnie Walker Black">
+          <option value="Jameson Irish Whiskey">
+          <option value="Jack Daniel's">
+          <option value="Maker's Mark">
+          <option value="Hennessy VS">
+          <option value="Patrón Silver">
+          <option value="Don Julio Blanco">
+          <option value="Casamigos Blanco">
+          <option value="Tanqueray Gin">
+          <option value="Bombay Sapphire">
+          <option value="Hendrick's Gin">
+          <option value="Campari">
+          <option value="Aperol">
+          <option value="Baileys Irish Cream">
+          <option value="Champagne / Prosecco">
+          <option value="Red Wine">
+          <option value="White Wine">
+          <option value="Beer">
+        </datalist>
+
+        <label class="lbl" for="drinkCategory">Category</label>
+        <select id="drinkCategory">
+          <option value="Vodka">Vodka</option>
+          <option value="Whiskey / Whisky">Whiskey / Whisky</option>
+          <option value="Gin">Gin</option>
+          <option value="Rum">Rum</option>
+          <option value="Tequila / Mezcal">Tequila / Mezcal</option>
+          <option value="Brandy / Cognac">Brandy / Cognac</option>
+          <option value="Liqueur">Liqueur</option>
+          <option value="Wine">Wine</option>
+          <option value="Champagne / Sparkling">Champagne / Sparkling</option>
+          <option value="Beer">Beer</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <button class="btn-save" id="saveBtn" type="button">💾 Save to My Collection</button>
+        <button class="btn-cancel" id="cancelBtn" type="button">Cancel</button>
+      </div>
     </div>
 
-    <script>
-        let sessionLogs = JSON.parse(localStorage.getItem('savedSessionLogs')) || [];
-        let editingId = null;
+    <div class="section-title">
+      <span>My Collection</span>
+      <span class="count" id="count">0</span>
+    </div>
+    <div class="list" id="list">
+      <div class="empty" id="empty">🍾<br><br>No bottles yet.<br>Add a photo, enter a name, then tap Save.</div>
+    </div>
+  </div>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
-            const metricSelect = document.getElementById('metric');
-            savedCategories.forEach(cat => {
-                const opt = document.createElement('option');
-                opt.value = cat;
-                opt.textContent = cat;
-                metricSelect.appendChild(opt);
-            });
-            renderLogs();
-        });
+  <script>
+    "use strict";
 
-        // --- Category Management ---
-        function toggleCategoryInput() {
-            document.getElementById('addCategoryGroup').style.display = 'flex';
-            document.getElementById('newCategoryInput').focus();
+    var LS_KEY = "tone_bar_v9";
+    var input = document.getElementById("photoInput");
+    var statusEl = document.getElementById("status");
+    var preview = document.getElementById("preview");
+    var previewImg = document.getElementById("previewImg");
+    var drinkName = document.getElementById("drinkName");
+    var drinkCategory = document.getElementById("drinkCategory");
+    var saveBtn = document.getElementById("saveBtn");
+    var cancelBtn = document.getElementById("cancelBtn");
+    var list = document.getElementById("list");
+    var empty = document.getElementById("empty");
+    var countEl = document.getElementById("count");
+
+    var currentDataUrl = null;
+    var lastKey = "";
+
+    function setStatus(msg, type) {
+      statusEl.textContent = msg || "";
+      statusEl.className = "status" + (type ? " " + type : "");
+    }
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function loadItems() {
+      try {
+        var raw = localStorage.getItem(LS_KEY);
+        if (!raw) return [];
+        var arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveItems(items) {
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify(items));
+        return true;
+      } catch (e) {
+        try {
+          localStorage.setItem(LS_KEY, JSON.stringify(items.slice(-8)));
+          return true;
+        } catch (e2) {
+          return false;
         }
+      }
+    }
 
-        function cancelNewCategory() {
-            document.getElementById('addCategoryGroup').style.display = 'none';
-            document.getElementById('newCategoryInput').value = '';
+    function render() {
+      var items = loadItems();
+      items.sort(function (a, b) {
+        return (b.addedAt || "").localeCompare(a.addedAt || "");
+      });
+
+      countEl.textContent = String(items.length);
+      list.querySelectorAll(".item").forEach(function (el) { el.remove(); });
+
+      if (!items.length) {
+        empty.style.display = "block";
+        return;
+      }
+      empty.style.display = "none";
+
+      items.forEach(function (it) {
+        var el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML =
+          '<img src="' + it.image + '" alt="">' +
+          '<div class="info">' +
+            '<div class="name">' + esc(it.name) + '</div>' +
+            '<div class="meta">' + esc(it.category) + '</div>' +
+          '</div>' +
+          '<button class="del" type="button" data-id="' + esc(it.id) + '">🗑️</button>';
+        list.appendChild(el);
+      });
+
+      list.querySelectorAll(".del").forEach(function (btn) {
+        btn.onclick = function () {
+          var id = btn.getAttribute("data-id");
+          saveItems(loadItems().filter(function (x) { return x.id !== id; }));
+          render();
+          setStatus("Removed", "ok");
+        };
+      });
+    }
+
+    function showPreview(dataUrl) {
+      currentDataUrl = dataUrl;
+      previewImg.src = dataUrl;
+      preview.classList.add("active");
+      drinkName.value = "";
+      setStatus("Type the bottle name in the purple box, then tap Save", "ok");
+      setTimeout(function () {
+        drinkName.focus();
+        preview.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 80);
+    }
+
+    function hidePreview() {
+      currentDataUrl = null;
+      preview.classList.remove("active");
+      previewImg.removeAttribute("src");
+      setStatus("1) Add Photo  →  2) Enter name  →  3) Tap Save");
+    }
+
+    function processFile(file) {
+      if (!file) {
+        setStatus("No file selected", "error");
+        return;
+      }
+
+      var key = (file.name || "img") + "|" + file.size + "|" + (file.lastModified || Date.now());
+      if (key === lastKey && currentDataUrl) return;
+      lastKey = key;
+
+      setStatus("Processing photo (" + Math.round(file.size / 1024) + " KB)…");
+
+      var url;
+      try { url = URL.createObjectURL(file); }
+      catch (e) {
+        setStatus("Could not open photo", "error");
+        return;
+      }
+
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var max = 560;
+          var w = img.naturalWidth || img.width;
+          var h = img.naturalHeight || img.height;
+          if (w > max || h > max) {
+            if (w > h) { h = Math.round(h * max / w); w = max; }
+            else { w = Math.round(w * max / h); h = max; }
+          }
+          var c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          c.getContext("2d").drawImage(img, 0, 0, w, h);
+          var dataUrl = c.toDataURL("image/jpeg", 0.7);
+          try { URL.revokeObjectURL(url); } catch (e) {}
+          showPreview(dataUrl);
+        } catch (e) {
+          showPreview(url);
         }
+      };
+      img.onerror = function () {
+        var reader = new FileReader();
+        reader.onload = function (ev) { showPreview(ev.target.result); };
+        reader.onerror = function () {
+          setStatus("Could not read photo", "error");
+          try { URL.revokeObjectURL(url); } catch (e) {}
+        };
+        reader.readAsDataURL(file);
+      };
+      img.src = url;
+    }
 
-        function saveNewCategory() {
-            const inputElement = document.getElementById('newCategoryInput');
-            const newCat = inputElement.value;
-            if(newCat && newCat.trim() !== '') {
-                const cleanCat = newCat.trim();
-                const metricSelect = document.getElementById('metric');
-                
-                let exists = false;
-                for(let i=0; i<metricSelect.options.length; i++) {
-                    if(metricSelect.options[i].value.toLowerCase() === cleanCat.toLowerCase()) {
-                        exists = true;
-                        break;
-                    }
-                }
-                
-                if(!exists) {
-                    const opt = document.createElement('option');
-                    opt.value = cleanCat;
-                    opt.textContent = cleanCat;
-                    metricSelect.appendChild(opt);
-                    
-                    const savedCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
-                    savedCategories.push(cleanCat);
-                    localStorage.setItem('customCategories', JSON.stringify(savedCategories));
-                    
-                    metricSelect.value = cleanCat;
-                    cancelNewCategory();
-                } else {
-                    alert("Category already exists!");
-                }
-            }
-        }
+    function onFiles() {
+      var file = input.files && input.files[0];
+      if (file) processFile(file);
+    }
 
-        // --- Log Management ---
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-        }
+    input.addEventListener("change", onFiles);
+    input.addEventListener("input", onFiles);
 
-        function saveAndRender() {
-            localStorage.setItem('savedSessionLogs', JSON.stringify(sessionLogs));
-            renderLogs();
-        }
+    function recheck() {
+      if (input.files && input.files[0]) processFile(input.files[0]);
+    }
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") {
+        setTimeout(recheck, 250);
+        setTimeout(recheck, 900);
+      }
+    });
+    window.addEventListener("focus", function () {
+      setTimeout(recheck, 250);
+    });
 
-        function addOrUpdateLog() {
-            const metric = document.getElementById('metric').value;
-            const val = document.getElementById('val').value;
-            if(!val) return alert("Please enter a value");
-            
-            if (editingId) {
-                const index = sessionLogs.findIndex(log => log.id === editingId);
-                if (index !== -1) {
-                    sessionLogs[index].metric = metric;
-                    sessionLogs[index].value = val;
-                }
-                editingId = null;
-                document.getElementById('submitBtn').innerText = "Add to Current Session";
-            } else {
-                const now = new Date();
-                const tzOffset = now.getTimezoneOffset() * 60000;
-                const timestamp = (new Date(now - tzOffset)).toISOString().slice(0, -1);
-                const id = generateId();
-                sessionLogs.push({ id, timestamp, metric, value: val });
-            }
-            
-            document.getElementById('val').value = '';
-            saveAndRender();
-        }
+    saveBtn.addEventListener("click", function () {
+      if (!currentDataUrl) {
+        setStatus("No photo loaded yet", "error");
+        return;
+      }
 
-        function editLog(id) {
-            const log = sessionLogs.find(l => l.id === id);
-            if(!log) return;
-            
-            document.getElementById('metric').value = log.metric;
-            document.getElementById('val').value = log.value;
-            editingId = id;
-            
-            document.getElementById('submitBtn').innerText = "Update Entry";
-            window.scrollTo(0, 0);
-        }
+      var name = (drinkName.value || "").trim();
+      if (!name) {
+        setStatus("Please type a bottle name in the purple box", "error");
+        drinkName.focus();
+        return;
+      }
 
-        function deleteLog(id) {
-            if(confirm("Delete this entry?")) {
-                sessionLogs = sessionLogs.filter(l => l.id !== id);
-                if (editingId === id) {
-                    editingId = null;
-                    document.getElementById('val').value = '';
-                    document.getElementById('submitBtn').innerText = "Add to Current Session";
-                }
-                saveAndRender();
-            }
-        }
+      var items = loadItems();
+      items.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: name,
+        category: drinkCategory.value || "Other",
+        image: currentDataUrl,
+        addedAt: new Date().toISOString()
+      });
 
-        function renderLogs() {
-            const container = document.getElementById('logs');
-            if(sessionLogs.length === 0) {
-                container.innerHTML = 'No data recorded yet.';
-                return;
-            }
-            
-            const displayLogs = [...sessionLogs].reverse();
-            container.innerHTML = displayLogs.map(log => {
-                const dateObj = new Date(log.timestamp);
-                const dateStr = dateObj.toLocaleDateString([], {month: 'short', day: 'numeric'});
-                const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                return `
-                <div class="log-item">
-                    <div class="log-details">
-                        <span><strong>${log.metric}:</strong> ${log.value}</span>
-                        <span style="color:#888;">${dateStr}, ${timeStr}</span>
-                    </div>
-                    <div class="log-actions">
-                        <button class="btn-small btn-edit" onclick="editLog('${log.id}')">Edit</button>
-                        <button class="btn-small btn-delete" onclick="deleteLog('${log.id}')">Delete</button>
-                    </div>
-                </div>`;
-            }).join('');
-        }
+      if (!saveItems(items)) {
+        setStatus("Storage full — delete some bottles first", "error");
+        return;
+      }
 
-        // --- Data Import/Export (Upgraded Smart Parser) ---
-        function exportCSV() {
-            if(sessionLogs.length === 0) return alert("No data to export.");
-            
-            let csvContent = "Timestamp,Metric,Value\n";
-            sessionLogs.forEach(row => {
-                const cleanMetric = row.metric.replace(/"/g, '""');
-                const cleanValue = row.value.replace(/"/g, '""');
-                csvContent += `${row.timestamp},"${cleanMetric}","${cleanValue}"\n`;
-            });
-            
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            
-            const dateStr = new Date().toISOString().split('T')[0];
-            link.setAttribute("href", url);
-            link.setAttribute("download", `health_log_${dateStr}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+      hidePreview();
+      render();
+      setStatus('Saved “' + name + '” to My Collection', "ok");
+      setTimeout(function () {
+        list.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    });
 
-        function clearSession() {
-            if(confirm("Clear current logs? Make sure you have downloaded them first!")) {
-                sessionLogs = [];
-                editingId = null;
-                document.getElementById('submitBtn').innerText = "Add to Current Session";
-                saveAndRender();
-            }
-        }
+    cancelBtn.addEventListener("click", hidePreview);
 
-        function importCSV(event) {
-            const file = event.target.files[0];
-            if(!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const text = e.target.result;
-                const lines = text.split('\n');
-                
-                if (lines.length < 2) {
-                    alert("File is empty or invalid.");
-                    return;
-                }
+    drinkName.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        saveBtn.click();
+      }
+    });
 
-                // Parse headers dynamically
-                const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-                
-                // Find column indices based on common health metrics and RingConn defaults
-                const dateIdx = headers.findIndex(h => h.includes('date') || h.includes('time') || h === 'timestamp');
-                const hrIdx = headers.findIndex(h => h.includes('heart rate') || h === 'hr' || h.includes('avg hr'));
-                const hrvIdx = headers.findIndex(h => h.includes('hrv'));
-                const sleepIdx = headers.findIndex(h => h.includes('sleep'));
-                const stepsIdx = headers.findIndex(h => h.includes('step'));
-                
-                // For our native basic format
-                const metricIdx = headers.findIndex(h => h === 'metric');
-                const valueIdx = headers.findIndex(h => h === 'value');
-
-                let addedCount = 0;
-
-                for(let i = 1; i < lines.length; i++) {
-                    if(!lines[i].trim()) continue;
-                    
-                    // Regex handles commas inside quotes correctly
-                    const row = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-                    if(!row) continue;
-                    
-                    const cleanRow = row.map(val => val.replace(/^"|"$/g, ''));
-                    
-                    let timestamp = (dateIdx !== -1 && cleanRow[dateIdx]) ? cleanRow[dateIdx] : new Date().toISOString().slice(0, -1);
-
-                    // Helper to push items
-                    const addParsedLog = (metricName, val) => {
-                        if (val && val !== '' && val !== '0') {
-                            sessionLogs.push({
-                                id: generateId(),
-                                timestamp: timestamp,
-                                metric: metricName,
-                                value: val
-                            });
-                            addedCount++;
-                        }
-                    };
-
-                    // Path A: The file is our own native export format
-                    if (metricIdx !== -1 && valueIdx !== -1) {
-                        addParsedLog(cleanRow[metricIdx], cleanRow[valueIdx]);
-                    } 
-                    // Path B: The file is a wide format like RingConn
-                    else {
-                        if (hrIdx !== -1) addParsedLog("Heart Rate", cleanRow[hrIdx]);
-                        if (hrvIdx !== -1) addParsedLog("HRV", cleanRow[hrvIdx]);
-                        if (sleepIdx !== -1) addParsedLog("Sleep", cleanRow[sleepIdx]);
-                        if (stepsIdx !== -1) addParsedLog("Steps", cleanRow[stepsIdx]);
-                    }
-                }
-                
-                // Sort chronologically
-                sessionLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                saveAndRender();
-                alert(`Successfully parsed and imported ${addedCount} metrics!`);
-                event.target.value = ''; // Reset input to allow re-uploading the same file
-            };
-            reader.readAsText(file);
-        }
-    </script>
+    render();
+  </script>
 </body>
 </html>
