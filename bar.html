@@ -92,7 +92,6 @@
       margin-bottom: 12px;
     }
 
-    /* Label-as-button is the most reliable way to trigger file inputs on iOS */
     .btn {
       display: flex;
       align-items: center;
@@ -143,7 +142,7 @@
 
     .preview-img {
       width: 100%;
-      max-height: 280px;
+      max-height: 260px;
       object-fit: contain;
       border-radius: 12px;
       background: #0a0b10;
@@ -262,6 +261,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
 
     .empty {
@@ -286,6 +286,14 @@
 
     .status.error { color: var(--danger); }
     .status.ok { color: var(--success); }
+
+    .hint {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -298,7 +306,6 @@
 
     <div class="capture-card">
       <div class="capture-buttons">
-        <!-- Label wrapping the input is the most reliable trigger on iOS Safari -->
         <label class="btn btn-camera">
           📷 Take Photo
           <input type="file" id="cameraInput" accept="image/*" capture="environment">
@@ -369,6 +376,7 @@
 
         <button class="btn btn-add" id="addBtn" type="button">Add to My Bar</button>
         <button class="btn btn-cancel" id="cancelBtn" type="button">Cancel</button>
+        <p class="hint">After naming the bottle, tap <strong>Add to My Bar</strong> to save it below.</p>
       </div>
 
       <div class="status" id="status"></div>
@@ -382,7 +390,7 @@
     <div class="drink-list" id="drinkList">
       <div class="empty" id="emptyState">
         <div class="empty-icon">🍾</div>
-        <div>No bottles yet.<br>Take or upload a photo to start your bar.</div>
+        <div>No bottles yet.<br>Take or upload a photo, name it, then tap Add.</div>
       </div>
     </div>
   </div>
@@ -390,7 +398,9 @@
   <script>
     "use strict";
 
-    const STORAGE_KEY = "tone_bar_inventory_v1";
+    const DB_NAME = "ToneBarDB";
+    const DB_VERSION = 1;
+    const STORE_NAME = "bottles";
 
     const cameraInput  = document.getElementById("cameraInput");
     const galleryInput = document.getElementById("galleryInput");
@@ -406,18 +416,7 @@
     const statusEl     = document.getElementById("status");
 
     let currentDataUrl = null;
-
-    function loadInventory() {
-      try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      } catch {
-        return [];
-      }
-    }
-
-    function saveInventory(items) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    }
+    let db = null;
 
     function setStatus(msg, type) {
       statusEl.textContent = msg || "";
@@ -441,38 +440,127 @@
       }
     }
 
-    function renderList() {
-      const items = loadInventory();
-      countBadge.textContent = items.length;
+    // ---------- IndexedDB helpers ----------
+    function openDB() {
+      return new Promise(function (resolve, reject) {
+        if (db) {
+          resolve(db);
+          return;
+        }
+        var request = indexedDB.open(DB_NAME, DB_VERSION);
 
-      drinkList.querySelectorAll(".drink-card").forEach(el => el.remove());
+        request.onerror = function () {
+          reject(request.error || new Error("IndexedDB open failed"));
+        };
 
-      if (items.length === 0) {
-        emptyState.style.display = "block";
-        return;
-      }
+        request.onsuccess = function () {
+          db = request.result;
+          resolve(db);
+        };
 
-      emptyState.style.display = "none";
-
-      items.slice().reverse().forEach((item, idx) => {
-        const realIndex = items.length - 1 - idx;
-        const card = document.createElement("div");
-        card.className = "drink-card";
-        card.innerHTML =
-          '<img class="drink-thumb" src="' + item.image + '" alt="' + escapeHtml(item.name) + '">' +
-          '<div class="drink-info">' +
-            '<div class="drink-name">' + escapeHtml(item.name) + '</div>' +
-            '<div class="drink-meta">' + escapeHtml(item.category) + ' · ' + formatDate(item.addedAt) + '</div>' +
-          '</div>' +
-          '<button class="icon-btn delete" data-index="' + realIndex + '" title="Remove" type="button">🗑️</button>';
-        drinkList.appendChild(card);
+        request.onupgradeneeded = function (event) {
+          var database = event.target.result;
+          if (!database.objectStoreNames.contains(STORE_NAME)) {
+            database.createObjectStore(STORE_NAME, { keyPath: "id" });
+          }
+        };
       });
+    }
 
-      drinkList.querySelectorAll(".icon-btn.delete").forEach(btn => {
-        btn.addEventListener("click", () => {
-          removeItem(parseInt(btn.dataset.index, 10));
+    function getAllItems() {
+      return openDB().then(function (database) {
+        return new Promise(function (resolve, reject) {
+          var tx = database.transaction(STORE_NAME, "readonly");
+          var store = tx.objectStore(STORE_NAME);
+          var req = store.getAll();
+          req.onsuccess = function () {
+            resolve(req.result || []);
+          };
+          req.onerror = function () {
+            reject(req.error);
+          };
         });
       });
+    }
+
+    function addItemToDB(item) {
+      return openDB().then(function (database) {
+        return new Promise(function (resolve, reject) {
+          var tx = database.transaction(STORE_NAME, "readwrite");
+          var store = tx.objectStore(STORE_NAME);
+          var req = store.add(item);
+          req.onsuccess = function () {
+            resolve(item);
+          };
+          req.onerror = function () {
+            reject(req.error);
+          };
+        });
+      });
+    }
+
+    function deleteItemFromDB(id) {
+      return openDB().then(function (database) {
+        return new Promise(function (resolve, reject) {
+          var tx = database.transaction(STORE_NAME, "readwrite");
+          var store = tx.objectStore(STORE_NAME);
+          var req = store.delete(id);
+          req.onsuccess = function () {
+            resolve();
+          };
+          req.onerror = function () {
+            reject(req.error);
+          };
+        });
+      });
+    }
+
+    // ---------- UI ----------
+    function renderList() {
+      getAllItems()
+        .then(function (items) {
+          // Sort newest first
+          items.sort(function (a, b) {
+            return (b.addedAt || "").localeCompare(a.addedAt || "");
+          });
+
+          countBadge.textContent = items.length;
+
+          drinkList.querySelectorAll(".drink-card").forEach(function (el) {
+            el.remove();
+          });
+
+          if (items.length === 0) {
+            emptyState.style.display = "block";
+            return;
+          }
+
+          emptyState.style.display = "none";
+
+          items.forEach(function (item) {
+            var card = document.createElement("div");
+            card.className = "drink-card";
+            card.innerHTML =
+              '<img class="drink-thumb" src="' + item.image + '" alt="' + escapeHtml(item.name) + '">' +
+              '<div class="drink-info">' +
+                '<div class="drink-name">' + escapeHtml(item.name) + '</div>' +
+                '<div class="drink-meta">' + escapeHtml(item.category) + ' · ' + formatDate(item.addedAt) + '</div>' +
+              '</div>' +
+              '<button class="icon-btn delete" data-id="' + escapeHtml(item.id) + '" title="Remove" type="button">🗑️</button>';
+            drinkList.appendChild(card);
+          });
+
+          drinkList.querySelectorAll(".icon-btn.delete").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              var id = btn.getAttribute("data-id");
+              removeItem(id);
+            });
+          });
+        })
+        .catch(function (err) {
+          console.error(err);
+          setStatus("Could not load collection", "error");
+        });
     }
 
     function showPreview(dataUrl) {
@@ -480,8 +568,10 @@
       previewImg.src = dataUrl;
       previewWrap.classList.add("active");
       drinkName.value = "";
-      setTimeout(function () { drinkName.focus(); }, 150);
-      setStatus("Name the bottle and add it to your collection", "ok");
+      setTimeout(function () {
+        drinkName.focus();
+      }, 150);
+      setStatus("Enter a name, then tap Add to My Bar", "ok");
     }
 
     function hidePreview() {
@@ -494,7 +584,7 @@
     function addItem() {
       var name = (drinkName.value || "").trim();
       if (!name) {
-        setStatus("Please enter a drink name", "error");
+        setStatus("Please enter a drink name first", "error");
         drinkName.focus();
         return;
       }
@@ -503,29 +593,48 @@
         return;
       }
 
-      var items = loadInventory();
-      items.push({
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      addBtn.disabled = true;
+      setStatus("Saving…");
+
+      var item = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
         name: name,
         category: drinkCategory.value,
         image: currentDataUrl,
         addedAt: new Date().toISOString()
-      });
-      saveInventory(items);
-      hidePreview();
-      renderList();
-      setStatus('Added “' + name + '” to your bar', "ok");
-      setTimeout(function () { setStatus(""); }, 2200);
+      };
+
+      addItemToDB(item)
+        .then(function () {
+          hidePreview();
+          renderList();
+          setStatus('Saved “' + name + '” to your collection', "ok");
+          setTimeout(function () {
+            setStatus("");
+          }, 2500);
+        })
+        .catch(function (err) {
+          console.error(err);
+          setStatus("Save failed — try a smaller photo", "error");
+        })
+        .finally(function () {
+          addBtn.disabled = false;
+        });
     }
 
-    function removeItem(index) {
-      var items = loadInventory();
-      if (index < 0 || index >= items.length) return;
-      var removed = items.splice(index, 1)[0];
-      saveInventory(items);
-      renderList();
-      setStatus('Removed “' + removed.name + '”', "ok");
-      setTimeout(function () { setStatus(""); }, 1800);
+    function removeItem(id) {
+      deleteItemFromDB(id)
+        .then(function () {
+          renderList();
+          setStatus("Bottle removed", "ok");
+          setTimeout(function () {
+            setStatus("");
+          }, 1800);
+        })
+        .catch(function (err) {
+          console.error(err);
+          setStatus("Could not remove item", "error");
+        });
     }
 
     function handleFile(file) {
@@ -556,7 +665,8 @@
 
         img.onload = function () {
           try {
-            var maxSize = 900;
+            // Stronger compression for reliable storage
+            var maxSize = 640;
             var width = img.width;
             var height = img.height;
 
@@ -576,7 +686,7 @@
             var ctx = canvas.getContext("2d");
             ctx.drawImage(img, 0, 0, width, height);
 
-            var dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+            var dataUrl = canvas.toDataURL("image/jpeg", 0.72);
             showPreview(dataUrl);
           } catch (err) {
             console.error(err);
@@ -590,21 +700,15 @@
       reader.readAsDataURL(file);
     }
 
-    // Direct change listeners on the inputs (no .click() needed)
     cameraInput.addEventListener("change", function () {
       var file = cameraInput.files && cameraInput.files[0];
-      if (file) {
-        handleFile(file);
-      }
-      // Reset so the same photo can be selected again later
+      if (file) handleFile(file);
       cameraInput.value = "";
     });
 
     galleryInput.addEventListener("change", function () {
       var file = galleryInput.files && galleryInput.files[0];
-      if (file) {
-        handleFile(file);
-      }
+      if (file) handleFile(file);
       galleryInput.value = "";
     });
 
@@ -618,7 +722,15 @@
       }
     });
 
-    renderList();
+    // Start
+    openDB()
+      .then(function () {
+        renderList();
+      })
+      .catch(function (err) {
+        console.error(err);
+        setStatus("Storage unavailable — try another browser", "error");
+      });
   </script>
 </body>
 </html>
