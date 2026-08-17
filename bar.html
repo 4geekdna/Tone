@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>My Bar v0.3</title>
+  <title>My Bar v0.4</title>
   <style>
     :root {
       --bg: #0c0d12;
@@ -19,9 +19,7 @@
       --danger: #f87171;
       --radius: 16px;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
@@ -32,331 +30,173 @@
       padding-bottom: max(24px, env(safe-area-inset-bottom));
       -webkit-font-smoothing: antialiased;
     }
-
     body::before {
       content: "";
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background:
         radial-gradient(ellipse 80% 50% at 50% -20%, rgba(167, 139, 250, 0.16), transparent),
         radial-gradient(ellipse 40% 30% at 90% 90%, rgba(244, 114, 182, 0.07), transparent);
-      pointer-events: none;
-      z-index: 0;
+      pointer-events: none; z-index: 0;
     }
-
     .version-badge {
       position: fixed;
       top: max(8px, env(safe-area-inset-top));
-      right: 12px;
-      z-index: 50;
-      font-size: 11px;
-      color: #6b7280;
-      letter-spacing: 0.04em;
-      background: rgba(12, 13, 18, 0.75);
-      padding: 3px 8px;
-      border-radius: 6px;
+      right: 12px; z-index: 50;
+      font-size: 11px; color: #6b7280;
+      background: rgba(12,13,18,0.8);
+      padding: 3px 8px; border-radius: 6px;
       border: 1px solid var(--border);
     }
-
-    .container {
-      position: relative;
-      z-index: 1;
-      max-width: 480px;
-      margin: 0 auto;
-    }
-
-    header { text-align: center; margin-bottom: 20px; }
-
+    .container { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 18px; }
     .back {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-      margin-bottom: 12px;
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--accent); text-decoration: none;
+      font-size: 14px; font-weight: 500; margin-bottom: 12px;
     }
-
     h1 {
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      margin-bottom: 4px;
+      font-size: 26px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px;
       background: linear-gradient(135deg, #e0e7ff, #c4b5fd, #f9a8d4);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-
     .subtitle { color: var(--text-muted); font-size: 14px; }
-
     .capture-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 20px;
+      padding: 16px; margin-bottom: 20px;
     }
-
     .capture-buttons {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
-
     .btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 14px 10px;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      color: white;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-      text-align: center;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 14px 10px; border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 600; cursor: pointer; color: white;
+      -webkit-tap-highlight-color: transparent; user-select: none; text-align: center;
     }
-
     .btn:active { opacity: 0.85; transform: scale(0.98); }
-
-    .btn-camera {
-      background: linear-gradient(135deg, #7c3aed, #a78bfa);
-    }
-
+    .btn-camera { background: linear-gradient(135deg, #7c3aed, #a78bfa); }
     .btn-gallery {
-      background: #1e293b;
-      border: 1px solid var(--border);
-      position: relative;
-      overflow: hidden;
+      background: #1e293b; border: 1px solid var(--border);
+      position: relative; overflow: hidden;
     }
-
-    .btn-gallery input[type="file"] {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      font-size: 16px;
-      cursor: pointer;
+    .btn-gallery input[type="file"],
+    .hidden-file {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      opacity: 0; font-size: 16px; cursor: pointer;
     }
-
+    .hidden-file { position: fixed; left: -9999px; width: 1px; height: 1px; opacity: 0; }
     .status {
-      text-align: center;
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-top: 12px;
-      min-height: 1.4em;
-      padding: 8px 10px;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border);
+      text-align: center; font-size: 13px; color: var(--text-muted);
+      margin-top: 12px; min-height: 1.4em; padding: 10px;
+      border-radius: 8px; background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); line-height: 1.4;
     }
-
     .status.error { color: var(--danger); border-color: rgba(248,113,113,0.35); }
     .status.ok { color: var(--success); border-color: rgba(52,211,153,0.35); }
 
-    /* Live camera panel */
-    .camera-panel {
-      display: none;
-      margin-top: 14px;
-    }
-
+    .camera-panel { display: none; margin-top: 14px; }
     .camera-panel.active { display: block; }
-
     .video-wrap {
-      position: relative;
-      border-radius: 14px;
-      overflow: hidden;
-      background: #000;
-      aspect-ratio: 3 / 4;
-      max-height: 55vh;
+      position: relative; border-radius: 14px; overflow: hidden;
+      background: #000; aspect-ratio: 3/4; max-height: 52vh;
     }
-
     #liveVideo {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      background: #111;
     }
-
     .camera-actions {
-      display: grid;
-      grid-template-columns: 1fr 1.2fr 1fr;
-      gap: 10px;
-      margin-top: 12px;
-      align-items: center;
+      display: grid; grid-template-columns: 1fr auto 1fr;
+      gap: 10px; margin-top: 12px; align-items: center;
     }
-
     .btn-shutter {
-      width: 68px;
-      height: 68px;
-      border-radius: 50%;
-      border: 4px solid #fff;
-      background: var(--accent);
-      margin: 0 auto;
+      width: 72px; height: 72px; border-radius: 50%;
+      border: 4px solid #fff; background: var(--accent);
       box-shadow: 0 0 0 3px rgba(167,139,250,0.35);
+      justify-self: center;
     }
-
     .btn-secondary {
-      background: #1e293b;
-      border: 1px solid var(--border);
-      font-size: 13px;
-      padding: 12px 8px;
+      background: #1e293b; border: 1px solid var(--border);
+      font-size: 13px; padding: 12px 8px;
     }
 
-    /* Preview + form */
     .preview-wrap {
-      display: none;
-      margin-top: 14px;
-      padding-top: 14px;
+      display: none; margin-top: 14px; padding-top: 14px;
       border-top: 1px solid var(--border);
     }
-
     .preview-wrap.active { display: block; }
-
     .preview-img {
-      width: 100%;
-      max-height: 260px;
-      object-fit: contain;
-      border-radius: 12px;
-      background: #0a0b10;
-      margin-bottom: 14px;
+      width: 100%; max-height: 260px; object-fit: contain;
+      border-radius: 12px; background: #0a0b10; margin-bottom: 14px;
     }
-
     .form-row { margin-bottom: 12px; }
-
     label.field-label {
-      display: block;
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: 6px;
+      display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px;
     }
-
     input[type="text"], select {
-      width: 100%;
-      background: #0f111a;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 14px;
-      color: var(--text);
-      font-size: 16px;
-      outline: none;
+      width: 100%; background: #0f111a; border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; color: var(--text);
+      font-size: 16px; outline: none;
     }
-
     input[type="text"]:focus, select:focus { border-color: var(--accent); }
-
-    .btn-add {
-      width: 100%;
-      background: var(--success);
-      color: #0c0d12;
-      margin-top: 8px;
-    }
-
+    .btn-add { width: 100%; background: var(--success); color: #0c0d12; margin-top: 8px; }
     .btn-cancel {
-      width: 100%;
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      margin-top: 8px;
+      width: 100%; background: transparent; border: 1px solid var(--border);
+      color: var(--text-muted); margin-top: 8px;
     }
-
     .hint {
-      font-size: 12.5px;
-      color: var(--text-muted);
-      text-align: center;
-      margin-top: 10px;
-      line-height: 1.4;
+      font-size: 12.5px; color: var(--text-muted); text-align: center;
+      margin-top: 10px; line-height: 1.4;
     }
-
     .section-title {
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-muted);
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      font-size: 13px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 12px;
+      display: flex; align-items: center; justify-content: space-between;
     }
-
     .count {
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-size: 12px;
-      padding: 2px 9px;
-      border-radius: 999px;
+      background: var(--accent-soft); color: var(--accent);
+      font-size: 12px; padding: 2px 9px; border-radius: 999px;
     }
-
     .drink-list { display: flex; flex-direction: column; gap: 10px; }
-
     .drink-card {
-      display: flex;
-      gap: 14px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px;
-      align-items: center;
+      display: flex; gap: 14px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 14px;
+      padding: 12px; align-items: center;
     }
-
     .drink-thumb {
-      width: 64px;
-      height: 64px;
-      border-radius: 10px;
-      object-fit: cover;
-      background: #0a0b10;
-      flex-shrink: 0;
+      width: 64px; height: 64px; border-radius: 10px;
+      object-fit: cover; background: #0a0b10; flex-shrink: 0;
     }
-
     .drink-info { flex: 1; min-width: 0; }
-
     .drink-name {
-      font-weight: 650;
-      font-size: 15.5px;
-      margin-bottom: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-weight: 650; font-size: 15.5px; margin-bottom: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-
     .drink-meta { font-size: 12.5px; color: var(--text-muted); }
-
     .icon-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      border: none;
-      background: rgba(255,255,255,0.06);
-      color: var(--text-muted);
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      width: 36px; height: 36px; border-radius: 10px; border: none;
+      background: rgba(255,255,255,0.06); color: var(--text-muted);
+      font-size: 16px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; flex-shrink: 0;
     }
-
     .empty {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-muted);
-      font-size: 14.5px;
-      background: var(--surface);
-      border: 1px dashed var(--border);
-      border-radius: var(--radius);
+      text-align: center; padding: 40px 20px; color: var(--text-muted);
+      font-size: 14.5px; background: var(--surface);
+      border: 1px dashed var(--border); border-radius: var(--radius);
     }
-
     .empty-icon { font-size: 36px; margin-bottom: 10px; }
+    .fallback-note {
+      display: none; margin-top: 10px; font-size: 12.5px;
+      color: var(--text-muted); text-align: center; line-height: 1.45;
+    }
+    .fallback-note.show { display: block; }
   </style>
 </head>
 <body>
-  <div class="version-badge">v0.3</div>
+  <div class="version-badge">v0.4</div>
 
   <div class="container">
     <header>
@@ -368,31 +208,33 @@
     <div class="capture-card">
       <div class="capture-buttons" id="mainButtons">
         <button class="btn btn-camera" id="openCameraBtn" type="button">📷 Take Photo</button>
-
         <label class="btn btn-gallery">
           🖼️ From Photos
           <input type="file" id="galleryInput" accept="image/*">
         </label>
       </div>
 
-      <div class="status" id="status">Ready — take or choose a photo</div>
+      <!-- Fallback system camera input (hidden) -->
+      <input class="hidden-file" type="file" id="systemCameraInput" accept="image/*" capture="environment">
 
-      <!-- In-app live camera -->
+      <div class="status" id="status">Ready — take or choose a photo</div>
+      <div class="fallback-note" id="fallbackNote">
+        Live camera blocked. Use <strong>From Photos</strong>, or tap Take Photo again to try the system camera.
+      </div>
+
       <div class="camera-panel" id="cameraPanel">
         <div class="video-wrap">
-          <video id="liveVideo" playsinline autoplay muted></video>
+          <video id="liveVideo" playsinline webkit-playsinline muted autoplay></video>
         </div>
         <div class="camera-actions">
           <button class="btn btn-secondary" id="closeCameraBtn" type="button">Cancel</button>
-          <button class="btn-shutter" id="shutterBtn" type="button" title="Capture"></button>
+          <button class="btn-shutter" id="shutterBtn" type="button" aria-label="Capture"></button>
           <button class="btn btn-secondary" id="switchCamBtn" type="button">Flip</button>
         </div>
       </div>
 
-      <!-- Preview + name form -->
       <div class="preview-wrap" id="previewWrap">
         <img class="preview-img" id="previewImg" alt="Bottle preview">
-
         <div class="form-row">
           <label class="field-label" for="drinkName">Drink / Bottle name</label>
           <input type="text" id="drinkName" placeholder="e.g. Grey Goose, Macallan 12…" list="drinkSuggestions" autocomplete="off">
@@ -408,28 +250,21 @@
             <option value="Jack Daniel's">
             <option value="Maker's Mark">
             <option value="Hennessy VS">
-            <option value="Rémy Martin VSOP">
             <option value="Patrón Silver">
             <option value="Don Julio Blanco">
             <option value="Casamigos Blanco">
-            <option value="Bacardi Superior">
-            <option value="Captain Morgan">
             <option value="Tanqueray Gin">
             <option value="Bombay Sapphire">
             <option value="Hendrick's Gin">
             <option value="Campari">
             <option value="Aperol">
-            <option value="Cointreau">
-            <option value="Grand Marnier">
             <option value="Baileys Irish Cream">
-            <option value="Kahlúa">
             <option value="Champagne / Prosecco">
             <option value="Red Wine">
             <option value="White Wine">
             <option value="Beer">
           </datalist>
         </div>
-
         <div class="form-row">
           <label class="field-label" for="drinkCategory">Category</label>
           <select id="drinkCategory">
@@ -446,7 +281,6 @@
             <option value="Other">Other</option>
           </select>
         </div>
-
         <button class="btn btn-add" id="addBtn" type="button">Add to My Bar</button>
         <button class="btn btn-cancel" id="cancelBtn" type="button">Cancel</button>
         <p class="hint">Type a name, then tap <strong>Add to My Bar</strong>.</p>
@@ -457,11 +291,10 @@
       <span>My Collection</span>
       <span class="count" id="countBadge">0</span>
     </div>
-
     <div class="drink-list" id="drinkList">
       <div class="empty" id="emptyState">
         <div class="empty-icon">🍾</div>
-        <div>No bottles yet.<br>Take a photo, name it, then tap Add.</div>
+        <div>No bottles yet.<br>Take or choose a photo, name it, then tap Add.</div>
       </div>
     </div>
   </div>
@@ -474,6 +307,7 @@
 
     var openCameraBtn = document.getElementById("openCameraBtn");
     var galleryInput = document.getElementById("galleryInput");
+    var systemCameraInput = document.getElementById("systemCameraInput");
     var cameraPanel = document.getElementById("cameraPanel");
     var liveVideo = document.getElementById("liveVideo");
     var shutterBtn = document.getElementById("shutterBtn");
@@ -490,11 +324,13 @@
     var emptyState = document.getElementById("emptyState");
     var countBadge = document.getElementById("countBadge");
     var statusEl = document.getElementById("status");
+    var fallbackNote = document.getElementById("fallbackNote");
 
     var currentDataUrl = null;
     var db = null;
     var mediaStream = null;
-    var facingMode = "environment"; // back camera first
+    var facingMode = "environment";
+    var liveCameraFailed = false;
 
     function setStatus(msg, type) {
       statusEl.textContent = msg || "";
@@ -502,17 +338,12 @@
     }
 
     function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, "&")
-        .replace(/</g, "<")
-        .replace(/>/g, ">")
-        .replace(/"/g, """);
+      return String(str).replace(/&/g,"&").replace(/</g,"<").replace(/>/g,">").replace(/"/g,""");
     }
 
     function formatDate(iso) {
-      try {
-        return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-      } catch (e) { return ""; }
+      try { return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
+      catch (e) { return ""; }
     }
 
     function openDB() {
@@ -533,8 +364,7 @@
     function getAllItems() {
       return openDB().then(function (database) {
         return new Promise(function (resolve, reject) {
-          var tx = database.transaction(STORE_NAME, "readonly");
-          var req = tx.objectStore(STORE_NAME).getAll();
+          var req = database.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).getAll();
           req.onsuccess = function () { resolve(req.result || []); };
           req.onerror = function () { reject(req.error); };
         });
@@ -544,8 +374,7 @@
     function addItemToDB(item) {
       return openDB().then(function (database) {
         return new Promise(function (resolve, reject) {
-          var tx = database.transaction(STORE_NAME, "readwrite");
-          var req = tx.objectStore(STORE_NAME).add(item);
+          var req = database.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).add(item);
           req.onsuccess = function () { resolve(item); };
           req.onerror = function () { reject(req.error); };
         });
@@ -555,8 +384,7 @@
     function deleteItemFromDB(id) {
       return openDB().then(function (database) {
         return new Promise(function (resolve, reject) {
-          var tx = database.transaction(STORE_NAME, "readwrite");
-          var req = tx.objectStore(STORE_NAME).delete(id);
+          var req = database.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).delete(id);
           req.onsuccess = function () { resolve(); };
           req.onerror = function () { reject(req.error); };
         });
@@ -565,39 +393,27 @@
 
     function renderList() {
       getAllItems().then(function (items) {
-        items.sort(function (a, b) {
-          return (b.addedAt || "").localeCompare(a.addedAt || "");
-        });
+        items.sort(function (a, b) { return (b.addedAt || "").localeCompare(a.addedAt || ""); });
         countBadge.textContent = items.length;
         drinkList.querySelectorAll(".drink-card").forEach(function (el) { el.remove(); });
-
-        if (!items.length) {
-          emptyState.style.display = "block";
-          return;
-        }
+        if (!items.length) { emptyState.style.display = "block"; return; }
         emptyState.style.display = "none";
-
         items.forEach(function (item) {
           var card = document.createElement("div");
           card.className = "drink-card";
           card.innerHTML =
             '<img class="drink-thumb" src="' + item.image + '" alt="' + escapeHtml(item.name) + '">' +
-            '<div class="drink-info">' +
-              '<div class="drink-name">' + escapeHtml(item.name) + '</div>' +
-              '<div class="drink-meta">' + escapeHtml(item.category) + ' · ' + formatDate(item.addedAt) + '</div>' +
-            '</div>' +
+            '<div class="drink-info"><div class="drink-name">' + escapeHtml(item.name) + '</div>' +
+            '<div class="drink-meta">' + escapeHtml(item.category) + ' · ' + formatDate(item.addedAt) + '</div></div>' +
             '<button class="icon-btn delete" data-id="' + escapeHtml(item.id) + '" type="button">🗑️</button>';
           drinkList.appendChild(card);
         });
-
         drinkList.querySelectorAll(".icon-btn.delete").forEach(function (btn) {
           btn.addEventListener("click", function () {
             deleteItemFromDB(btn.getAttribute("data-id")).then(renderList);
           });
         });
-      }).catch(function () {
-        setStatus("Could not load collection", "error");
-      });
+      }).catch(function () { setStatus("Could not load collection", "error"); });
     }
 
     function stopCamera() {
@@ -610,19 +426,29 @@
       mainButtons.style.display = "grid";
     }
 
-    function startCamera() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setStatus("Camera API not available in this browser", "error");
+    function startLiveCamera() {
+      fallbackNote.classList.remove("show");
+
+      if (!window.isSecureContext) {
+        setStatus("Camera needs HTTPS", "error");
+        useSystemCameraFallback();
         return;
       }
 
-      setStatus("Starting camera…");
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setStatus("Live camera not supported — using system camera", "error");
+        liveCameraFailed = true;
+        useSystemCameraFallback();
+        return;
+      }
+
+      setStatus("Requesting camera permission…");
       stopCamera();
 
       var constraints = {
         audio: false,
         video: {
-          facingMode: { ideal: facingMode },
+          facingMode: facingMode,
           width: { ideal: 1280 },
           height: { ideal: 720 }
         }
@@ -631,59 +457,65 @@
       navigator.mediaDevices.getUserMedia(constraints)
         .then(function (stream) {
           mediaStream = stream;
-          liveVideo.srcObject = stream;
-          liveVideo.setAttribute("playsinline", true);
+          liveVideo.setAttribute("playsinline", "true");
+          liveVideo.setAttribute("webkit-playsinline", "true");
           liveVideo.muted = true;
-          var playPromise = liveVideo.play();
-          if (playPromise && playPromise.catch) {
-            playPromise.catch(function () {});
-          }
+          liveVideo.srcObject = stream;
+          return liveVideo.play();
+        })
+        .then(function () {
           mainButtons.style.display = "none";
           previewWrap.classList.remove("active");
           cameraPanel.classList.add("active");
-          setStatus("Point at a bottle, then tap the purple shutter", "ok");
+          setStatus("Live camera on — tap the purple button to capture", "ok");
         })
         .catch(function (err) {
-          console.error(err);
-          var msg = "Camera permission denied or unavailable";
+          console.error("getUserMedia error", err);
+          liveCameraFailed = true;
+          fallbackNote.classList.add("show");
+
+          var msg = "Camera blocked";
           if (err && err.name === "NotAllowedError") {
-            msg = "Camera permission denied — allow camera for this site in Settings";
+            msg = "Permission denied — allow Camera for this website in Safari Settings";
           } else if (err && err.name === "NotFoundError") {
-            msg = "No camera found on this device";
+            msg = "No camera found";
+          } else if (err && err.name === "NotReadableError") {
+            msg = "Camera is in use by another app";
           }
-          setStatus(msg, "error");
+
+          setStatus(msg + " — trying system camera…", "error");
+          setTimeout(useSystemCameraFallback, 400);
         });
+    }
+
+    function useSystemCameraFallback() {
+      setStatus("Opening system camera…");
+      try {
+        systemCameraInput.value = "";
+        systemCameraInput.click();
+      } catch (e) {
+        setStatus("Use From Photos instead", "error");
+        fallbackNote.classList.add("show");
+      }
     }
 
     function captureFrame() {
       if (!liveVideo.videoWidth) {
-        setStatus("Camera not ready yet — wait a second", "error");
+        setStatus("Camera not ready — wait a moment", "error");
         return;
       }
-
       var maxSize = 720;
       var vw = liveVideo.videoWidth;
       var vh = liveVideo.videoHeight;
-      var width = vw;
-      var height = vh;
-
+      var width = vw, height = vh;
       if (width > maxSize || height > maxSize) {
-        if (width > height) {
-          height = Math.round((height * maxSize) / width);
-          width = maxSize;
-        } else {
-          width = Math.round((width * maxSize) / height);
-          height = maxSize;
-        }
+        if (width > height) { height = Math.round(height * maxSize / width); width = maxSize; }
+        else { width = Math.round(width * maxSize / height); height = maxSize; }
       }
-
       var canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      var ctx = canvas.getContext("2d");
-      ctx.drawImage(liveVideo, 0, 0, width, height);
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d").drawImage(liveVideo, 0, 0, width, height);
       var dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-
       stopCamera();
       showPreview(dataUrl);
     }
@@ -693,11 +525,12 @@
       previewImg.src = dataUrl;
       previewWrap.classList.add("active");
       drinkName.value = "";
-      setStatus("Photo captured — enter a name", "ok");
+      setStatus("Photo ready — enter a name", "ok");
+      fallbackNote.classList.remove("show");
       setTimeout(function () {
         drinkName.focus();
         previewWrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }, 100);
+      }, 80);
     }
 
     function hidePreview() {
@@ -707,10 +540,12 @@
       setStatus("Ready — take or choose a photo");
     }
 
-    function handleGalleryFile(file) {
-      if (!file) return;
-      setStatus("Loading photo…");
-
+    function handleFile(file) {
+      if (!file) {
+        setStatus("No photo received", "error");
+        return;
+      }
+      setStatus("Loading photo (" + Math.round(file.size/1024) + " KB)…");
       var url = URL.createObjectURL(file);
       var img = new Image();
       img.onload = function () {
@@ -719,17 +554,11 @@
           var width = img.naturalWidth || img.width;
           var height = img.naturalHeight || img.height;
           if (width > maxSize || height > maxSize) {
-            if (width > height) {
-              height = Math.round((height * maxSize) / width);
-              width = maxSize;
-            } else {
-              width = Math.round((width * maxSize) / height);
-              height = maxSize;
-            }
+            if (width > height) { height = Math.round(height * maxSize / width); width = maxSize; }
+            else { width = Math.round(width * maxSize / height); height = maxSize; }
           }
           var canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
+          canvas.width = width; canvas.height = height;
           canvas.getContext("2d").drawImage(img, 0, 0, width, height);
           var dataUrl = canvas.toDataURL("image/jpeg", 0.75);
           URL.revokeObjectURL(url);
@@ -739,7 +568,7 @@
         }
       };
       img.onerror = function () {
-        setStatus("Could not load that photo", "error");
+        setStatus("Could not load photo", "error");
         URL.revokeObjectURL(url);
       };
       img.src = url;
@@ -747,19 +576,10 @@
 
     function addItem() {
       var name = (drinkName.value || "").trim();
-      if (!name) {
-        setStatus("Enter a drink name first", "error");
-        drinkName.focus();
-        return;
-      }
-      if (!currentDataUrl) {
-        setStatus("No photo", "error");
-        return;
-      }
-
+      if (!name) { setStatus("Enter a drink name first", "error"); drinkName.focus(); return; }
+      if (!currentDataUrl) { setStatus("No photo", "error"); return; }
       addBtn.disabled = true;
       setStatus("Saving…");
-
       var item = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
         name: name,
@@ -767,57 +587,75 @@
         image: currentDataUrl,
         addedAt: new Date().toISOString()
       };
-
-      addItemToDB(item)
-        .then(function () {
-          hidePreview();
-          renderList();
-          setStatus('Saved “' + name + '”', "ok");
-          setTimeout(function () {
-            setStatus("Ready — take or choose a photo");
-          }, 2000);
-        })
-        .catch(function () {
-          setStatus("Save failed", "error");
-        })
-        .finally(function () {
-          addBtn.disabled = false;
-        });
+      addItemToDB(item).then(function () {
+        hidePreview();
+        renderList();
+        setStatus('Saved “' + name + '”', "ok");
+        setTimeout(function () { setStatus("Ready — take or choose a photo"); }, 2000);
+      }).catch(function () {
+        setStatus("Save failed", "error");
+      }).finally(function () {
+        addBtn.disabled = false;
+      });
     }
 
-    // Events
-    openCameraBtn.addEventListener("click", startCamera);
+    // Take Photo: live camera first, system camera fallback
+    openCameraBtn.addEventListener("click", function () {
+      if (liveCameraFailed) {
+        useSystemCameraFallback();
+      } else {
+        startLiveCamera();
+      }
+    });
+
     closeCameraBtn.addEventListener("click", function () {
       stopCamera();
       setStatus("Ready — take or choose a photo");
     });
+
     shutterBtn.addEventListener("click", captureFrame);
+
     switchCamBtn.addEventListener("click", function () {
       facingMode = facingMode === "environment" ? "user" : "environment";
-      startCamera();
+      startLiveCamera();
     });
 
     galleryInput.addEventListener("change", function () {
-      var file = galleryInput.files && galleryInput.files[0];
-      if (file) handleGalleryFile(file);
+      var f = galleryInput.files && galleryInput.files[0];
+      if (f) handleFile(f);
       galleryInput.value = "";
+    });
+
+    systemCameraInput.addEventListener("change", function () {
+      var f = systemCameraInput.files && systemCameraInput.files[0];
+      if (f) {
+        handleFile(f);
+      } else {
+        setStatus("No photo from system camera — try From Photos", "error");
+        fallbackNote.classList.add("show");
+      }
+      systemCameraInput.value = "";
+    });
+
+    // iOS sometimes delivers the file only after focus returns
+    function recheckSystemInput() {
+      var f = systemCameraInput.files && systemCameraInput.files[0];
+      if (f) handleFile(f);
+    }
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") {
+        setTimeout(recheckSystemInput, 300);
+        setTimeout(recheckSystemInput, 900);
+      }
+    });
+    window.addEventListener("focus", function () {
+      setTimeout(recheckSystemInput, 250);
     });
 
     addBtn.addEventListener("click", addItem);
     cancelBtn.addEventListener("click", hidePreview);
-
     drinkName.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        addItem();
-      }
-    });
-
-    // Stop camera if user leaves the page
-    document.addEventListener("visibilitychange", function () {
-      if (document.visibilityState === "hidden") {
-        // keep stream if possible; optional stop
-      }
+      if (e.key === "Enter") { e.preventDefault(); addItem(); }
     });
 
     openDB().then(renderList).catch(function () {
