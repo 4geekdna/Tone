@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>My Bar v1.0</title>
+  <title>My Bar v0.9</title>
   <style>
     :root {
       --bg: #0c0d12; --surface: #161822; --border: #2a2e42;
@@ -27,17 +27,9 @@
         radial-gradient(ellipse 40% 30% at 90% 90%, rgba(244,114,182,0.07), transparent);
     }
     .version-badge {
-      position: fixed;
-      top: max(8px, env(safe-area-inset-top));
-      right: 12px;
-      z-index: 50;
-      font-size: 10px;
-      color: #5b6170;
-      letter-spacing: 0.04em;
-      background: transparent;
-      padding: 2px 4px;
-      pointer-events: none;
-      user-select: none;
+      position: fixed; top: max(8px, env(safe-area-inset-top)); right: 12px; z-index: 50;
+      font-size: 11px; color: #6b7280; background: rgba(12,13,18,0.85);
+      padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border);
     }
     .container { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; }
     header { text-align: center; margin-bottom: 18px; }
@@ -90,6 +82,7 @@
       border-radius: 12px; background: #0a0b10; margin-bottom: 16px;
     }
 
+    /* Prominent name entry box */
     .name-box {
       background: rgba(167, 139, 250, 0.12);
       border: 2px solid var(--accent);
@@ -186,7 +179,7 @@
   </style>
 </head>
 <body>
-  <div class="version-badge">v1.0</div>
+  <div class="version-badge">v0.9</div>
 
   <div class="container">
     <header>
@@ -207,6 +200,7 @@
       <div class="preview" id="preview">
         <img id="previewImg" alt="Preview">
 
+        <!-- Highly visible name field -->
         <div class="name-box">
           <label class="lbl" for="drinkName">✏️ Type the bottle name here</label>
           <input type="text" id="drinkName" placeholder="Example: Grey Goose Vodka" list="suggestions" autocomplete="off">
@@ -269,7 +263,7 @@
   <script>
     "use strict";
 
-    var LS_KEY = "tone_bar_v1";
+    var LS_KEY = "tone_bar_v9";
     var input = document.getElementById("photoInput");
     var statusEl = document.getElementById("status");
     var preview = document.getElementById("preview");
@@ -292,10 +286,10 @@
 
     function esc(s) {
       return String(s)
-        .replace(/&/g, "&")
-        .replace(/</g, "<")
-        .replace(/>/g, ">")
-        .replace(/"/g, """);
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
     }
 
     function loadItems() {
