@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>My Bar • Bottle Inventory</title>
+  <title>My Bar v0.2</title>
   <style>
     :root {
       --bg: #0c0d12;
@@ -42,6 +42,20 @@
         radial-gradient(ellipse 40% 30% at 90% 90%, rgba(244, 114, 182, 0.07), transparent);
       pointer-events: none;
       z-index: 0;
+    }
+
+    .version-badge {
+      position: fixed;
+      top: max(8px, env(safe-area-inset-top));
+      right: 12px;
+      z-index: 50;
+      font-size: 11px;
+      color: #6b7280;
+      letter-spacing: 0.04em;
+      background: rgba(12, 13, 18, 0.75);
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
     }
 
     .container {
@@ -89,7 +103,6 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin-bottom: 12px;
     }
 
     .btn {
@@ -104,11 +117,11 @@
       font-weight: 600;
       cursor: pointer;
       color: white;
-      transition: opacity 0.15s, transform 0.15s;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       text-align: center;
       position: relative;
+      overflow: hidden;
     }
 
     .btn:active { opacity: 0.85; transform: scale(0.98); }
@@ -122,6 +135,7 @@
       border: 1px solid var(--border);
     }
 
+    /* Full-size transparent file input over the button */
     .btn input[type="file"] {
       position: absolute;
       inset: 0;
@@ -129,12 +143,41 @@
       height: 100%;
       opacity: 0;
       cursor: pointer;
-      font-size: 0;
+      font-size: 16px; /* iOS needs non-zero */
+    }
+
+    .status {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 14px;
+      min-height: 1.4em;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid transparent;
+    }
+
+    .status.active {
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .status.error {
+      color: var(--danger);
+      border-color: rgba(248,113,113,0.3);
+    }
+
+    .status.ok {
+      color: var(--success);
+      border-color: rgba(52,211,153,0.3);
     }
 
     .preview-wrap {
       display: none;
       margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
     }
 
     .preview-wrap.active { display: block; }
@@ -164,7 +207,7 @@
       border-radius: 10px;
       padding: 12px 14px;
       color: var(--text);
-      font-size: 15px;
+      font-size: 16px; /* prevents iOS zoom */
       outline: none;
     }
 
@@ -177,6 +220,8 @@
       background: var(--success);
       color: #0c0d12;
       margin-top: 8px;
+      position: static;
+      overflow: visible;
     }
 
     .btn-cancel {
@@ -185,6 +230,16 @@
       border: 1px solid var(--border);
       color: var(--text-muted);
       margin-top: 8px;
+      position: static;
+      overflow: visible;
+    }
+
+    .hint {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 10px;
+      line-height: 1.4;
     }
 
     .section-title {
@@ -274,29 +329,11 @@
     }
 
     .empty-icon { font-size: 36px; margin-bottom: 10px; }
-
-    .status {
-      text-align: center;
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-top: 12px;
-      min-height: 1.3em;
-      word-break: break-word;
-    }
-
-    .status.error { color: var(--danger); }
-    .status.ok { color: var(--success); }
-
-    .hint {
-      font-size: 12.5px;
-      color: var(--text-muted);
-      text-align: center;
-      margin-top: 8px;
-      line-height: 1.4;
-    }
   </style>
 </head>
 <body>
+  <div class="version-badge">v0.2</div>
+
   <div class="container">
     <header>
       <a class="back" href="index.html">← Back to Index</a>
@@ -306,23 +343,25 @@
 
     <div class="capture-card">
       <div class="capture-buttons">
-        <label class="btn btn-camera">
+        <label class="btn btn-camera" id="cameraLabel">
           📷 Take Photo
           <input type="file" id="cameraInput" accept="image/*" capture="environment">
         </label>
 
-        <label class="btn btn-gallery">
+        <label class="btn btn-gallery" id="galleryLabel">
           🖼️ From Photos
           <input type="file" id="galleryInput" accept="image/*">
         </label>
       </div>
+
+      <div class="status active" id="status">Ready — take or choose a photo</div>
 
       <div class="preview-wrap" id="previewWrap">
         <img class="preview-img" id="previewImg" alt="Bottle preview">
 
         <div class="form-row">
           <label class="field-label" for="drinkName">Drink / Bottle name</label>
-          <input type="text" id="drinkName" placeholder="e.g. Grey Goose Vodka, Macallan 12..." list="drinkSuggestions" autocomplete="off">
+          <input type="text" id="drinkName" placeholder="e.g. Grey Goose, Macallan 12…" list="drinkSuggestions" autocomplete="off">
           <datalist id="drinkSuggestions">
             <option value="Grey Goose Vodka">
             <option value="Belvedere Vodka">
@@ -376,10 +415,8 @@
 
         <button class="btn btn-add" id="addBtn" type="button">Add to My Bar</button>
         <button class="btn btn-cancel" id="cancelBtn" type="button">Cancel</button>
-        <p class="hint">After the photo appears, type a name and tap <strong>Add to My Bar</strong>.</p>
+        <p class="hint">Type a name, then tap <strong>Add to My Bar</strong> to save it below.</p>
       </div>
-
-      <div class="status" id="status"></div>
     </div>
 
     <div class="section-title">
@@ -390,7 +427,7 @@
     <div class="drink-list" id="drinkList">
       <div class="empty" id="emptyState">
         <div class="empty-icon">🍾</div>
-        <div>No bottles yet.<br>Take or upload a photo, name it, then tap Add.</div>
+        <div>No bottles yet.<br>Take a photo, name it, then tap Add.</div>
       </div>
     </div>
   </div>
@@ -398,29 +435,31 @@
   <script>
     "use strict";
 
-    const DB_NAME = "ToneBarDB";
-    const DB_VERSION = 1;
-    const STORE_NAME = "bottles";
+    var DB_NAME = "ToneBarDB";
+    var DB_VERSION = 1;
+    var STORE_NAME = "bottles";
 
-    const cameraInput  = document.getElementById("cameraInput");
-    const galleryInput = document.getElementById("galleryInput");
-    const previewWrap  = document.getElementById("previewWrap");
-    const previewImg   = document.getElementById("previewImg");
-    const drinkName    = document.getElementById("drinkName");
-    const drinkCategory = document.getElementById("drinkCategory");
-    const addBtn       = document.getElementById("addBtn");
-    const cancelBtn    = document.getElementById("cancelBtn");
-    const drinkList    = document.getElementById("drinkList");
-    const emptyState   = document.getElementById("emptyState");
-    const countBadge   = document.getElementById("countBadge");
-    const statusEl     = document.getElementById("status");
+    var cameraInput = document.getElementById("cameraInput");
+    var galleryInput = document.getElementById("galleryInput");
+    var previewWrap = document.getElementById("previewWrap");
+    var previewImg = document.getElementById("previewImg");
+    var drinkName = document.getElementById("drinkName");
+    var drinkCategory = document.getElementById("drinkCategory");
+    var addBtn = document.getElementById("addBtn");
+    var cancelBtn = document.getElementById("cancelBtn");
+    var drinkList = document.getElementById("drinkList");
+    var emptyState = document.getElementById("emptyState");
+    var countBadge = document.getElementById("countBadge");
+    var statusEl = document.getElementById("status");
 
-    let currentDataUrl = null;
-    let db = null;
+    var currentDataUrl = null;
+    var db = null;
+    var processing = false;
+    var lastHandledKey = "";
 
     function setStatus(msg, type) {
       statusEl.textContent = msg || "";
-      statusEl.className = "status" + (type ? " " + type : "");
+      statusEl.className = "status active" + (type ? " " + type : "");
     }
 
     function escapeHtml(str) {
@@ -434,7 +473,7 @@
     function formatDate(iso) {
       try {
         return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-      } catch {
+      } catch (e) {
         return "";
       }
     }
@@ -496,7 +535,6 @@
           items.sort(function (a, b) {
             return (b.addedAt || "").localeCompare(a.addedAt || "");
           });
-
           countBadge.textContent = items.length;
           drinkList.querySelectorAll(".drink-card").forEach(function (el) { el.remove(); });
 
@@ -504,7 +542,6 @@
             emptyState.style.display = "block";
             return;
           }
-
           emptyState.style.display = "none";
 
           items.forEach(function (item) {
@@ -536,8 +573,10 @@
       currentDataUrl = dataUrl;
       previewImg.onload = function () {
         previewWrap.classList.add("active");
-        setStatus("Photo ready — enter a name, then tap Add", "ok");
-        setTimeout(function () { drinkName.focus(); }, 100);
+        setStatus("Photo ready — enter a name below", "ok");
+        setTimeout(function () { drinkName.focus(); }, 120);
+        // Scroll preview into view on phone
+        previewWrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
       };
       previewImg.onerror = function () {
         setStatus("Preview failed to display", "error");
@@ -550,7 +589,7 @@
       currentDataUrl = null;
       previewWrap.classList.remove("active");
       previewImg.removeAttribute("src");
-      setStatus("");
+      setStatus("Ready — take or choose a photo");
     }
 
     function addItem() {
@@ -580,8 +619,10 @@
         .then(function () {
           hidePreview();
           renderList();
-          setStatus('Saved “' + name + '”', "ok");
-          setTimeout(function () { setStatus(""); }, 2500);
+          setStatus('Saved “' + name + '” to collection', "ok");
+          setTimeout(function () {
+            setStatus("Ready — take or choose a photo");
+          }, 2200);
         })
         .catch(function (err) {
           console.error(err);
@@ -597,28 +638,34 @@
         .then(function () {
           renderList();
           setStatus("Removed", "ok");
-          setTimeout(function () { setStatus(""); }, 1500);
+          setTimeout(function () {
+            setStatus("Ready — take or choose a photo");
+          }, 1500);
         })
         .catch(function () {
           setStatus("Could not remove", "error");
         });
     }
 
-    // More reliable image pipeline for iOS camera photos
+    function fileKey(file) {
+      return (file.name || "") + "|" + file.size + "|" + (file.lastModified || "");
+    }
+
     function handleFile(file) {
-      if (!file) {
-        setStatus("No file received from camera/photos", "error");
-        return;
-      }
+      if (!file || processing) return;
 
-      setStatus("Got photo (“ + (file.name || "image") + ”, " + Math.round(file.size / 1024) + " KB)…");
+      var key = fileKey(file);
+      if (key === lastHandledKey) return;
+      lastHandledKey = key;
+      processing = true;
 
-      // Prefer object URL – more reliable on iOS than FileReader for camera shots
+      setStatus("Processing photo (" + Math.round(file.size / 1024) + " KB)…");
+
       var objectUrl = null;
       try {
         objectUrl = URL.createObjectURL(file);
       } catch (e) {
-        console.error(e);
+        processing = false;
         setStatus("Could not open photo", "error");
         return;
       }
@@ -632,9 +679,8 @@
           var height = img.naturalHeight || img.height;
 
           if (!width || !height) {
-            // Fallback: show original object URL as preview without compression
             showPreview(objectUrl);
-            setStatus("Photo loaded (no resize)", "ok");
+            processing = false;
             return;
           }
 
@@ -653,28 +699,29 @@
           canvas.height = height;
           var ctx = canvas.getContext("2d");
           ctx.drawImage(img, 0, 0, width, height);
-
           var dataUrl = canvas.toDataURL("image/jpeg", 0.75);
-          URL.revokeObjectURL(objectUrl);
+          try { URL.revokeObjectURL(objectUrl); } catch (e) {}
           showPreview(dataUrl);
         } catch (err) {
           console.error(err);
-          // Last resort: use the object URL directly so user still sees something
           showPreview(objectUrl);
-          setStatus("Loaded without compression", "ok");
         }
+        processing = false;
       };
 
       img.onerror = function () {
-        // HEIC or unsupported format – try FileReader as backup
-        setStatus("Trying alternate load method…");
+        // Fallback for HEIC / odd formats
+        setStatus("Trying alternate load…");
         var reader = new FileReader();
         reader.onload = function (e) {
           showPreview(e.target.result);
+          processing = false;
+          try { URL.revokeObjectURL(objectUrl); } catch (err) {}
         };
         reader.onerror = function () {
-          setStatus("Could not load this photo format. Try From Photos or take again as JPEG.", "error");
-          if (objectUrl) URL.revokeObjectURL(objectUrl);
+          setStatus("Could not load this photo. Try From Photos.", "error");
+          processing = false;
+          try { URL.revokeObjectURL(objectUrl); } catch (err) {}
         };
         reader.readAsDataURL(file);
       };
@@ -682,29 +729,52 @@
       img.src = objectUrl;
     }
 
-    function onInputChange(input) {
-      var file = input.files && input.files[0];
-      setStatus(file ? "Photo selected, processing…" : "No photo selected");
-      if (file) handleFile(file);
-      // Reset so the same file can be chosen again
-      try { input.value = ""; } catch (e) {}
+    function checkInputsForFile() {
+      var cam = cameraInput.files && cameraInput.files[0];
+      var gal = galleryInput.files && galleryInput.files[0];
+      if (cam) {
+        setStatus("Found camera photo…");
+        handleFile(cam);
+      } else if (gal) {
+        setStatus("Found gallery photo…");
+        handleFile(gal);
+      }
     }
 
+    // Primary listeners
     cameraInput.addEventListener("change", function () {
-      onInputChange(cameraInput);
+      setStatus("Camera change event…");
+      if (cameraInput.files && cameraInput.files[0]) {
+        handleFile(cameraInput.files[0]);
+      } else {
+        setStatus("Camera returned but no file", "error");
+      }
     });
 
     galleryInput.addEventListener("change", function () {
-      onInputChange(galleryInput);
+      setStatus("Gallery change event…");
+      if (galleryInput.files && galleryInput.files[0]) {
+        handleFile(galleryInput.files[0]);
+      }
     });
 
-    // Extra safety: also listen for input event (some WebViews fire this)
-    cameraInput.addEventListener("input", function () {
-      if (cameraInput.files && cameraInput.files[0]) onInputChange(cameraInput);
+    // iOS fix: when returning from camera, change often doesn't fire.
+    // Check again when the page becomes visible / focused.
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") {
+        setStatus("Back from camera — checking for photo…");
+        setTimeout(checkInputsForFile, 300);
+        setTimeout(checkInputsForFile, 800);
+      }
     });
 
-    galleryInput.addEventListener("input", function () {
-      if (galleryInput.files && galleryInput.files[0]) onInputChange(galleryInput);
+    window.addEventListener("focus", function () {
+      setTimeout(checkInputsForFile, 200);
+      setTimeout(checkInputsForFile, 600);
+    });
+
+    window.addEventListener("pageshow", function () {
+      setTimeout(checkInputsForFile, 200);
     });
 
     addBtn.addEventListener("click", addItem);
