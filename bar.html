@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>My Bar v0.8</title>
+  <title>My Bar v0.9</title>
   <style>
     :root {
       --bg: #0c0d12; --surface: #161822; --border: #2a2e42;
@@ -78,22 +78,61 @@
     }
     .preview.active { display: block; }
     .preview img {
-      width: 100%; max-height: 260px; object-fit: contain;
-      border-radius: 12px; background: #0a0b10; margin-bottom: 14px;
+      width: 100%; max-height: 220px; object-fit: contain;
+      border-radius: 12px; background: #0a0b10; margin-bottom: 16px;
     }
+
+    /* Prominent name entry box */
+    .name-box {
+      background: rgba(167, 139, 250, 0.12);
+      border: 2px solid var(--accent);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.12);
+    }
+    .name-box .lbl {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+      color: #e9d5ff;
+      margin-bottom: 10px;
+      letter-spacing: 0.01em;
+    }
+    .name-box input[type=text] {
+      width: 100%;
+      background: #0c0d12;
+      border: 2px solid #c4b5fd;
+      border-radius: 12px;
+      padding: 16px 14px;
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 600;
+      outline: none;
+      margin-bottom: 0;
+    }
+    .name-box input[type=text]::placeholder {
+      color: #7c6fa0;
+      font-weight: 500;
+    }
+    .name-box input[type=text]:focus {
+      border-color: #ddd6fe;
+      box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.25);
+    }
+
     label.lbl {
       display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px;
     }
-    input[type=text], select {
+    select {
       width: 100%; background: #0f111a; border: 1px solid var(--border);
       border-radius: 10px; padding: 12px 14px; color: var(--text);
-      font-size: 16px; outline: none; margin-bottom: 12px;
+      font-size: 16px; outline: none; margin-bottom: 14px;
     }
-    input[type=text]:focus, select:focus { border-color: var(--accent); }
+    select:focus { border-color: var(--accent); }
 
     .btn-save {
-      width: 100%; border: none; border-radius: 12px; padding: 16px;
-      font-size: 16px; font-weight: 700; cursor: pointer;
+      width: 100%; border: none; border-radius: 12px; padding: 18px;
+      font-size: 17px; font-weight: 700; cursor: pointer;
       background: var(--success); color: #0c0d12; margin-bottom: 8px;
     }
     .btn-cancel {
@@ -140,7 +179,7 @@
   </style>
 </head>
 <body>
-  <div class="version-badge">v0.8</div>
+  <div class="version-badge">v0.9</div>
 
   <div class="container">
     <header>
@@ -158,12 +197,15 @@
       <div class="status" id="status">1) Add Photo &nbsp;→&nbsp; 2) Enter name &nbsp;→&nbsp; 3) Tap Save</div>
       <p class="tip">On iPhone: choose <strong>Photo Library</strong> or <strong>Take Photo</strong>.</p>
 
-      <!-- Preview + name + save -->
       <div class="preview" id="preview">
         <img id="previewImg" alt="Preview">
 
-        <label class="lbl" for="drinkName">Bottle name</label>
-        <input type="text" id="drinkName" placeholder="e.g. Grey Goose, Macallan 12…" list="suggestions" autocomplete="off">
+        <!-- Highly visible name field -->
+        <div class="name-box">
+          <label class="lbl" for="drinkName">✏️ Type the bottle name here</label>
+          <input type="text" id="drinkName" placeholder="Example: Grey Goose Vodka" list="suggestions" autocomplete="off">
+        </div>
+
         <datalist id="suggestions">
           <option value="Grey Goose Vodka">
           <option value="Belvedere Vodka">
@@ -221,7 +263,7 @@
   <script>
     "use strict";
 
-    var LS_KEY = "tone_bar_v8";
+    var LS_KEY = "tone_bar_v9";
     var input = document.getElementById("photoInput");
     var statusEl = document.getElementById("status");
     var preview = document.getElementById("preview");
@@ -318,7 +360,7 @@
       previewImg.src = dataUrl;
       preview.classList.add("active");
       drinkName.value = "";
-      setStatus("Photo loaded — enter a name, then tap Save", "ok");
+      setStatus("Type the bottle name in the purple box, then tap Save", "ok");
       setTimeout(function () {
         drinkName.focus();
         preview.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -412,7 +454,7 @@
 
       var name = (drinkName.value || "").trim();
       if (!name) {
-        setStatus("Please enter a bottle name", "error");
+        setStatus("Please type a bottle name in the purple box", "error");
         drinkName.focus();
         return;
       }
