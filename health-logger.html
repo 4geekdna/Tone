@@ -39,6 +39,7 @@
                 <option value="Heart Rate">Heart Rate (bpm)</option>
                 <option value="Sleep">Sleep (hours)</option>
                 <option value="HRV">HRV (ms)</option>
+                <option value="Steps">Steps</option>
                 <option value="Custom Note">Custom Note</option>
             </select>
             <button class="add-btn" onclick="toggleCategoryInput()" title="Add custom category">+</button>
@@ -69,12 +70,10 @@
     </div>
 
     <script>
-        // Initialize from LocalStorage or create empty array
         let sessionLogs = JSON.parse(localStorage.getItem('savedSessionLogs')) || [];
         let editingId = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Load custom categories
             const savedCategories = JSON.parse(localStorage.getItem('customCategories') || '[]');
             const metricSelect = document.getElementById('metric');
             savedCategories.forEach(cat => {
@@ -83,8 +82,6 @@
                 opt.textContent = cat;
                 metricSelect.appendChild(opt);
             });
-
-            // Render any loaded logs
             renderLogs();
         });
 
@@ -148,7 +145,6 @@
             if(!val) return alert("Please enter a value");
             
             if (editingId) {
-                // Update existing item
                 const index = sessionLogs.findIndex(log => log.id === editingId);
                 if (index !== -1) {
                     sessionLogs[index].metric = metric;
@@ -157,7 +153,6 @@
                 editingId = null;
                 document.getElementById('submitBtn').innerText = "Add to Current Session";
             } else {
-                // Add new item
                 const now = new Date();
                 const tzOffset = now.getTimezoneOffset() * 60000;
                 const timestamp = (new Date(now - tzOffset)).toISOString().slice(0, -1);
@@ -178,14 +173,12 @@
             editingId = id;
             
             document.getElementById('submitBtn').innerText = "Update Entry";
-            window.scrollTo(0, 0); // Scroll to top for easier editing on mobile
+            window.scrollTo(0, 0);
         }
 
         function deleteLog(id) {
             if(confirm("Delete this entry?")) {
                 sessionLogs = sessionLogs.filter(l => l.id !== id);
-                
-                // If the user deletes the item they were currently editing, reset the form
                 if (editingId === id) {
                     editingId = null;
                     document.getElementById('val').value = '';
@@ -221,7 +214,7 @@
             }).join('');
         }
 
-        // --- Data Import/Export ---
+        // --- Data Import/Export (Upgraded Smart Parser) ---
         function exportCSV() {
             if(sessionLogs.length === 0) return alert("No data to export.");
             
@@ -262,30 +255,72 @@
                 const text = e.target.result;
                 const lines = text.split('\n');
                 
+                if (lines.length < 2) {
+                    alert("File is empty or invalid.");
+                    return;
+                }
+
+                // Parse headers dynamically
+                const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+                
+                // Find column indices based on common health metrics and RingConn defaults
+                const dateIdx = headers.findIndex(h => h.includes('date') || h.includes('time') || h === 'timestamp');
+                const hrIdx = headers.findIndex(h => h.includes('heart rate') || h === 'hr' || h.includes('avg hr'));
+                const hrvIdx = headers.findIndex(h => h.includes('hrv'));
+                const sleepIdx = headers.findIndex(h => h.includes('sleep'));
+                const stepsIdx = headers.findIndex(h => h.includes('step'));
+                
+                // For our native basic format
+                const metricIdx = headers.findIndex(h => h === 'metric');
+                const valueIdx = headers.findIndex(h => h === 'value');
+
                 let addedCount = 0;
+
                 for(let i = 1; i < lines.length; i++) {
                     if(!lines[i].trim()) continue;
                     
+                    // Regex handles commas inside quotes correctly
                     const row = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-                    if(row && row.length >= 3) {
-                        sessionLogs.push({
-                            id: generateId(),
-                            timestamp: row[0].replace(/^"|"$/g, ''),
-                            metric: row[1].replace(/^"|"$/g, ''),
-                            value: row[2].replace(/^"|"$/g, '')
-                        });
-                        addedCount++;
+                    if(!row) continue;
+                    
+                    const cleanRow = row.map(val => val.replace(/^"|"$/g, ''));
+                    
+                    let timestamp = (dateIdx !== -1 && cleanRow[dateIdx]) ? cleanRow[dateIdx] : new Date().toISOString().slice(0, -1);
+
+                    // Helper to push items
+                    const addParsedLog = (metricName, val) => {
+                        if (val && val !== '' && val !== '0') {
+                            sessionLogs.push({
+                                id: generateId(),
+                                timestamp: timestamp,
+                                metric: metricName,
+                                value: val
+                            });
+                            addedCount++;
+                        }
+                    };
+
+                    // Path A: The file is our own native export format
+                    if (metricIdx !== -1 && valueIdx !== -1) {
+                        addParsedLog(cleanRow[metricIdx], cleanRow[valueIdx]);
+                    } 
+                    // Path B: The file is a wide format like RingConn
+                    else {
+                        if (hrIdx !== -1) addParsedLog("Heart Rate", cleanRow[hrIdx]);
+                        if (hrvIdx !== -1) addParsedLog("HRV", cleanRow[hrvIdx]);
+                        if (sleepIdx !== -1) addParsedLog("Sleep", cleanRow[sleepIdx]);
+                        if (stepsIdx !== -1) addParsedLog("Steps", cleanRow[stepsIdx]);
                     }
                 }
                 
+                // Sort chronologically
                 sessionLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
                 saveAndRender();
-                alert(`Successfully imported ${addedCount} logs!`);
-                event.target.value = ''; 
+                alert(`Successfully parsed and imported ${addedCount} metrics!`);
+                event.target.value = ''; // Reset input to allow re-uploading the same file
             };
             reader.readAsText(file);
         }
     </script>
 </body>
 </html>
-
