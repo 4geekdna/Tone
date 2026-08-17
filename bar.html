@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>My Bar • Bottle Inventory</title>
+  <style>
+    :root {
+      --bg: #0c0d12;
+      --surface: #161822;
+      --surface-hover: #1e2130;
+      --border: #2a2e42;
+      --text: #f0f1f5;
+      --text-muted: #9ca3af;
+      --accent: #a78bfa;
+      --accent-soft: rgba(167, 139, 250, 0.15);
+      --success: #34d399;
+      --danger: #f87171;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding: 16px;
+      padding-top: max(16px, env(safe-area-inset-top));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(167, 139, 250, 0.16), transparent),
+        radial-gradient(ellipse 40% 30% at 90% 90%, rgba(244, 114, 182, 0.07), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 4px;
+      background: linear-gradient(135deg, #e0e7ff, #c4b5fd, #f9a8d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Capture area */
+    .capture-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .capture-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 12px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+      transition: opacity 0.15s, transform 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn:active { opacity: 0.85; transform: scale(0.98); }
+
+    .btn-camera {
+      background: linear-gradient(135deg, #7c3aed, #a78bfa);
+    }
+
+    .btn-gallery {
+      background: #1e293b;
+      border: 1px solid var(--border);
+    }
+
+    .preview-wrap {
+      display: none;
+      margin-top: 16px;
+    }
+
+    .preview-wrap.active { display: block; }
+
+    .preview-img {
+      width: 100%;
+      max-height: 280px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: #0a0b10;
+      margin-bottom: 14px;
+    }
+
+    .form-row {
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"], select {
+      width: 100%;
+      background: #0f111a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+    }
+
+    input[type="text"]:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-add {
+      width: 100%;
+      background: var(--success);
+      color: #0c0d12;
+      margin-top: 8px;
+    }
+
+    .btn-cancel {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* List */
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .count {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      padding: 2px 9px;
+      border-radius: 999px;
+    }
+
+    .drink-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .drink-card {
+      display: flex;
+      gap: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      align-items: center;
+    }
+
+    .drink-thumb {
+      width: 64px;
+      height: 64px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: #0a0b10;
+      flex-shrink: 0;
+    }
+
+    .drink-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .drink-name {
+      font-weight: 650;
+      font-size: 15.5px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .drink-meta {
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    .drink-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255,255,255,0.06);
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-btn.delete:hover { background: rgba(248,113,113,0.15); color: var(--danger); }
+
+    .empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 14.5px;
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+    }
+
+    .empty-icon {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    /* Hidden file input */
+    #fileInput { display: none; }
+
+    .status {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 12px;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a class="back" href="index.html">← Back to Index</a>
+      <h1>My Bar</h1>
+      <p class="subtitle">Photograph bottles • Build your drink collection</p>
+    </header>
+
+    <div class="capture-card">
+      <div class="capture-buttons">
+        <button class="btn btn-camera" id="cameraBtn" type="button">
+          📷 Take Photo
+        </button>
+        <button class="btn btn-gallery" id="galleryBtn" type="button">
+          🖼️ From Photos
+        </button>
+      </div>
+
+      <input type="file" id="fileInput" accept="image/*" capture="environment">
+
+      <div class="preview-wrap" id="previewWrap">
+        <img class="preview-img" id="previewImg" alt="Bottle preview">
+
+        <div class="form-row">
+          <label for="drinkName">Drink / Bottle name</label>
+          <input type="text" id="drinkName" placeholder="e.g. Grey Goose Vodka, Macallan 12..." list="drinkSuggestions" autocomplete="off">
+          <datalist id="drinkSuggestions">
+            <option value="Grey Goose Vodka">
+            <option value="Belvedere Vodka">
+            <option value="Tito's Handmade Vodka">
+            <option value="Absolut Vodka">
+            <option value="Macallan 12">
+            <option value="Glenfiddich 12">
+            <option value="Johnnie Walker Black">
+            <option value="Jameson Irish Whiskey">
+            <option value="Jack Daniel's">
+            <option value="Maker's Mark">
+            <option value="Hennessy VS">
+            <option value="Rémy Martin VSOP">
+            <option value="Patrón Silver">
+            <option value="Don Julio Blanco">
+            <option value="Casamigos Blanco">
+            <option value="Bacardi Superior">
+            <option value="Captain Morgan">
+            <option value="Tanqueray Gin">
+            <option value="Bombay Sapphire">
+            <option value="Hendrick's Gin">
+            <option value="Campari">
+            <option value="Aperol">
+            <option value="Cointreau">
+            <option value="Grand Marnier">
+            <option value="Baileys Irish Cream">
+            <option value="Kahlúa">
+            <option value="Champagne / Prosecco">
+            <option value="Red Wine">
+            <option value="White Wine">
+            <option value="Beer">
+          </datalist>
+        </div>
+
+        <div class="form-row">
+          <label for="drinkCategory">Category</label>
+          <select id="drinkCategory">
+            <option value="Vodka">Vodka</option>
+            <option value="Whiskey / Whisky">Whiskey / Whisky</option>
+            <option value="Gin">Gin</option>
+            <option value="Rum">Rum</option>
+            <option value="Tequila / Mezcal">Tequila / Mezcal</option>
+            <option value="Brandy / Cognac">Brandy / Cognac</option>
+            <option value="Liqueur">Liqueur</option>
+            <option value="Wine">Wine</option>
+            <option value="Champagne / Sparkling">Champagne / Sparkling</option>
+            <option value="Beer">Beer</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <button class="btn btn-add" id="addBtn" type="button">Add to My Bar</button>
+        <button class="btn btn-cancel" id="cancelBtn" type="button">Cancel</button>
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="section-title">
+      <span>My Collection</span>
+      <span class="count" id="countBadge">0</span>
+    </div>
+
+    <div class="drink-list" id="drinkList">
+      <div class="empty" id="emptyState">
+        <div class="empty-icon">🍾</div>
+        <div>No bottles yet.<br>Take or upload a photo to start your bar.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const STORAGE_KEY = "tone_bar_inventory_v1";
+
+    const fileInput   = document.getElementById("fileInput");
+    const cameraBtn   = document.getElementById("cameraBtn");
+    const galleryBtn  = document.getElementById("galleryBtn");
+    const previewWrap = document.getElementById("previewWrap");
+    const previewImg  = document.getElementById("previewImg");
+    const drinkName   = document.getElementById("drinkName");
+    const drinkCategory = document.getElementById("drinkCategory");
+    const addBtn      = document.getElementById("addBtn");
+    const cancelBtn   = document.getElementById("cancelBtn");
+    const drinkList   = document.getElementById("drinkList");
+    const emptyState  = document.getElementById("emptyState");
+    const countBadge  = document.getElementById("countBadge");
+    const statusEl    = document.getElementById("status");
+
+    let currentDataUrl = null;
+
+    function loadInventory() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveInventory(items) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+
+    function setStatus(msg) {
+      statusEl.textContent = msg || "";
+    }
+
+    function renderList() {
+      const items = loadInventory();
+      countBadge.textContent = items.length;
+
+      // Clear existing cards (keep emptyState)
+      drinkList.querySelectorAll(".drink-card").forEach(el => el.remove());
+
+      if (items.length === 0) {
+        emptyState.style.display = "block";
+        return;
+      }
+
+      emptyState.style.display = "none";
+
+      // Newest first
+      items.slice().reverse().forEach((item, idx) => {
+        const realIndex = items.length - 1 - idx;
+        const card = document.createElement("div");
+        card.className = "drink-card";
+        card.innerHTML = `
+          <img class="drink-thumb" src="${item.image}" alt="${escapeHtml(item.name)}">
+          <div class="drink-info">
+            <div class="drink-name">${escapeHtml(item.name)}</div>
+            <div class="drink-meta">${escapeHtml(item.category)} · ${formatDate(item.addedAt)}</div>
+          </div>
+          <div class="drink-actions">
+            <button class="icon-btn delete" data-index="${realIndex}" title="Remove">🗑️</button>
+          </div>
+        `;
+        drinkList.appendChild(card);
+      });
+
+      // Attach delete handlers
+      drinkList.querySelectorAll(".icon-btn.delete").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const index = parseInt(btn.dataset.index, 10);
+          removeItem(index);
+        });
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&")
+        .replace(/</g, "<")
+        .replace(/>/g, ">")
+        .replace(/"/g, """);
+    }
+
+    function formatDate(iso) {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      } catch {
+        return "";
+      }
+    }
+
+    function showPreview(dataUrl) {
+      currentDataUrl = dataUrl;
+      previewImg.src = dataUrl;
+      previewWrap.classList.add("active");
+      drinkName.value = "";
+      drinkName.focus();
+      setStatus("Name the bottle and add it to your collection");
+    }
+
+    function hidePreview() {
+      currentDataUrl = null;
+      previewWrap.classList.remove("active");
+      previewImg.src = "";
+      setStatus("");
+    }
+
+    function addItem() {
+      const name = (drinkName.value || "").trim();
+      if (!name) {
+        setStatus("Please enter a drink name");
+        drinkName.focus();
+        return;
+      }
+      if (!currentDataUrl) {
+        setStatus("No photo selected");
+        return;
+      }
+
+      const items = loadInventory();
+      items.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        name,
+        category: drinkCategory.value,
+        image: currentDataUrl,
+        addedAt: new Date().toISOString()
+      });
+      saveInventory(items);
+      hidePreview();
+      renderList();
+      setStatus(`Added “${name}” to your bar`);
+      setTimeout(() => setStatus(""), 2200);
+    }
+
+    function removeItem(index) {
+      const items = loadInventory();
+      if (index < 0 || index >= items.length) return;
+      const removed = items.splice(index, 1)[0];
+      saveInventory(items);
+      renderList();
+      setStatus(`Removed “${removed.name}”`);
+      setTimeout(() => setStatus(""), 1800);
+    }
+
+    // File handling
+    function handleFile(file) {
+      if (!file || !file.type.startsWith("image/")) {
+        setStatus("Please select an image");
+        return;
+      }
+
+      // Resize for localStorage limits
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxSize = 800;
+          let { width, height } = img;
+          if (width > maxSize || height > maxSize) {
+            if (width > height) {
+              height = Math.round((height * maxSize) / width);
+              width = maxSize;
+            } else {
+              width = Math.round((width * maxSize) / height);
+              height = maxSize;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+          showPreview(dataUrl);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Event listeners
+    cameraBtn.addEventListener("click", () => {
+      fileInput.setAttribute("capture", "environment");
+      fileInput.click();
+    });
+
+    galleryBtn.addEventListener("click", () => {
+      fileInput.removeAttribute("capture");
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (file) handleFile(file);
+      fileInput.value = ""; // allow same file again
+    });
+
+    addBtn.addEventListener("click", addItem);
+    cancelBtn.addEventListener("click", hidePreview);
+
+    drinkName.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") addItem();
+    });
+
+    // Init
+    renderList();
+  </script>
+</body>
+</html>
