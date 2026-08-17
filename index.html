@@ -47,12 +47,55 @@
       z-index: 0;
     }
 
+    .top-bar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 10px 20px 0;
+    }
+
+    .version {
+      font-size: 11px;
+      color: #6b7280;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .top-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 11px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .top-btn:hover,
+    .top-btn:active {
+      background: var(--surface);
+      color: var(--text);
+      border-color: #3f4560;
+    }
+
     .container {
       position: relative;
       z-index: 1;
       max-width: 680px;
       margin: 0 auto;
-      padding: 32px 20px 90px;
+      padding: 20px 20px 90px;
     }
 
     header {
@@ -258,13 +301,22 @@
     }
 
     @media (max-width: 480px) {
-      .container { padding: 24px 16px 70px; }
+      .container { padding: 16px 16px 70px; }
+      .top-bar { padding: 8px 16px 0; }
       h1 { font-size: 26px; }
       a.card { padding: 15px 14px; }
     }
   </style>
 </head>
 <body>
+  <div class="top-bar">
+    <div class="version">v0.11</div>
+    <div class="top-actions">
+      <button class="top-btn" id="backBtn" type="button" title="Go back">← Back</button>
+      <button class="top-btn" id="refreshBtn" type="button" title="Refresh page">Refresh</button>
+    </div>
+  </div>
+
   <div class="container">
     <header>
       <a class="repo-badge" href="https://github.com/4geekdna/Tone" target="_blank" rel="noopener">
@@ -461,5 +513,20 @@
       · Keep this file in the repo root
     </footer>
   </div>
+
+  <script>
+    document.getElementById("backBtn").addEventListener("click", () => {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        // Fallback if no history (e.g. opened directly)
+        window.location.href = "https://github.com/4geekdna/Tone";
+      }
+    });
+
+    document.getElementById("refreshBtn").addEventListener("click", () => {
+      window.location.reload();
+    });
+  </script>
 </body>
 </html>
