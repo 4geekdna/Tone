@@ -10,7 +10,6 @@
     :root {
       --bg: #0c0d12;
       --surface: #161822;
-      --surface-hover: #1e2130;
       --border: #2a2e42;
       --text: #f0f1f5;
       --text-muted: #9ca3af;
@@ -52,10 +51,7 @@
       margin: 0 auto;
     }
 
-    header {
-      text-align: center;
-      margin-bottom: 24px;
-    }
+    header { text-align: center; margin-bottom: 24px; }
 
     .back {
       display: inline-flex;
@@ -79,10 +75,7 @@
       background-clip: text;
     }
 
-    .subtitle {
-      color: var(--text-muted);
-      font-size: 14px;
-    }
+    .subtitle { color: var(--text-muted); font-size: 14px; }
 
     .capture-card {
       background: var(--surface);
@@ -99,6 +92,7 @@
       margin-bottom: 12px;
     }
 
+    /* Label-as-button is the most reliable way to trigger file inputs on iOS */
     .btn {
       display: flex;
       align-items: center;
@@ -114,6 +108,7 @@
       transition: opacity 0.15s, transform 0.15s;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
+      text-align: center;
     }
 
     .btn:active { opacity: 0.85; transform: scale(0.98); }
@@ -125,6 +120,18 @@
     .btn-gallery {
       background: #1e293b;
       border: 1px solid var(--border);
+    }
+
+    .btn input[type="file"] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
 
     .preview-wrap {
@@ -143,11 +150,9 @@
       margin-bottom: 14px;
     }
 
-    .form-row {
-      margin-bottom: 12px;
-    }
+    .form-row { margin-bottom: 12px; }
 
-    label {
+    label.field-label {
       display: block;
       font-size: 13px;
       color: var(--text-muted);
@@ -229,10 +234,7 @@
       flex-shrink: 0;
     }
 
-    .drink-info {
-      flex: 1;
-      min-width: 0;
-    }
+    .drink-info { flex: 1; min-width: 0; }
 
     .drink-name {
       font-weight: 650;
@@ -246,11 +248,6 @@
     .drink-meta {
       font-size: 12.5px;
       color: var(--text-muted);
-    }
-
-    .drink-actions {
-      display: flex;
-      gap: 6px;
     }
 
     .icon-btn {
@@ -277,22 +274,7 @@
       border-radius: var(--radius);
     }
 
-    .empty-icon {
-      font-size: 36px;
-      margin-bottom: 10px;
-    }
-
-    /* Visually hidden but accessible file inputs */
-    .file-input {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0,0,0,0);
-      border: 0;
-    }
+    .empty-icon { font-size: 36px; margin-bottom: 10px; }
 
     .status {
       text-align: center;
@@ -316,23 +298,23 @@
 
     <div class="capture-card">
       <div class="capture-buttons">
-        <button class="btn btn-camera" id="cameraBtn" type="button">
+        <!-- Label wrapping the input is the most reliable trigger on iOS Safari -->
+        <label class="btn btn-camera">
           📷 Take Photo
-        </button>
-        <button class="btn btn-gallery" id="galleryBtn" type="button">
-          🖼️ From Photos
-        </button>
-      </div>
+          <input type="file" id="cameraInput" accept="image/*" capture="environment">
+        </label>
 
-      <!-- Two separate inputs = more reliable on iOS -->
-      <input class="file-input" type="file" id="cameraInput" accept="image/*" capture="environment">
-      <input class="file-input" type="file" id="galleryInput" accept="image/*">
+        <label class="btn btn-gallery">
+          🖼️ From Photos
+          <input type="file" id="galleryInput" accept="image/*">
+        </label>
+      </div>
 
       <div class="preview-wrap" id="previewWrap">
         <img class="preview-img" id="previewImg" alt="Bottle preview">
 
         <div class="form-row">
-          <label for="drinkName">Drink / Bottle name</label>
+          <label class="field-label" for="drinkName">Drink / Bottle name</label>
           <input type="text" id="drinkName" placeholder="e.g. Grey Goose Vodka, Macallan 12..." list="drinkSuggestions" autocomplete="off">
           <datalist id="drinkSuggestions">
             <option value="Grey Goose Vodka">
@@ -369,7 +351,7 @@
         </div>
 
         <div class="form-row">
-          <label for="drinkCategory">Category</label>
+          <label class="field-label" for="drinkCategory">Category</label>
           <select id="drinkCategory">
             <option value="Vodka">Vodka</option>
             <option value="Whiskey / Whisky">Whiskey / Whisky</option>
@@ -412,8 +394,6 @@
 
     const cameraInput  = document.getElementById("cameraInput");
     const galleryInput = document.getElementById("galleryInput");
-    const cameraBtn    = document.getElementById("cameraBtn");
-    const galleryBtn   = document.getElementById("galleryBtn");
     const previewWrap  = document.getElementById("previewWrap");
     const previewImg   = document.getElementById("previewImg");
     const drinkName    = document.getElementById("drinkName");
@@ -478,23 +458,19 @@
         const realIndex = items.length - 1 - idx;
         const card = document.createElement("div");
         card.className = "drink-card";
-        card.innerHTML = `
-          <img class="drink-thumb" src="${item.image}" alt="${escapeHtml(item.name)}">
-          <div class="drink-info">
-            <div class="drink-name">${escapeHtml(item.name)}</div>
-            <div class="drink-meta">${escapeHtml(item.category)} · ${formatDate(item.addedAt)}</div>
-          </div>
-          <div class="drink-actions">
-            <button class="icon-btn delete" data-index="${realIndex}" title="Remove" type="button">🗑️</button>
-          </div>
-        `;
+        card.innerHTML =
+          '<img class="drink-thumb" src="' + item.image + '" alt="' + escapeHtml(item.name) + '">' +
+          '<div class="drink-info">' +
+            '<div class="drink-name">' + escapeHtml(item.name) + '</div>' +
+            '<div class="drink-meta">' + escapeHtml(item.category) + ' · ' + formatDate(item.addedAt) + '</div>' +
+          '</div>' +
+          '<button class="icon-btn delete" data-index="' + realIndex + '" title="Remove" type="button">🗑️</button>';
         drinkList.appendChild(card);
       });
 
       drinkList.querySelectorAll(".icon-btn.delete").forEach(btn => {
         btn.addEventListener("click", () => {
-          const index = parseInt(btn.dataset.index, 10);
-          removeItem(index);
+          removeItem(parseInt(btn.dataset.index, 10));
         });
       });
     }
@@ -504,7 +480,7 @@
       previewImg.src = dataUrl;
       previewWrap.classList.add("active");
       drinkName.value = "";
-      setTimeout(() => drinkName.focus(), 100);
+      setTimeout(function () { drinkName.focus(); }, 150);
       setStatus("Name the bottle and add it to your collection", "ok");
     }
 
@@ -516,7 +492,7 @@
     }
 
     function addItem() {
-      const name = (drinkName.value || "").trim();
+      var name = (drinkName.value || "").trim();
       if (!name) {
         setStatus("Please enter a drink name", "error");
         drinkName.focus();
@@ -527,10 +503,10 @@
         return;
       }
 
-      const items = loadInventory();
+      var items = loadInventory();
       items.push({
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-        name,
+        name: name,
         category: drinkCategory.value,
         image: currentDataUrl,
         addedAt: new Date().toISOString()
@@ -538,18 +514,18 @@
       saveInventory(items);
       hidePreview();
       renderList();
-      setStatus(`Added “${name}” to your bar`, "ok");
-      setTimeout(() => setStatus(""), 2200);
+      setStatus('Added “' + name + '” to your bar', "ok");
+      setTimeout(function () { setStatus(""); }, 2200);
     }
 
     function removeItem(index) {
-      const items = loadInventory();
+      var items = loadInventory();
       if (index < 0 || index >= items.length) return;
-      const removed = items.splice(index, 1)[0];
+      var removed = items.splice(index, 1)[0];
       saveInventory(items);
       renderList();
-      setStatus(`Removed “${removed.name}”`, "ok");
-      setTimeout(() => setStatus(""), 1800);
+      setStatus('Removed “' + removed.name + '”', "ok");
+      setTimeout(function () { setStatus(""); }, 1800);
     }
 
     function handleFile(file) {
@@ -558,31 +534,31 @@
         return;
       }
 
-      if (!file.type.startsWith("image/")) {
+      if (!file.type || file.type.indexOf("image/") !== 0) {
         setStatus("Please choose an image file", "error");
         return;
       }
 
       setStatus("Processing photo…");
 
-      const reader = new FileReader();
+      var reader = new FileReader();
 
-      reader.onerror = () => {
+      reader.onerror = function () {
         setStatus("Could not read the image", "error");
       };
 
-      reader.onload = (e) => {
-        const img = new Image();
+      reader.onload = function (e) {
+        var img = new Image();
 
-        img.onerror = () => {
+        img.onerror = function () {
           setStatus("Could not load the image", "error");
         };
 
-        img.onload = () => {
+        img.onload = function () {
           try {
-            const maxSize = 900;
-            let width = img.width;
-            let height = img.height;
+            var maxSize = 900;
+            var width = img.width;
+            var height = img.height;
 
             if (width > maxSize || height > maxSize) {
               if (width > height) {
@@ -594,13 +570,13 @@
               }
             }
 
-            const canvas = document.createElement("canvas");
+            var canvas = document.createElement("canvas");
             canvas.width = width;
             canvas.height = height;
-            const ctx = canvas.getContext("2d");
+            var ctx = canvas.getContext("2d");
             ctx.drawImage(img, 0, 0, width, height);
 
-            const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+            var dataUrl = canvas.toDataURL("image/jpeg", 0.85);
             showPreview(dataUrl);
           } catch (err) {
             console.error(err);
@@ -614,49 +590,34 @@
       reader.readAsDataURL(file);
     }
 
-    // Camera button → dedicated camera input
-    cameraBtn.addEventListener("click", () => {
-      setStatus("Opening camera…");
+    // Direct change listeners on the inputs (no .click() needed)
+    cameraInput.addEventListener("change", function () {
+      var file = cameraInput.files && cameraInput.files[0];
+      if (file) {
+        handleFile(file);
+      }
+      // Reset so the same photo can be selected again later
       cameraInput.value = "";
-      cameraInput.click();
     });
 
-    // Gallery button → dedicated gallery input
-    galleryBtn.addEventListener("click", () => {
-      setStatus("Opening photo library…");
+    galleryInput.addEventListener("change", function () {
+      var file = galleryInput.files && galleryInput.files[0];
+      if (file) {
+        handleFile(file);
+      }
       galleryInput.value = "";
-      galleryInput.click();
-    });
-
-    cameraInput.addEventListener("change", () => {
-      const file = cameraInput.files && cameraInput.files[0];
-      if (file) {
-        handleFile(file);
-      } else {
-        setStatus("");
-      }
-    });
-
-    galleryInput.addEventListener("change", () => {
-      const file = galleryInput.files && galleryInput.files[0];
-      if (file) {
-        handleFile(file);
-      } else {
-        setStatus("");
-      }
     });
 
     addBtn.addEventListener("click", addItem);
     cancelBtn.addEventListener("click", hidePreview);
 
-    drinkName.addEventListener("keydown", (e) => {
+    drinkName.addEventListener("keydown", function (e) {
       if (e.key === "Enter") {
         e.preventDefault();
         addItem();
       }
     });
 
-    // Init
     renderList();
   </script>
 </body>
