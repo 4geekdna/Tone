@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>My Bar v0.7</title>
+  <title>My Bar v0.8</title>
   <style>
     :root {
       --bg: #0c0d12; --surface: #161822; --border: #2a2e42;
@@ -69,6 +69,39 @@
       margin-top: 10px; font-size: 12.5px; color: var(--text-muted);
       text-align: center; line-height: 1.45;
     }
+
+    .preview {
+      display: none;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .preview.active { display: block; }
+    .preview img {
+      width: 100%; max-height: 260px; object-fit: contain;
+      border-radius: 12px; background: #0a0b10; margin-bottom: 14px;
+    }
+    label.lbl {
+      display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px;
+    }
+    input[type=text], select {
+      width: 100%; background: #0f111a; border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; color: var(--text);
+      font-size: 16px; outline: none; margin-bottom: 12px;
+    }
+    input[type=text]:focus, select:focus { border-color: var(--accent); }
+
+    .btn-save {
+      width: 100%; border: none; border-radius: 12px; padding: 16px;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      background: var(--success); color: #0c0d12; margin-bottom: 8px;
+    }
+    .btn-cancel {
+      width: 100%; border-radius: 12px; padding: 12px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+    }
+
     .section-title {
       font-size: 13px; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 12px;
@@ -89,13 +122,11 @@
       object-fit: cover; background: #0a0b10; flex-shrink: 0;
     }
     .item .info { flex: 1; min-width: 0; }
-    .item .name-input {
-      width: 100%; background: #0f111a; border: 1px solid var(--border);
-      border-radius: 8px; padding: 8px 10px; color: var(--text);
-      font-size: 15px; font-weight: 650; outline: none;
+    .item .name {
+      font-weight: 650; font-size: 15.5px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .item .name-input:focus { border-color: var(--accent); }
-    .item .meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .item .meta { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
     .del {
       width: 36px; height: 36px; border: none; border-radius: 10px;
       background: rgba(255,255,255,0.06); font-size: 16px; cursor: pointer;
@@ -109,7 +140,7 @@
   </style>
 </head>
 <body>
-  <div class="version-badge">v0.7</div>
+  <div class="version-badge">v0.8</div>
 
   <div class="container">
     <header>
@@ -124,8 +155,58 @@
         <input type="file" id="photoInput" accept="image/*">
       </label>
 
-      <div class="status" id="status">Tap Add Photo — the picture will be saved to My Collection automatically</div>
-      <p class="tip">On iPhone choose <strong>Photo Library</strong> (most reliable) or <strong>Take Photo</strong>.</p>
+      <div class="status" id="status">1) Add Photo &nbsp;→&nbsp; 2) Enter name &nbsp;→&nbsp; 3) Tap Save</div>
+      <p class="tip">On iPhone: choose <strong>Photo Library</strong> or <strong>Take Photo</strong>.</p>
+
+      <!-- Preview + name + save -->
+      <div class="preview" id="preview">
+        <img id="previewImg" alt="Preview">
+
+        <label class="lbl" for="drinkName">Bottle name</label>
+        <input type="text" id="drinkName" placeholder="e.g. Grey Goose, Macallan 12…" list="suggestions" autocomplete="off">
+        <datalist id="suggestions">
+          <option value="Grey Goose Vodka">
+          <option value="Belvedere Vodka">
+          <option value="Macallan 12">
+          <option value="Glenfiddich 12">
+          <option value="Johnnie Walker Black">
+          <option value="Jameson Irish Whiskey">
+          <option value="Jack Daniel's">
+          <option value="Maker's Mark">
+          <option value="Hennessy VS">
+          <option value="Patrón Silver">
+          <option value="Don Julio Blanco">
+          <option value="Casamigos Blanco">
+          <option value="Tanqueray Gin">
+          <option value="Bombay Sapphire">
+          <option value="Hendrick's Gin">
+          <option value="Campari">
+          <option value="Aperol">
+          <option value="Baileys Irish Cream">
+          <option value="Champagne / Prosecco">
+          <option value="Red Wine">
+          <option value="White Wine">
+          <option value="Beer">
+        </datalist>
+
+        <label class="lbl" for="drinkCategory">Category</label>
+        <select id="drinkCategory">
+          <option value="Vodka">Vodka</option>
+          <option value="Whiskey / Whisky">Whiskey / Whisky</option>
+          <option value="Gin">Gin</option>
+          <option value="Rum">Rum</option>
+          <option value="Tequila / Mezcal">Tequila / Mezcal</option>
+          <option value="Brandy / Cognac">Brandy / Cognac</option>
+          <option value="Liqueur">Liqueur</option>
+          <option value="Wine">Wine</option>
+          <option value="Champagne / Sparkling">Champagne / Sparkling</option>
+          <option value="Beer">Beer</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <button class="btn-save" id="saveBtn" type="button">💾 Save to My Collection</button>
+        <button class="btn-cancel" id="cancelBtn" type="button">Cancel</button>
+      </div>
     </div>
 
     <div class="section-title">
@@ -133,22 +214,28 @@
       <span class="count" id="count">0</span>
     </div>
     <div class="list" id="list">
-      <div class="empty" id="empty">🍾<br><br>No bottles yet.<br>Tap <strong>Add Photo</strong> above.</div>
+      <div class="empty" id="empty">🍾<br><br>No bottles yet.<br>Add a photo, enter a name, then tap Save.</div>
     </div>
   </div>
 
   <script>
     "use strict";
 
-    var LS_KEY = "tone_bar_v7";
+    var LS_KEY = "tone_bar_v8";
     var input = document.getElementById("photoInput");
     var statusEl = document.getElementById("status");
+    var preview = document.getElementById("preview");
+    var previewImg = document.getElementById("previewImg");
+    var drinkName = document.getElementById("drinkName");
+    var drinkCategory = document.getElementById("drinkCategory");
+    var saveBtn = document.getElementById("saveBtn");
+    var cancelBtn = document.getElementById("cancelBtn");
     var list = document.getElementById("list");
     var empty = document.getElementById("empty");
     var countEl = document.getElementById("count");
 
+    var currentDataUrl = null;
     var lastKey = "";
-    var busy = false;
 
     function setStatus(msg, type) {
       statusEl.textContent = msg || "";
@@ -179,10 +266,8 @@
         localStorage.setItem(LS_KEY, JSON.stringify(items));
         return true;
       } catch (e) {
-        // Quota — keep only newest few
         try {
-          var trimmed = items.slice(-8);
-          localStorage.setItem(LS_KEY, JSON.stringify(trimmed));
+          localStorage.setItem(LS_KEY, JSON.stringify(items.slice(-8)));
           return true;
         } catch (e2) {
           return false;
@@ -211,8 +296,8 @@
         el.innerHTML =
           '<img src="' + it.image + '" alt="">' +
           '<div class="info">' +
-            '<input class="name-input" data-id="' + esc(it.id) + '" value="' + esc(it.name) + '" placeholder="Bottle name">' +
-            '<div class="meta">Tap name to edit</div>' +
+            '<div class="name">' + esc(it.name) + '</div>' +
+            '<div class="meta">' + esc(it.category) + '</div>' +
           '</div>' +
           '<button class="del" type="button" data-id="' + esc(it.id) + '">🗑️</button>';
         list.appendChild(el);
@@ -226,62 +311,42 @@
           setStatus("Removed", "ok");
         };
       });
-
-      list.querySelectorAll(".name-input").forEach(function (inp) {
-        inp.addEventListener("change", function () {
-          var id = inp.getAttribute("data-id");
-          var name = (inp.value || "").trim() || "Bottle";
-          var items = loadItems();
-          for (var i = 0; i < items.length; i++) {
-            if (items[i].id === id) {
-              items[i].name = name;
-              break;
-            }
-          }
-          saveItems(items);
-          setStatus('Renamed to “' + name + '”', "ok");
-        });
-      });
     }
 
-    function addPhoto(dataUrl) {
-      var items = loadItems();
-      var n = items.length + 1;
-      items.push({
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        name: "Bottle " + n,
-        category: "Other",
-        image: dataUrl,
-        addedAt: new Date().toISOString()
-      });
-
-      if (!saveItems(items)) {
-        setStatus("Storage full — delete some bottles first", "error");
-        return false;
-      }
-
-      render();
-      setStatus("Saved to My Collection — tap the name to rename", "ok");
+    function showPreview(dataUrl) {
+      currentDataUrl = dataUrl;
+      previewImg.src = dataUrl;
+      preview.classList.add("active");
+      drinkName.value = "";
+      setStatus("Photo loaded — enter a name, then tap Save", "ok");
       setTimeout(function () {
-        list.scrollIntoView({ behavior: "smooth", block: "start" });
+        drinkName.focus();
+        preview.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }, 80);
-      return true;
+    }
+
+    function hidePreview() {
+      currentDataUrl = null;
+      preview.classList.remove("active");
+      previewImg.removeAttribute("src");
+      setStatus("1) Add Photo  →  2) Enter name  →  3) Tap Save");
     }
 
     function processFile(file) {
-      if (!file || busy) return;
+      if (!file) {
+        setStatus("No file selected", "error");
+        return;
+      }
 
       var key = (file.name || "img") + "|" + file.size + "|" + (file.lastModified || Date.now());
-      if (key === lastKey) return;
+      if (key === lastKey && currentDataUrl) return;
       lastKey = key;
-      busy = true;
 
       setStatus("Processing photo (" + Math.round(file.size / 1024) + " KB)…");
 
       var url;
       try { url = URL.createObjectURL(file); }
       catch (e) {
-        busy = false;
         setStatus("Could not open photo", "error");
         return;
       }
@@ -289,7 +354,7 @@
       var img = new Image();
       img.onload = function () {
         try {
-          var max = 480;
+          var max = 560;
           var w = img.naturalWidth || img.width;
           var h = img.naturalHeight || img.height;
           if (w > max || h > max) {
@@ -299,24 +364,18 @@
           var c = document.createElement("canvas");
           c.width = w; c.height = h;
           c.getContext("2d").drawImage(img, 0, 0, w, h);
-          var dataUrl = c.toDataURL("image/jpeg", 0.6);
+          var dataUrl = c.toDataURL("image/jpeg", 0.7);
           try { URL.revokeObjectURL(url); } catch (e) {}
-          addPhoto(dataUrl);
+          showPreview(dataUrl);
         } catch (e) {
-          console.error(e);
-          addPhoto(url);
+          showPreview(url);
         }
-        busy = false;
       };
       img.onerror = function () {
         var reader = new FileReader();
-        reader.onload = function (ev) {
-          addPhoto(ev.target.result);
-          busy = false;
-        };
+        reader.onload = function (ev) { showPreview(ev.target.result); };
         reader.onerror = function () {
           setStatus("Could not read photo", "error");
-          busy = false;
           try { URL.revokeObjectURL(url); } catch (e) {}
         };
         reader.readAsDataURL(file);
@@ -327,8 +386,6 @@
     function onFiles() {
       var file = input.files && input.files[0];
       if (file) processFile(file);
-      // allow selecting same file again later
-      try { input.value = ""; } catch (e) {}
     }
 
     input.addEventListener("change", onFiles);
@@ -345,6 +402,50 @@
     });
     window.addEventListener("focus", function () {
       setTimeout(recheck, 250);
+    });
+
+    saveBtn.addEventListener("click", function () {
+      if (!currentDataUrl) {
+        setStatus("No photo loaded yet", "error");
+        return;
+      }
+
+      var name = (drinkName.value || "").trim();
+      if (!name) {
+        setStatus("Please enter a bottle name", "error");
+        drinkName.focus();
+        return;
+      }
+
+      var items = loadItems();
+      items.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: name,
+        category: drinkCategory.value || "Other",
+        image: currentDataUrl,
+        addedAt: new Date().toISOString()
+      });
+
+      if (!saveItems(items)) {
+        setStatus("Storage full — delete some bottles first", "error");
+        return;
+      }
+
+      hidePreview();
+      render();
+      setStatus('Saved “' + name + '” to My Collection', "ok");
+      setTimeout(function () {
+        list.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    });
+
+    cancelBtn.addEventListener("click", hidePreview);
+
+    drinkName.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        saveBtn.click();
+      }
     });
 
     render();
