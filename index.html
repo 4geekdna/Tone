@@ -213,6 +213,7 @@
     .icon.hr     { background: rgba(244, 114, 182, 0.18); }
     .icon.file   { background: rgba(167, 139, 250, 0.12); }
     .icon.keys   { background: rgba(138, 180, 248, 0.18); }
+    .icon.chat   { background: rgba(139, 92, 246, 0.18); }
 
     .card-body {
       flex: 1;
@@ -312,7 +313,7 @@
 </head>
 <body>
   <div class="top-bar">
-    <div class="version">v0.14</div>
+    <div class="version">v0.15</div>
     <div class="top-actions">
       <button class="top-btn" id="backBtn" type="button" title="Go back">← Back</button>
       <button class="top-btn" id="refreshBtn" type="button" title="Refresh page">Refresh</button>
@@ -443,6 +444,20 @@
           </div>
           <div class="arrow">→</div>
         </a>
+
+        <a class="card" href="landmark-companion.html">
+          <div class="icon chat">💬</div>
+          <div class="card-body">
+            <div class="card-title">
+              landmark-companion.html
+              <span class="tag">New</span>
+            </div>
+            <div class="card-desc">
+              Gemini chat for your active landmark (or any place you type). Quick actions for history, nearby, practical info, accessibility & more. Per-place conversation history + notes.
+            </div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
       </div>
     </section>
 
@@ -563,7 +578,6 @@
       if (window.history.length > 1) {
         window.history.back();
       } else {
-        // Fallback if no history (e.g. opened directly)
         window.location.href = "https://github.com/4geekdna/Tone";
       }
     });
