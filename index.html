@@ -212,6 +212,7 @@
     .icon.bar    { background: rgba(245, 158, 11, 0.18); }
     .icon.hr     { background: rgba(244, 114, 182, 0.18); }
     .icon.file   { background: rgba(167, 139, 250, 0.12); }
+    .icon.keys   { background: rgba(138, 180, 248, 0.18); }
 
     .card-body {
       flex: 1;
@@ -311,7 +312,7 @@
 </head>
 <body>
   <div class="top-bar">
-    <div class="version">v0.13</div>
+    <div class="version">v0.14</div>
     <div class="top-actions">
       <button class="top-btn" id="backBtn" type="button" title="Go back">← Back</button>
       <button class="top-btn" id="refreshBtn" type="button" title="Refresh page">Refresh</button>
@@ -482,6 +483,20 @@
             <div class="card-title">test02.html</div>
             <div class="card-desc">
               ElevenLabs TTS playground — enter API key, pick voice/model, adjust settings, generate speech and download audio.
+            </div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
+
+        <a class="card" href="api-key-tester.html">
+          <div class="icon keys">🔑</div>
+          <div class="card-body">
+            <div class="card-title">
+              api-key-tester.html
+              <span class="tag">New</span>
+            </div>
+            <div class="card-desc">
+              Test & save Google Places API (New) and Gemini API keys. Live validation with clear success/error feedback. Keys stay in browser localStorage.
             </div>
           </div>
           <div class="arrow">→</div>
