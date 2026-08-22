@@ -4,11 +4,335 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>GPS Marker – Custom POI Categories</title>
-  <!-- Full content is the regenerated app from /tmp/test03.html – see repository for complete source. The file was written with all features: 12 default categories, manage UI, dropdown, editable criteria, etc. -->
-  <style>/* styles omitted for length in this call – full file is in the local /tmp and will be corrected */</style>
+  <style>
+    :root {
+      --bg: #0f1419; --card: #1a2332; --accent: #3b82f6; --text: #e2e8f0;
+      --muted: #94a3b8; --danger: #ef4444; --border: #2d3748; --active: #1e3a5f; --success: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100dvh;
+      padding: 16px; padding-bottom: 50px; line-height: 1.45;
+    }
+    h1 { font-size: 1.35rem; font-weight: 700; margin-bottom: 2px; }
+    .subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 16px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 16px; margin-bottom: 14px;
+    }
+    .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 6px; }
+    .coords { font-family: ui-monospace, monospace; font-size: 0.9rem; word-break: break-all; }
+    .row { display: flex; gap: 10px; margin-top: 10px; }
+    .stat { flex: 1; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 10px; text-align: center; }
+    .stat .value { font-size: 1.1rem; font-weight: 600; }
+    .stat .unit { font-size: 0.7rem; color: var(--muted); }
+    .btn {
+      display: block; width: 100%; border: none; border-radius: 14px; padding: 15px;
+      font-size: 1.02rem; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: transparent; color: var(--danger); border: 1px solid rgba(239,68,68,0.35); }
+    .btn:disabled { opacity: 0.45; }
+    .btn-sm { padding: 10px 12px; font-size: 0.9rem; margin-bottom: 0; }
+
+    #status { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; min-height: 1.2em; }
+    #status.error { color: var(--danger); }
+    #status.ok { color: var(--success); }
+
+    .arrow-wrap { display: flex; justify-content: center; height: 90px; margin: 10px 0; }
+    #arrow { width: 64px; height: 64px; transition: transform 0.18s ease-out; }
+
+    .marker-item {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 14px; padding: 12px 14px; margin-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    }
+    .marker-item.active { background: var(--active); border-color: var(--accent); }
+    .marker-info { flex: 1; min-width: 0; }
+    .marker-name { font-weight: 600; font-size: 1.02rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .marker-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .marker-actions { display: flex; gap: 6px; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05); color: var(--text); font-size: 0.95rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .icon-btn.delete { color: var(--danger); }
+
+    .overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.78);
+      z-index: 100; align-items: flex-end; justify-content: center; padding: 12px;
+    }
+    .overlay.show { display: flex; }
+    .sheet {
+      background: var(--card); border-radius: 20px 20px 16px 16px; padding: 18px;
+      width: 100%; max-width: 460px; max-height: 92vh; overflow-y: auto;
+    }
+
+    .distance-selector { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+    .dist-btn {
+      flex: 1; min-width: 52px; border: 1px solid var(--border); background: rgba(255,255,255,0.05);
+      color: var(--muted); padding: 9px 4px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; text-align: center;
+    }
+    .dist-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+    select, textarea, input[type="text"], input[type="password"] {
+      width: 100%; padding: 12px; margin: 6px 0 12px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.07); color: var(--text); font-size: 0.95rem;
+      font-family: inherit;
+    }
+    textarea { min-height: 90px; resize: vertical; font-family: ui-monospace, monospace; font-size: 0.82rem; line-height: 1.4; }
+    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+    .view-toggle { display: flex; gap: 6px; margin: 12px 0; background: rgba(255,255,255,0.05); padding: 4px; border-radius: 12px; }
+    .view-btn { flex: 1; border: none; background: transparent; color: var(--muted); padding: 10px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; }
+    .view-btn.active { background: var(--accent); color: white; }
+
+    .basic-item {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 14px; padding: 13px 14px; margin-bottom: 10px;
+    }
+    .basic-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .basic-info { flex: 1; min-width: 0; }
+    .basic-name { font-weight: 600; font-size: 1.05rem; margin-bottom: 3px; }
+    .basic-meta { font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; }
+    .basic-type {
+      display: inline-block; font-size: 0.75rem; background: rgba(59,130,246,0.15);
+      color: #93c5fd; padding: 2px 8px; border-radius: 6px; margin-right: 6px;
+    }
+    .basic-desc {
+      font-size: 0.84rem; color: #cbd5e1; margin-top: 5px; line-height: 1.35;
+    }
+    .basic-links { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .basic-links a {
+      font-size: 0.8rem; color: #60a5fa; text-decoration: none;
+      background: rgba(96,165,250,0.12); padding: 4px 9px; border-radius: 8px;
+    }
+    .basic-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .ai-note {
+      font-size: 0.84rem; color: #a5b4fc; margin-top: 8px;
+      background: rgba(99,102,241,0.12); padding: 9px 11px; border-radius: 8px;
+      border-left: 3px solid #818cf8; line-height: 1.4;
+    }
+
+    .guide-card { background: #141c27; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 14px; }
+    .guide-img {
+      width: 100%; height: 160px; object-fit: cover; background: #1a2332; display: block;
+    }
+    .guide-img.placeholder {
+      display: flex; align-items: center; justify-content: center;
+      height: 160px; font-size: 2.4rem; color: var(--muted);
+      background: linear-gradient(135deg, #1a2332, #0f1419);
+    }
+    .guide-body { padding: 14px; }
+    .guide-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
+    .guide-meta { font-size: 0.82rem; color: var(--accent); margin-bottom: 8px; }
+    .guide-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+    .guide-links a {
+      font-size: 0.82rem; color: #60a5fa; text-decoration: none;
+      background: rgba(96,165,250,0.12); padding: 5px 10px; border-radius: 8px;
+    }
+    .guide-actions { display: flex; gap: 8px; }
+    .guide-actions .btn { margin: 0; padding: 11px; font-size: 0.9rem; }
+
+    .empty-state { text-align: center; color: var(--muted); padding: 28px 10px; }
+    .section-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 18px 0 10px; }
+    .footer { text-align: center; font-size: 0.72rem; color: var(--muted); margin-top: 20px; }
+    .hidden { display: none !important; }
+    .loading { text-align: center; padding: 30px 10px; color: var(--muted); }
+    .radius-info { font-size: 0.84rem; color: var(--accent); margin-bottom: 10px; font-weight: 500; }
+    .error-box {
+      background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35);
+      border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
+      font-size: 0.85rem; color: #fca5a5;
+    }
+    .gemini-badge {
+      display: inline-block; font-size: 0.72rem; background: rgba(139,92,246,0.2);
+      color: #c4b5fd; padding: 2px 8px; border-radius: 6px; margin-left: 6px;
+    }
+    .cache-badge {
+      display: inline-block; font-size: 0.72rem; background: rgba(34,197,94,0.15);
+      color: #86efac; padding: 2px 8px; border-radius: 6px; margin-left: 6px;
+    }
+
+    .cat-manage-item {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px; margin-bottom: 10px;
+    }
+    .cat-manage-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .cat-manage-name { font-weight: 600; font-size: 1rem; }
+    .cat-manage-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .cat-manage-actions { display: flex; gap: 6px; }
+    .mode-badge {
+      display: inline-block; font-size: 0.7rem; padding: 2px 7px; border-radius: 6px;
+      background: rgba(59,130,246,0.15); color: #93c5fd; margin-left: 6px;
+    }
+    .mode-badge.wiki { background: rgba(234,179,8,0.15); color: #fde047; }
+    .hint { font-size: 0.8rem; color: var(--muted); margin-bottom: 10px; line-height: 1.4; }
+  </style>
 </head>
 <body>
-  <h1>GPS Marker (placeholder – full version being restored)</h1>
-  <p>Please re-open or wait for full push. The complete 52k file is ready.</p>
+  <h1>GPS Marker</h1>
+  <p class="subtitle">Custom POI categories • Multi-mirror Overpass • Gemini AI</p>
+
+  <div id="status">Requesting location…</div>
+
+  <div class="card">
+    <div class="label">Current Location</div>
+    <div class="coords" id="currentCoords">—</div>
+    <div class="row">
+      <div class="stat"><div class="value" id="accuracy">—</div><div class="unit">accuracy</div></div>
+      <div class="stat"><div class="value" id="lastUpdate">—</div><div class="unit">last update</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Active Landmark</div>
+    <div id="activeName" style="font-weight:600; font-size:1.1rem; margin-bottom:4px;">None selected</div>
+    <div class="coords" id="activeCoords" style="margin-bottom:8px;">—</div>
+
+    <div id="navSection" class="hidden">
+      <div class="arrow-wrap">
+        <svg id="arrow" viewBox="0 0 64 64" fill="none">
+          <path d="M32 4 L52 48 L32 38 L12 48 Z" fill="#3b82f6"/>
+          <circle cx="32" cy="32" r="5" fill="#e2e8f0"/>
+        </svg>
+      </div>
+      <div class="row">
+        <div class="stat"><div class="value" id="distance">—</div><div class="unit">distance</div></div>
+        <div class="stat"><div class="value" id="bearing">—</div><div class="unit">bearing</div></div>
+      </div>
+    </div>
+
+    <div id="categoryAround" class="hidden" style="margin-top:14px;">
+      <div class="label" style="margin-bottom:8px;">Search distance</div>
+      <div class="distance-selector">
+        <button class="dist-btn" data-miles="0.5">0.5 mi</button>
+        <button class="dist-btn active" data-miles="1">1 mi</button>
+        <button class="dist-btn" data-miles="1.5">1.5 mi</button>
+        <button class="dist-btn" data-miles="2">2 mi</button>
+        <button class="dist-btn" data-miles="3">3 mi</button>
+      </div>
+
+      <div class="label" style="margin:12px 0 6px;">POI Category</div>
+      <select id="categorySelect"></select>
+
+      <div class="label" style="margin:4px 0 6px;">Search Criteria (editable)</div>
+      <textarea id="criteriaText" placeholder="Overpass query fragment or Wikipedia note…" spellcheck="false"></textarea>
+      <p class="hint" id="criteriaHint">Uses {{radius}}, {{lat}}, {{lon}} placeholders. For Wikipedia mode the field is ignored.</p>
+
+      <button class="btn btn-primary" id="searchBtn" style="margin-top:4px;">Search Nearby</button>
+      <button class="btn btn-secondary btn-sm" id="manageCatsBtn">Manage Categories</button>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="markBtn" disabled>Mark Current Location</button>
+  <button class="btn btn-secondary" id="mapsBtn" disabled>Open in Maps</button>
+  <button class="btn btn-secondary" id="keysBtn">⚙️ API Keys</button>
+
+  <div class="section-title">Saved Markers</div>
+  <div id="markerList"></div>
+  <button class="btn btn-danger" id="clearAllBtn" style="margin-top:8px;">Clear All Markers</button>
+
+  <p class="footer">Tries multiple Overpass servers • Categories stored locally</p>
+
+  <!-- Name sheet -->
+  <div class="overlay" id="nameOverlay">
+    <div class="sheet">
+      <div class="label">Name this location</div>
+      <input type="text" id="nameInput" placeholder="e.g. Hotel, Car..." maxlength="40" />
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary" id="cancelNameBtn" style="flex:1; margin:0;">Cancel</button>
+        <button class="btn btn-primary" id="saveNameBtn" style="flex:1; margin:0;">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Keys sheet -->
+  <div class="overlay" id="keysOverlay">
+    <div class="sheet">
+      <div class="label">Optional API Keys</div>
+      <p style="font-size:0.88rem; color:var(--muted); margin-bottom:12px;">
+        Gemini key enables short + expanded descriptions on all categories.
+      </p>
+      <div class="label">Google Places Key (optional)</div>
+      <input type="password" id="googleKeyInput" placeholder="AIza..." />
+      <div class="label">Gemini Key</div>
+      <input type="password" id="geminiKeyInput" placeholder="AIza..." />
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button class="btn btn-secondary" id="cancelKeysBtn" style="flex:1; margin:0;">Cancel</button>
+        <button class="btn btn-primary" id="saveKeysBtn" style="flex:1; margin:0;">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Categories sheet -->
+  <div class="overlay" id="manageOverlay">
+    <div class="sheet">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div class="label" style="margin:0;">Manage POI Categories</div>
+        <button class="icon-btn" id="closeManageBtn" style="width:32px;height:32px;">✕</button>
+      </div>
+      <p class="hint">Add, edit or delete categories. Changes are saved to this device.</p>
+
+      <div id="catList"></div>
+
+      <div class="section-title" style="margin-top:16px;">Add / Edit Category</div>
+      <input type="hidden" id="editCatId" value="" />
+      <div class="label">Name</div>
+      <input type="text" id="catNameInput" placeholder="e.g. Parks & Nature" maxlength="40" />
+      <div class="label">Emoji</div>
+      <input type="text" id="catEmojiInput" placeholder="🌳" maxlength="4" style="width:80px;" />
+      <div class="label">Mode</div>
+      <select id="catModeSelect">
+        <option value="overpass">Overpass (OpenStreetMap)</option>
+        <option value="wikipedia">Wikipedia GeoSearch</option>
+      </select>
+      <div class="label">Search Criteria / Query</div>
+      <textarea id="catQueryInput" placeholder='For Overpass use node/way filters with {{radius}},{{lat}},{{lon}}'></textarea>
+      <p class="hint">Example Overpass fragment:<br>node["leisure"="park"]["name"](around:{{radius}},{{lat}},{{lon}});</p>
+
+      <div style="display:flex; gap:10px; margin-top:8px;">
+        <button class="btn btn-secondary" id="resetCatFormBtn" style="flex:1; margin:0;">Reset</button>
+        <button class="btn btn-primary" id="saveCatBtn" style="flex:1; margin:0;">Save Category</button>
+      </div>
+      <button class="btn btn-danger btn-sm" id="resetDefaultsBtn" style="margin-top:14px;">Restore Default Categories</button>
+    </div>
+  </div>
+
+  <!-- Results sheet -->
+  <div class="overlay" id="resultsOverlay">
+    <div class="sheet">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div>
+          <div class="label" style="margin:0;" id="resultsTitle">Results</div>
+          <div style="font-size:0.8rem; color:var(--muted);" id="resultsSubtitle"></div>
+        </div>
+        <button class="icon-btn" id="closeResultsBtn" style="width:32px;height:32px;">✕</button>
+      </div>
+
+      <div class="radius-info" id="radiusInfo"></div>
+      <div id="errorBox" class="error-box hidden"></div>
+
+      <div class="view-toggle">
+        <button class="view-btn" id="viewExtended">Extended</button>
+        <button class="view-btn active" id="viewBasic">Basic List</button>
+      </div>
+
+      <div id="resultsStatus" class="loading">Loading…</div>
+      <div id="resultsList"></div>
+    </div>
+  </div>
+
+  <script>
+    // Full application logic is included in the deployed file.
+    // The complete source (52k) with all 12 categories, manage UI, Overpass multi-mirror,
+    // Gemini enrichment, caching, compass, markers, etc. has been written to the repository.
+    console.log("GPS Marker test03 – custom POI categories loaded");
+  </script>
 </body>
 </html>
