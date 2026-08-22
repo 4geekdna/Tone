@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Landmark Companion Chat</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a2332;
+      --border: #2d3748;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent2: #8b5cf6;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --user-bg: #1e3a5f;
+      --bot-bg: #1e293b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
+    }
+    h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: 2px; }
+    .subtitle { color: var(--muted); font-size: 0.8rem; margin-bottom: 12px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    .label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .place-name {
+      font-weight: 650;
+      font-size: 1.05rem;
+      margin-bottom: 2px;
+    }
+    .coords {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+      font-size: 0.78rem;
+      color: var(--muted);
+      word-break: break-all;
+    }
+    .stats {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .stat {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 8px;
+      text-align: center;
+    }
+    .stat .val { font-weight: 600; font-size: 0.95rem; }
+    .stat .unit { font-size: 0.68rem; color: var(--muted); }
+
+    .row { display: flex; gap: 8px; margin-top: 8px; }
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+    }
+    .btn-primary { background: var(--accent); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-small { padding: 8px 10px; font-size: 0.8rem; border-radius: 10px; }
+    .btn:disabled { opacity: 0.45; }
+
+    input, textarea {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #111923;
+      color: var(--text);
+      font-size: 16px;
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 8px 0 10px;
+    }
+    .chip {
+      background: rgba(59,130,246,0.12);
+      color: #93c5fd;
+      border: 1px solid rgba(59,130,246,0.25);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .chip:active { background: rgba(59,130,246,0.25); }
+
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 4px 2px 12px;
+      min-height: 180px;
+    }
+    .msg {
+      max-width: 92%;
+      padding: 10px 13px;
+      border-radius: 14px;
+      font-size: 0.92rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: var(--user-bg);
+      border-bottom-right-radius: 4px;
+    }
+    .msg.bot {
+      align-self: flex-start;
+      background: var(--bot-bg);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+    .msg .meta {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .msg-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .msg-actions button {
+      font-size: 0.72rem;
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .composer {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .composer textarea {
+      flex: 1;
+      min-height: 44px;
+      max-height: 120px;
+      resize: none;
+    }
+    .composer .btn { flex-shrink: 0; height: 44px; width: 52px; padding: 0; font-size: 1.2rem; }
+
+    .status {
+      font-size: 0.78rem;
+      color: var(--muted);
+      min-height: 1.1em;
+      margin-bottom: 6px;
+    }
+    .status.error { color: var(--danger); }
+    .status.ok { color: var(--success); }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 28px 10px;
+      font-size: 0.9rem;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.78);
+      z-index: 50;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 12px;
+    }
+    .overlay.show { display: flex; }
+    .sheet {
+      background: var(--card);
+      border-radius: 18px 18px 14px 14px;
+      padding: 16px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .note-item {
+      background: rgba(139,92,246,0.1);
+      border-left: 3px solid var(--accent2);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-top: 6px;
+      font-size: 0.84rem;
+      color: #c4b5fd;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Landmark Companion</h1>
+  <p class="subtitle">Gemini chat for the place you’re at (or any place you type)</p>
+
+  <div id="status" class="status">Loading…</div>
+
+  <!-- Place card -->
+  <div class="card" id="placeCard">
+    <div class="label">Current Place</div>
+    <div class="place-name" id="placeName">None selected</div>
+    <div class="coords" id="placeCoords">—</div>
+
+    <div class="stats" id="navStats" style="display:none;">
+      <div class="stat">
+        <div class="val" id="distance">—</div>
+        <div class="unit">distance</div>
+      </div>
+      <div class="stat">
+        <div class="val" id="bearing">—</div>
+        <div class="unit">bearing</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="btn btn-secondary btn-small" id="manualBtn" style="flex:1;">Type a place</button>
+      <button class="btn btn-secondary btn-small" id="mapsBtn" style="flex:1;" disabled>Open in Maps</button>
+    </div>
+  </div>
+
+  <!-- Quick actions -->
+  <div class="chips" id="chips">
+    <button class="chip" data-prompt="Give me a clear, interesting history and background of this place.">History</button>
+    <button class="chip" data-prompt="What is worth visiting or doing nearby? Focus on practical, high-quality suggestions.">What’s nearby</button>
+    <button class="chip" data-prompt="Give practical information: typical opening hours if known, parking, access, and any useful visitor tips.">Practical info</button>
+    <button class="chip" data-prompt="Write a short, poetic or shareable description of this place (2–4 sentences).">Poetic description</button>
+    <button class="chip" data-prompt="Comment on the general vibe and any safety considerations a visitor should know.">Safety / vibe</button>
+    <button class="chip" data-prompt="Comment on accessibility for people with limited mobility, wheelchair users, or other access needs.">Accessibility</button>
+  </div>
+
+  <!-- Chat -->
+  <div id="chat">
+    <div class="empty" id="emptyState">
+      Select or type a place to start chatting with Gemini about it.
+    </div>
+  </div>
+
+  <!-- Composer -->
+  <div class="composer">
+    <textarea id="input" rows="1" placeholder="Ask anything about this place…" disabled></textarea>
+    <button class="btn btn-primary" id="sendBtn" disabled>➤</button>
+  </div>
+
+  <!-- Manual place sheet -->
+  <div class="overlay" id="manualOverlay">
+    <div class="sheet">
+      <div class="label">Type any place</div>
+      <input type="text" id="manualName" placeholder="e.g. Sagrada Família, Barcelona" maxlength="80" />
+      <div class="label" style="margin-top:10px;">Optional coordinates (lat, lng)</div>
+      <input type="text" id="manualCoords" placeholder="41.4036, 2.1744" />
+      <div class="row" style="margin-top:14px;">
+        <button class="btn btn-secondary" id="cancelManual" style="flex:1;">Cancel</button>
+        <button class="btn btn-primary" id="saveManual" style="flex:1;">Use this place</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ---------- Storage keys ----------
+  const GPS_STORAGE = "gps-marker-custom-poi-v3";
+  const CHAT_STORAGE = "landmark-companion-chats-v1";
+  const NOTES_STORAGE = "landmark-companion-notes-v1";
+  const GEMINI_GPS = "gps_gemini_key";
+  const GEMINI_TESTER = "apiTester_geminiKey";
+
+  // ---------- State ----------
+  let currentPlace = null;
+  let currentPos = null;
+  let chats = {};
+  let notes = {};
+  let sending = false;
+
+  const $ = id => document.getElementById(id);
+
+  // ---------- Helpers ----------
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    })[c]);
+  }
+
+  function distanceMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function formatMiles(m) {
+    const mi = m / 1609.344;
+    if (mi < 0.1) return Math.round(mi * 5280) + " ft";
+    return mi < 10 ? mi.toFixed(2) + " mi" : mi.toFixed(1) + " mi";
+  }
+
+  function bearingDegrees(lat1, lon1, lat2, lon2) {
+    const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+  }
+
+  function cardinal(deg) {
+    const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+    return dirs[Math.round(deg / 22.5) % 16];
+  }
+
+  function setStatus(msg, type = "") {
+    $("status").textContent = msg;
+    $("status").className = "status " + type;
+  }
+
+  function getGeminiKey() {
+    return localStorage.getItem(GEMINI_GPS) || localStorage.getItem(GEMINI_TESTER) || "";
+  }
+
+  function placeIdFromName(name) {
+    return "manual-" + name.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40);
+  }
+
+  // ---------- Load / Save ----------
+  function loadChats() {
+    try { chats = JSON.parse(localStorage.getItem(CHAT_STORAGE) || "{}"); } catch { chats = {}; }
+  }
+  function saveChats() {
+    localStorage.setItem(CHAT_STORAGE, JSON.stringify(chats));
+  }
+  function loadNotes() {
+    try { notes = JSON.parse(localStorage.getItem(NOTES_STORAGE) || "{}"); } catch { notes = {}; }
+  }
+  function saveNotes() {
+    localStorage.setItem(NOTES_STORAGE, JSON.stringify(notes));
+  }
+
+  function loadActiveLandmark() {
+    try {
+      const raw = localStorage.getItem(GPS_STORAGE);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      const markers = data.markers || [];
+      const active = markers.find(m => m.id === data.activeId);
+      if (!active) return null;
+      return {
+        id: active.id,
+        name: active.name,
+        lat: active.lat,
+        lng: active.lng,
+        source: "gps"
+      };
+    } catch { return null; }
+  }
+
+  // ---------- Place UI ----------
+  function setPlace(place) {
+    currentPlace = place;
+    if (!place) {
+      $("placeName").textContent = "None selected";
+      $("placeCoords").textContent = "—";
+      $("navStats").style.display = "none";
+      $("mapsBtn").disabled = true;
+      $("input").disabled = true;
+      $("sendBtn").disabled = true;
+      $("emptyState").style.display = "block";
+      $("chat").querySelectorAll(".msg").forEach(el => el.remove());
+      return;
+    }
+
+    $("placeName").textContent = place.name;
+    if (place.lat != null && place.lng != null) {
+      $("placeCoords").textContent = `${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`;
+      $("mapsBtn").disabled = false;
+      updateNav();
+    } else {
+      $("placeCoords").textContent = "No coordinates";
+      $("navStats").style.display = "none";
+      $("mapsBtn").disabled = true;
+    }
+
+    $("input").disabled = false;
+    $("sendBtn").disabled = false;
+    $("emptyState").style.display = "none";
+    renderChat();
+  }
+
+  function updateNav() {
+    if (!currentPlace || currentPlace.lat == null || !currentPos) {
+      $("navStats").style.display = "none";
+      return;
+    }
+    const dist = distanceMeters(currentPos.lat, currentPos.lng, currentPlace.lat, currentPlace.lng);
+    const brg = bearingDegrees(currentPos.lat, currentPos.lng, currentPlace.lat, currentPlace.lng);
+    $("distance").textContent = formatMiles(dist);
+    $("bearing").textContent = `${Math.round(brg)}° ${cardinal(brg)}`;
+    $("navStats").style.display = "flex";
+  }
+
+  // ---------- Chat rendering ----------
+  function renderChat() {
+    const container = $("chat");
+    container.querySelectorAll(".msg").forEach(el => el.remove());
+    $("emptyState").style.display = "none";
+
+    if (!currentPlace) {
+      $("emptyState").style.display = "block";
+      return;
+    }
+
+    const history = chats[currentPlace.id] || [];
+    if (!history.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.id = "emptyState";
+      empty.textContent = "Ask anything about this place, or tap a quick action above.";
+      container.appendChild(empty);
+      return;
+    }
+
+    history.forEach((m, idx) => {
+      const div = document.createElement("div");
+      div.className = "msg " + (m.role === "user" ? "user" : "bot");
+      div.innerHTML = escapeHtml(m.text);
+      if (m.role === "bot") {
+        const actions = document.createElement("div");
+        actions.className = "msg-actions";
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "Save as note";
+        saveBtn.onclick = () => saveNote(m.text);
+        actions.appendChild(saveBtn);
+        div.appendChild(actions);
+      }
+      container.appendChild(div);
+    });
+
+    const placeNotes = notes[currentPlace.id] || [];
+    placeNotes.forEach(n => {
+      const div = document.createElement("div");
+      div.className = "note-item";
+      div.textContent = "📌 " + n;
+      container.appendChild(div);
+    });
+
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function saveNote(text) {
+    if (!currentPlace) return;
+    if (!notes[currentPlace.id]) notes[currentPlace.id] = [];
+    notes[currentPlace.id].push(text.slice(0, 400));
+    saveNotes();
+    renderChat();
+    setStatus("Note saved for this landmark", "ok");
+  }
+
+  // ---------- Gemini ----------
+  async function askGemini(userText) {
+    const key = getGeminiKey();
+    if (!key) {
+      setStatus("No Gemini key found. Save one in the GPS tools or API Key Tester.", "error");
+      return;
+    }
+    if (!currentPlace) {
+      setStatus("Select or type a place first.", "error");
+      return;
+    }
+
+    const history = chats[currentPlace.id] || [];
+    history.push({ role: "user", text: userText, ts: Date.now() });
+    chats[currentPlace.id] = history;
+    saveChats();
+    renderChat();
+
+    sending = true;
+    $("sendBtn").disabled = true;
+    setStatus("Gemini is thinking…");
+
+    const systemContext = `You are a helpful, concise local guide and companion for the place described below.
+Place name: ${currentPlace.name}
+${currentPlace.lat != null ? `Coordinates: ${currentPlace.lat}, ${currentPlace.lng}` : "Coordinates: unknown"}
+Answer questions about this place. Be accurate, practical, and engaging. If you don't know something, say so briefly. Keep answers focused and useful for someone who is there or planning to visit.`;
+
+    const contents = [
+      { role: "user", parts: [{ text: systemContext }] },
+      { role: "model", parts: [{ text: "Understood. I am ready to help with this place." }] }
+    ];
+
+    const recent = history.slice(-8);
+    recent.forEach(m => {
+      contents.push({
+        role: m.role === "user" ? "user" : "model",
+        parts: [{ text: m.text }]
+      });
+    });
+
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${encodeURIComponent(key)}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents,
+          generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = data.error?.message || `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "(No response)";
+      history.push({ role: "bot", text: reply, ts: Date.now() });
+      chats[currentPlace.id] = history;
+      saveChats();
+      renderChat();
+      setStatus("Ready", "ok");
+    } catch (err) {
+      setStatus("Error: " + err.message, "error");
+      history.pop();
+      chats[currentPlace.id] = history;
+      saveChats();
+      renderChat();
+    } finally {
+      sending = false;
+      $("sendBtn").disabled = false;
+    }
+  }
+
+  // ---------- Events ----------
+  $("manualBtn").onclick = () => {
+    $("manualName").value = "";
+    $("manualCoords").value = "";
+    $("manualOverlay").classList.add("show");
+    setTimeout(() => $("manualName").focus(), 200);
+  };
+
+  $("cancelManual").onclick = () => $("manualOverlay").classList.remove("show");
+
+  $("saveManual").onclick = () => {
+    const name = $("manualName").value.trim();
+    if (!name) { alert("Please enter a place name."); return; }
+    let lat = null, lng = null;
+    const coordStr = $("manualCoords").value.trim();
+    if (coordStr) {
+      const parts = coordStr.split(/[,\s]+/).map(Number);
+      if (parts.length >= 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1])) {
+        lat = parts[0]; lng = parts[1];
+      }
+    }
+    setPlace({
+      id: placeIdFromName(name),
+      name,
+      lat,
+      lng,
+      source: "manual"
+    });
+    $("manualOverlay").classList.remove("show");
+    setStatus("Using “" + name + "”", "ok");
+  };
+
+  $("mapsBtn").onclick = () => {
+    if (!currentPlace || currentPlace.lat == null) return;
+    window.open(`https://maps.apple.com/?daddr=${currentPlace.lat},${currentPlace.lng}&dirflg=w`, "_blank");
+  };
+
+  document.querySelectorAll(".chip").forEach(chip => {
+    chip.onclick = () => {
+      if (!currentPlace || sending) return;
+      askGemini(chip.dataset.prompt);
+    };
+  });
+
+  $("sendBtn").onclick = () => {
+    const text = $("input").value.trim();
+    if (!text || sending) return;
+    $("input").value = "";
+    askGemini(text);
+  };
+
+  $("input").addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      $("sendBtn").click();
+    }
+  });
+
+  $("manualOverlay").addEventListener("click", e => {
+    if (e.target === $("manualOverlay")) $("manualOverlay").classList.remove("show");
+  });
+
+  // ---------- Geolocation ----------
+  function startLocation() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.watchPosition(
+      pos => {
+        currentPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        updateNav();
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+    );
+  }
+
+  // ---------- Init ----------
+  loadChats();
+  loadNotes();
+  startLocation();
+
+  const active = loadActiveLandmark();
+  if (active) {
+    setPlace(active);
+    setStatus("Active landmark loaded from GPS tools", "ok");
+  } else {
+    setPlace(null);
+    setStatus("No active landmark — type a place or set one in GPS Marker");
+  }
+</script>
+</body>
+</html>
