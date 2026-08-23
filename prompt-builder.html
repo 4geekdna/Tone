@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Tone Prompt Builder</title>
+  <style>
+    :root {
+      --bg: #0c0d12;
+      --surface: #161822;
+      --surface2: #1e2130;
+      --border: #2a2e42;
+      --text: #f0f1f5;
+      --muted: #9ca3af;
+      --accent: #a78bfa;
+      --accent-soft: rgba(167, 139, 250, 0.14);
+      --success: #34d399;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100dvh;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 4px;
+      background: linear-gradient(135deg, #e0e7ff, #c4b5fd 50%, #f9a8d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 22px; }
+
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #111318;
+      color: var(--text);
+      font-size: 16px;
+      font-family: inherit;
+    }
+    select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    textarea { min-height: 90px; resize: vertical; }
+
+    .extras {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .extra {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .extra:hover { background: rgba(255,255,255,0.05); }
+    .extra.selected {
+      background: var(--accent-soft);
+      border-color: rgba(167, 139, 250, 0.45);
+    }
+    .extra input {
+      margin-top: 3px;
+      accent-color: var(--accent);
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .extra span { font-size: 0.9rem; line-height: 1.35; }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 13px 18px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+      flex: 1;
+      min-width: 120px;
+    }
+    .btn-primary { background: var(--accent); color: #1a1025; }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:active { background: var(--surface2); }
+
+    .output-wrap {
+      position: relative;
+    }
+    #output {
+      width: 100%;
+      min-height: 280px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      background: #0a0b10;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      color: #d1d5db;
+    }
+    .copy-status {
+      font-size: 0.8rem;
+      color: var(--success);
+      margin-top: 8px;
+      min-height: 1.2em;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .copy-status.show { opacity: 1; }
+
+    .hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .count {
+      font-size: 0.75rem;
+      color: var(--accent);
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tone Prompt Builder</h1>
+  <p class="subtitle">Build a ready-to-paste prompt for a new Tone app</p>
+
+  <!-- Type -->
+  <div class="section">
+    <div class="section-title">1. Application Type</div>
+    <select id="typeSelect">
+      <option value="">— Select a type —</option>
+      <option value="Utility / Tool">Utility / Tool</option>
+      <option value="Health & Biohacking">Health & Biohacking</option>
+      <option value="GPS / Location / Travel">GPS / Location / Travel</option>
+      <option value="Sound / Frequency / Meditation">Sound / Frequency / Meditation</option>
+      <option value="Lifestyle / Relationship / Personal">Lifestyle / Relationship / Personal</option>
+      <option value="Creative / Journal / Reflection">Creative / Journal / Reflection</option>
+      <option value="AI Companion / Chat">AI Companion / Chat</option>
+      <option value="Data Logger / Tracker">Data Logger / Tracker</option>
+      <option value="Experiment / Playground">Experiment / Playground</option>
+      <option value="Random">Random (AI invents everything)</option>
+    </select>
+  </div>
+
+  <!-- Extras -->
+  <div class="section" id="extrasSection" style="display:none;">
+    <div class="section-title">2. Optional Extras <span id="extraCount" class="count"></span></div>
+    <div class="extras" id="extrasList"></div>
+    <p class="hint">Select 0 to many. They will be included in the generated prompt.</p>
+  </div>
+
+  <!-- Free-form -->
+  <div class="section">
+    <div class="section-title">3. Extra free-form instructions (optional)</div>
+    <textarea id="freeform" placeholder="Any specific requests, constraints, or ideas…"></textarea>
+  </div>
+
+  <!-- Actions -->
+  <div class="btn-row">
+    <button class="btn-primary" id="generateBtn">Generate Prompt</button>
+    <button class="btn-secondary" id="copyBtn">Copy Prompt</button>
+  </div>
+  <div class="copy-status" id="copyStatus">Copied to clipboard</div>
+
+  <!-- Output -->
+  <div class="section" style="margin-top:16px;">
+    <div class="section-title">Generated Prompt</div>
+    <div class="output-wrap">
+      <textarea id="output" readonly placeholder="Select a type and tap Generate Prompt…"></textarea>
+    </div>
+  </div>
+
+<script>
+  const EXTRAS = {
+    "Utility / Tool": [
+      "Export data as CSV or JSON",
+      "Dark / light theme toggle",
+      "Offline-first (works without network)",
+      "Keyboard shortcuts for power users",
+      "Undo / redo support",
+      "Share or copy result with one tap",
+      "Compact “widget” mode for quick access",
+      "Local search / filter of saved items",
+      "Backup & restore via file download/upload",
+      "Haptic feedback on key actions (where supported)"
+    ],
+    "Health & Biohacking": [
+      "Integrate with existing heart-rate data (localStorage)",
+      "Daily / weekly trend charts",
+      "Simple symptom or mood check-in",
+      "Reminder / streak counter",
+      "Export summary for doctor visit",
+      "Zone or threshold alerts (visual)",
+      "Correlation notes (e.g. sleep vs energy)",
+      "Fasting or intermittent fasting timer",
+      "Supplement / medication log",
+      "Privacy-first (all data stays on device)"
+    ],
+    "GPS / Location / Travel": [
+      "Auto-load Active Landmark from GPS tools",
+      "Live distance + bearing display",
+      "“Open in Maps” / navigate button",
+      "Manual place name + optional coordinates",
+      "Save notes attached to a location",
+      "Nearby suggestions (food, coffee, etc.)",
+      "Trip packing list mode",
+      "Offline map links (Apple / Google)",
+      "History of visited places",
+      "Share location snapshot"
+    ],
+    "Sound / Frequency / Meditation": [
+      "Multiple simultaneous tones (binaural / stereo)",
+      "Preset frequency banks (solfeggio, chakra, etc.)",
+      "Volume envelope / fade in-out",
+      "Timer with gentle ending",
+      "Guided text + optional TTS integration",
+      "Visualizer or simple waveform",
+      "Save custom frequency sets",
+      "Session history log",
+      "Background play while screen locked (where possible)",
+      "Pair with existing Chakra Tone Player data"
+    ],
+    "Lifestyle / Relationship / Personal": [
+      "Private journal-style entries",
+      "Mood or energy slider",
+      "Conversation starter / prompt generator",
+      "Boundary or agreement tracker",
+      "Calendar-style view of entries",
+      "“Hall pass” or permission log",
+      "Gratitude / appreciation prompts",
+      "Export selected entries",
+      "Tag system (people, places, themes)",
+      "Soft, non-judgmental tone throughout"
+    ],
+    "Creative / Journal / Reflection": [
+      "Daily prompt generator",
+      "Free-write + structured reflection modes",
+      "Image or photo attachment (local)",
+      "Tagging and search",
+      "Streak / consistency counter",
+      "Mood color coding",
+      "Export as markdown or plain text",
+      "“Three good things” end-of-day template",
+      "Voice-to-text friendly input",
+      "Soft ambient background option"
+    ],
+    "AI Companion / Chat": [
+      "Context-aware system prompt (place, health, etc.)",
+      "Quick-action chips / suggested prompts",
+      "Separate conversation history per context",
+      "Save any reply as a note",
+      "Streaming or progressive response display",
+      "Model selector (if multiple available)",
+      "Clear conversation / reset context",
+      "Token or length awareness",
+      "Reuse existing Gemini key from Tone apps",
+      "Lightweight “personality” toggle"
+    ],
+    "Data Logger / Tracker": [
+      "Custom field builder (text, number, scale, yes/no)",
+      "Fast one-tap logging",
+      "Charts / sparklines over time",
+      "Filter by date range or tag",
+      "CSV export",
+      "Daily / weekly summary view",
+      "Goal or target line",
+      "Notes field per entry",
+      "Duplicate last entry button",
+      "Data stays fully local"
+    ],
+    "Experiment / Playground": [
+      "Live code / parameter tweaking",
+      "Multiple visualization modes",
+      "Seeded randomness with shareable seed",
+      "Save / load experiment states",
+      "Side-by-side comparison",
+      "Performance / FPS counter (if relevant)",
+      "Export screenshot or result",
+      "Educational tooltips",
+      "Reset to defaults",
+      "Fun, playful micro-interactions"
+    ],
+    "Random": []
+  };
+
+  const typeSelect = document.getElementById("typeSelect");
+  const extrasSection = document.getElementById("extrasSection");
+  const extrasList = document.getElementById("extrasList");
+  const extraCount = document.getElementById("extraCount");
+  const freeform = document.getElementById("freeform");
+  const output = document.getElementById("output");
+  const copyStatus = document.getElementById("copyStatus");
+
+  function renderExtras(type) {
+    extrasList.innerHTML = "";
+    const list = EXTRAS[type] || [];
+    if (type === "Random" || list.length === 0) {
+      extrasSection.style.display = "none";
+      return;
+    }
+    extrasSection.style.display = "block";
+    list.forEach((text, i) => {
+      const label = document.createElement("label");
+      label.className = "extra";
+      label.innerHTML = `<input type="checkbox" data-idx="${i}" /> <span>${text}</span>`;
+      label.addEventListener("change", (e) => {
+        label.classList.toggle("selected", e.target.checked);
+        updateCount();
+      });
+      extrasList.appendChild(label);
+    });
+    updateCount();
+  }
+
+  function updateCount() {
+    const n = extrasList.querySelectorAll("input:checked").length;
+    extraCount.textContent = n ? `(${n} selected)` : "";
+  }
+
+  typeSelect.addEventListener("change", () => {
+    renderExtras(typeSelect.value);
+  });
+
+  function buildPrompt() {
+    const type = typeSelect.value;
+    if (!type) {
+      output.value = "Please select an Application Type first.";
+      return;
+    }
+
+    const selected = [];
+    extrasList.querySelectorAll("input:checked").forEach(cb => {
+      const span = cb.parentElement.querySelector("span");
+      if (span) selected.push(span.textContent.trim());
+    });
+
+    const free = freeform.value.trim();
+
+    let prompt = `Create and deploy a new single-file HTML application to the 4geekdna/Tone GitHub repository.
+
+### 1. Application Type
+${type}
+
+`;
+
+    if (type === "Random") {
+      prompt += `### 2. Optional Extras
+(Random mode — invent both the concept and 3–6 relevant extras that fit the idea)
+
+`;
+    } else {
+      prompt += `### 2. Optional Extras
+(Selected from the list for this type)
+
+`;
+      if (selected.length === 0) {
+        prompt += `(none selected)\n\n`;
+      } else {
+        selected.forEach(s => {
+          prompt += `- ${s}\n`;
+        });
+        prompt += `\n`;
+      }
+    }
+
+    prompt += `### 3. Core Requirements (always apply)
+- Single self-contained HTML file
+- Dark theme matching existing Tone apps
+- Mobile-first, safe-area aware, iPhone Safari friendly
+- localStorage for persistence
+- Reuse existing Gemini / Places keys when needed
+- After creation: push to Tone repo + update index.html (Master Index) with new card, version bump, emoji, and short description
+
+`;
+
+    if (free) {
+      prompt += `### 4. Extra free-form instructions
+${free}
+
+`;
+    }
+
+    prompt += `---
+
+Now create and deploy the application according to the selections above.`;
+
+    output.value = prompt;
+  }
+
+  document.getElementById("generateBtn").addEventListener("click", buildPrompt);
+
+  document.getElementById("copyBtn").addEventListener("click", async () => {
+    if (!output.value.trim()) {
+      buildPrompt();
+    }
+    try {
+      await navigator.clipboard.writeText(output.value);
+      copyStatus.classList.add("show");
+      setTimeout(() => copyStatus.classList.remove("show"), 2000);
+    } catch {
+      output.select();
+      document.execCommand("copy");
+      copyStatus.classList.add("show");
+      setTimeout(() => copyStatus.classList.remove("show"), 2000);
+    }
+  });
+</script>
+</body>
+</html>
