@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0c0d12">
+  <title>Bio Log • Tone</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0c0d12;
+      --surface: #161822;
+      --surface-hover: #1e2130;
+      --border: #2a2e42;
+      --text: #f0f1f5;
+      --text-muted: #9ca3af;
+      --accent: #a78bfa;
+      --accent-soft: rgba(167,139,250,0.15);
+      --success: #34d399;
+      --danger: #f87171;
+      --warning: #fbbf24;
+      --bio: #34d399;
+      --bio-soft: rgba(52,211,153,0.18);
+      --radius: 16px;
+      --shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100dvh;
+      padding: 16px; padding-top: max(16px, env(safe-area-inset-top));
+      padding-bottom: max(32px, env(safe-area-inset-bottom));
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(52,211,153,0.14), transparent),
+        radial-gradient(ellipse 40% 30% at 90% 90%, rgba(167,139,250,0.08), transparent);
+    }
+    .version-badge {
+      position: fixed; top: max(8px, env(safe-area-inset-top)); right: 12px; z-index: 50;
+      font-size: 11px; color: #6b7280; background: rgba(12,13,18,0.85);
+      padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border);
+    }
+    .container { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 16px; }
+    .back { display: inline-flex; color: var(--accent); text-decoration: none; font-size: 14px; font-weight: 500; margin-bottom: 12px; }
+    h1 {
+      font-size: 26px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px;
+      background: linear-gradient(135deg, #6ee7b7, #34d399, #a78bfa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .subtitle { color: var(--text-muted); font-size: 14px; line-height: 1.45; }
+
+    .toast {
+      display: none; position: fixed; top: max(48px, env(safe-area-inset-top)); left: 50%;
+      transform: translateX(-50%); z-index: 100;
+      background: #166534; color: #dcfce7; font-size: 14px; font-weight: 600;
+      padding: 12px 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      max-width: 90%; text-align: center;
+    }
+    .toast.show { display: block; animation: fadeIn 0.25s ease; }
+    .toast.warn { background: #92400e; color: #fef3c7; }
+    .toast.err { background: #991b1b; color: #fecaca; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(-8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+    .tabs {
+      display: flex; gap: 6px; margin-bottom: 16px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 14px; padding: 5px;
+    }
+    .tab {
+      flex: 1; border: none; background: transparent; color: var(--text-muted);
+      font-size: 13px; font-weight: 600; padding: 10px 6px; border-radius: 10px;
+      cursor: pointer; -webkit-tap-highlight-color: transparent; transition: all 0.15s;
+    }
+    .tab.active { background: var(--accent-soft); color: var(--accent); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .pill {
+      font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+      background: var(--bio-soft); color: #6ee7b7;
+    }
+    .pill.warn { background: rgba(251,191,36,0.18); color: #fcd34d; }
+    .pill.danger { background: rgba(248,113,113,0.18); color: #fca5a5; }
+
+    .score-row {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;
+    }
+    .score-item {
+      background: #0f111a; border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 8px; text-align: center;
+    }
+    .score-val { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .score-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    .metric-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .metric {
+      background: #0f111a; border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+    }
+    .metric label {
+      display: block; font-size: 11px; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;
+    }
+    .metric input[type=number], .metric select, .metric input[type=text] {
+      width: 100%; background: transparent; border: none; color: var(--text);
+      font-size: 18px; font-weight: 700; outline: none; font-variant-numeric: tabular-nums;
+    }
+    .metric.full { grid-column: 1 / -1; }
+    .slider-row { display: flex; align-items: center; gap: 10px; }
+    .slider-row input[type=range] { flex: 1; accent-color: var(--accent); }
+    .slider-val { min-width: 28px; text-align: right; font-weight: 700; font-size: 16px; }
+
+    .btn-primary {
+      width: 100%; border: none; border-radius: 14px; padding: 15px;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      background: linear-gradient(135deg, #059669, #34d399);
+      color: #0c0d12; margin-top: 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-primary:active { opacity: 0.9; transform: scale(0.99); }
+    .btn-secondary {
+      width: 100%; border-radius: 12px; padding: 12px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+      margin-top: 8px;
+    }
+    .btn-row { display: flex; gap: 8px; margin-top: 8px; }
+    .btn-row .btn-secondary { flex: 1; margin-top: 0; }
+
+    .alert-banner {
+      display: none; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
+      font-size: 13.5px; font-weight: 600; line-height: 1.4;
+    }
+    .alert-banner.show { display: block; }
+    .alert-banner.warn { background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.4); color: #fcd34d; }
+    .alert-banner.danger { background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.4); color: #fca5a5; }
+    .alert-banner.ok { background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.35); color: #6ee7b7; }
+
+    .supp-item {
+      display: flex; align-items: center; gap: 12px;
+      background: #0f111a; border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 8px;
+    }
+    .supp-item.taken { border-color: rgba(52,211,153,0.45); background: rgba(52,211,153,0.08); }
+    .supp-check {
+      width: 28px; height: 28px; border-radius: 8px; border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      font-size: 16px; cursor: pointer; background: transparent;
+    }
+    .supp-item.taken .supp-check { background: var(--success); border-color: var(--success); color: #0c0d12; }
+    .supp-info { flex: 1; min-width: 0; }
+    .supp-name { font-size: 15px; font-weight: 650; }
+    .supp-meta { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .supp-del {
+      width: 32px; height: 32px; border: none; border-radius: 8px;
+      background: rgba(255,255,255,0.06); font-size: 14px; cursor: pointer; flex-shrink: 0;
+    }
+
+    .chart-wrap {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 8px 6px; margin-bottom: 14px;
+      height: 210px;
+    }
+    .chart-controls {
+      display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;
+    }
+    .chip {
+      font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px;
+      border: 1px solid var(--border); background: transparent; color: var(--text-muted);
+      cursor: pointer;
+    }
+    .chip.active { background: var(--accent-soft); color: var(--accent); border-color: rgba(167,139,250,0.45); }
+
+    .history-item {
+      display: flex; gap: 12px; align-items: flex-start;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 12px 14px; margin-bottom: 8px;
+    }
+    .history-day { font-size: 13px; font-weight: 700; min-width: 52px; color: #6ee7b7; }
+    .history-body { flex: 1; min-width: 0; font-size: 13px; color: var(--text-muted); line-height: 1.45; }
+    .history-body strong { color: var(--text); }
+    .empty {
+      text-align: center; padding: 32px 16px; color: var(--text-muted);
+      font-size: 14.5px; background: var(--surface);
+      border: 1px dashed var(--border); border-radius: var(--radius);
+    }
+
+    .thresh-row {
+      display: flex; gap: 8px; align-items: center; margin-bottom: 10px;
+    }
+    .thresh-row label { flex: 1; font-size: 13px; color: var(--text-muted); }
+    .thresh-row input {
+      width: 64px; background: #0f111a; border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px; color: var(--text); font-size: 14px; text-align: center;
+    }
+
+    .add-form { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .add-form.show { display: block; }
+    .add-form input, .add-form select {
+      width: 100%; background: #0f111a; border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; color: var(--text); font-size: 15px;
+      margin-bottom: 10px; outline: none;
+    }
+    .add-form input:focus, .add-form select:focus { border-color: var(--accent); }
+
+    .streak {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: #fbbf24;
+    }
+
+    .tip {
+      margin-top: 16px; font-size: 12.5px; color: var(--text-muted);
+      line-height: 1.5; text-align: center; padding: 0 8px;
+    }
+    .tip strong { color: var(--text); }
+
+    @media (max-width: 380px) {
+      .metric-grid { grid-template-columns: 1fr; }
+      .score-row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="version-badge">v1.0</div>
+  <div class="toast" id="toast"></div>
+
+  <div class="container">
+    <header>
+      <a class="back" href="index.html">← Back to Index</a>
+      <h1>Bio Log</h1>
+      <p class="subtitle">Daily metrics • Supplement adherence • Trends & threshold alerts</p>
+    </header>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="today">Today</button>
+      <button class="tab" data-tab="stack">Stack</button>
+      <button class="tab" data-tab="trends">Trends</button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </div>
+
+    <!-- ========== TODAY ========== -->
+    <div class="panel active" id="panel-today">
+      <div class="alert-banner" id="alertBanner"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Today’s Scorecard</span>
+          <span class="streak" id="streakEl">🔥 0 day streak</span>
+        </div>
+        <div class="score-row">
+          <div class="score-item">
+            <div class="score-val" id="scoreEnergy">—</div>
+            <div class="score-lbl">Energy</div>
+          </div>
+          <div class="score-item">
+            <div class="score-val" id="scorePain">—</div>
+            <div class="score-lbl">Pain</div>
+          </div>
+          <div class="score-item">
+            <div class="score-val" id="scoreSleep">—</div>
+            <div class="score-lbl">Sleep</div>
+          </div>
+          <div class="score-item">
+            <div class="score-val" id="scoreMood">—</div>
+            <div class="score-lbl">Mood</div>
+          </div>
+          <div class="score-item">
+            <div class="score-val" id="scoreFocus">—</div>
+            <div class="score-lbl">Focus</div>
+          </div>
+          <div class="score-item">
+            <div class="score-val" id="scoreMobility">—</div>
+            <div class="score-lbl">Mobility</div>
+          </div>
+        </div>
+        <div id="adherenceSummary" style="font-size:13px;color:var(--text-muted);text-align:center;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Log Metrics <span class="pill" id="logDatePill"></span></div>
+        <div class="metric-grid">
+          <div class="metric">
+            <label>Energy (1–10)</label>
+            <div class="slider-row">
+              <input type="range" id="mEnergy" min="1" max="10" value="6" step="1">
+              <span class="slider-val" id="vEnergy">6</span>
+            </div>
+          </div>
+          <div class="metric">
+            <label>Pain (0–10)</label>
+            <div class="slider-row">
+              <input type="range" id="mPain" min="0" max="10" value="2" step="1">
+              <span class="slider-val" id="vPain">2</span>
+            </div>
+          </div>
+          <div class="metric">
+            <label>Sleep Hours</label>
+            <input type="number" id="mSleepHrs" min="0" max="16" step="0.5" placeholder="7.5" inputmode="decimal">
+          </div>
+          <div class="metric">
+            <label>Sleep Quality (1–10)</label>
+            <div class="slider-row">
+              <input type="range" id="mSleepQ" min="1" max="10" value="7" step="1">
+              <span class="slider-val" id="vSleepQ">7</span>
+            </div>
+          </div>
+          <div class="metric">
+            <label>Mood (1–10)</label>
+            <div class="slider-row">
+              <input type="range" id="mMood" min="1" max="10" value="7" step="1">
+              <span class="slider-val" id="vMood">7</span>
+            </div>
+          </div>
+          <div class="metric">
+            <label>Focus (1–10)</label>
+            <div class="slider-row">
+              <input type="range" id="mFocus" min="1" max="10" value="6" step="1">
+              <span class="slider-val" id="vFocus">6</span>
+            </div>
+          </div>
+          <div class="metric">
+            <label>Mobility (1–10)</label>
+            <div class="slider-row">
+              <input type="range" id="mMobility" min="1" max="10" value="7" step="1">
+              <span class="slider-val" id="vMobility">7</span>
+            </div>
+          </div>
+          <div class="metric">
+            <label>HRV (ms, optional)</label>
+            <input type="number" id="mHrv" min="0" max="200" step="1" placeholder="—" inputmode="numeric">
+          </div>
+          <div class="metric full">
+            <label>Notes</label>
+            <input type="text" id="mNotes" placeholder="Anything notable today…" autocomplete="off">
+          </div>
+        </div>
+        <button class="btn-primary" id="saveDayBtn" type="button">💾 Save Today’s Log</button>
+        <div class="btn-row">
+          <button class="btn-secondary" id="loadTodayBtn" type="button">Load Today</button>
+          <button class="btn-secondary" id="exportMetricsBtn" type="button">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Recent Days <span class="pill" id="histCount">0</span></div>
+        <div id="historyList">
+          <div class="empty">No daily logs yet.<br>Save your first scorecard above.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== STACK ========== -->
+    <div class="panel" id="panel-stack">
+      <div class="card">
+        <div class="card-title">
+          <span>Today’s Adherence</span>
+          <span class="pill" id="adhPill">0%</span>
+        </div>
+        <div id="suppList"></div>
+        <button class="btn-secondary" id="toggleAddSupp" type="button" style="margin-top:12px;">+ Add Supplement / Medication</button>
+        <div class="add-form" id="addSuppForm">
+          <input type="text" id="newSuppName" placeholder="Name (e.g. Magnesium Glycinate)" autocomplete="off">
+          <input type="text" id="newSuppDose" placeholder="Dose (e.g. 400 mg)" autocomplete="off">
+          <select id="newSuppTime">
+            <option value="Morning">Morning</option>
+            <option value="Afternoon">Afternoon</option>
+            <option value="Evening">Evening</option>
+            <option value="As needed">As needed</option>
+            <option value="Weekly">Weekly</option>
+          </select>
+          <button class="btn-primary" id="addSuppBtn" type="button">Add to Stack</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Stack Notes</div>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.5;">
+          Tap the checkbox to mark taken for today. Data resets each calendar day but history is kept for adherence trends.
+          Pre-seeded common biohacking items — edit or delete freely. Everything stays on-device.
+        </p>
+      </div>
+    </div>
+
+    <!-- ========== TRENDS ========== -->
+    <div class="panel" id="panel-trends">
+      <div class="card">
+        <div class="card-title">Metric Trends</div>
+        <div class="chart-controls" id="metricChips">
+          <button class="chip active" data-m="energy">Energy</button>
+          <button class="chip" data-m="pain">Pain</button>
+          <button class="chip" data-m="sleepQ">Sleep Q</button>
+          <button class="chip" data-m="mood">Mood</button>
+          <button class="chip" data-m="focus">Focus</button>
+          <button class="chip" data-m="mobility">Mobility</button>
+          <button class="chip" data-m="hrv">HRV</button>
+        </div>
+        <div class="chart-controls">
+          <button class="chip active" data-range="7">7 days</button>
+          <button class="chip" data-range="14">14 days</button>
+          <button class="chip" data-range="30">30 days</button>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Weekly Snapshot</div>
+        <div class="score-row" id="weeklyStats">
+          <div class="score-item"><div class="score-val" id="wAvgEnergy">—</div><div class="score-lbl">Avg Energy</div></div>
+          <div class="score-item"><div class="score-val" id="wAvgPain">—</div><div class="score-lbl">Avg Pain</div></div>
+          <div class="score-item"><div class="score-val" id="wAvgSleep">—</div><div class="score-lbl">Avg Sleep</div></div>
+        </div>
+        <div id="weeklyExtra" style="font-size:13px;color:var(--text-muted);text-align:center;margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <!-- ========== SETTINGS ========== -->
+    <div class="panel" id="panel-settings">
+      <div class="card">
+        <div class="card-title">Threshold Alerts</div>
+        <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">Visual banners appear on Today when values cross these lines.</p>
+        <div class="thresh-row">
+          <label>Energy low alert ≤</label>
+          <input type="number" id="thEnergy" min="1" max="10" value="4">
+        </div>
+        <div class="thresh-row">
+          <label>Pain high alert ≥</label>
+          <input type="number" id="thPain" min="0" max="10" value="6">
+        </div>
+        <div class="thresh-row">
+          <label>Sleep hours low ≤</label>
+          <input type="number" id="thSleep" min="0" max="12" step="0.5" value="6">
+        </div>
+        <div class="thresh-row">
+          <label>Mood low alert ≤</label>
+          <input type="number" id="thMood" min="1" max="10" value="4">
+        </div>
+        <div class="thresh-row">
+          <label>Mobility low alert ≤</label>
+          <input type="number" id="thMobility" min="1" max="10" value="4">
+        </div>
+        <button class="btn-primary" id="saveThreshBtn" type="button">Save Thresholds</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Data</div>
+        <button class="btn-secondary" id="exportAllBtn" type="button">Export All Data (JSON)</button>
+        <button class="btn-secondary" id="clearDaysBtn" type="button">Clear Daily Logs</button>
+        <button class="btn-secondary" id="clearStackBtn" type="button">Reset Supplement Stack</button>
+        <button class="btn-secondary" id="clearAllBtn" type="button" style="color:var(--danger);border-color:rgba(248,113,113,0.4);">Clear Everything</button>
+      </div>
+
+      <p class="tip">
+        <strong>Privacy:</strong> All data stays in this browser’s localStorage. Nothing is sent anywhere.<br>
+        Works offline after first load. Perfect for daily biohacking check-ins.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    var LS_DAYS = "tone_biolog_days_v1";
+    var LS_STACK = "tone_biolog_stack_v1";
+    var LS_TAKEN = "tone_biolog_taken_v1";
+    var LS_THRESH = "tone_biolog_thresh_v1";
+
+    var DEFAULT_STACK = [
+      { id: "s1", name: "Magnesium Glycinate", dose: "400 mg", time: "Evening" },
+      { id: "s2", name: "Vitamin D3", dose: "5000 IU", time: "Morning" },
+      { id: "s3", name: "Omega-3 / Fish Oil", dose: "2 g EPA+DHA", time: "Morning" },
+      { id: "s4", name: "Creatine Monohydrate", dose: "5 g", time: "Morning" },
+      { id: "s5", name: "Electrolytes", dose: "1 scoop", time: "Morning" },
+      { id: "s6", name: "Testosterone (TRT)", dose: "as prescribed", time: "As needed" }
+    ];
+
+    var DEFAULT_THRESH = { energy: 4, pain: 6, sleep: 6, mood: 4, mobility: 4 };
+
+    var chart = null;
+    var activeMetric = "energy";
+    var activeRange = 7;
+
+    // ---------- helpers ----------
+    function todayKey() {
+      var d = new Date();
+      return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    }
+    function showToast(msg, type, ms) {
+      var el = document.getElementById("toast");
+      el.textContent = msg;
+      el.className = "toast show" + (type === "warn" ? " warn" : type === "err" ? " err" : "");
+      setTimeout(function(){ el.classList.remove("show"); }, ms || 2600);
+    }
+    function loadJSON(key, fallback) {
+      try {
+        var raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        var v = JSON.parse(raw);
+        return v != null ? v : fallback;
+      } catch(e) { return fallback; }
+    }
+    function saveJSON(key, val) {
+      try { localStorage.setItem(key, JSON.stringify(val)); return true; }
+      catch(e) { return false; }
+    }
+    function esc(s) {
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+    function fmtDay(key) {
+      try {
+        var p = key.split("-");
+        var d = new Date(+p[0], +p[1]-1, +p[2]);
+        return d.toLocaleDateString(undefined, { weekday:"short", month:"short", day:"numeric" });
+      } catch(e) { return key; }
+    }
+
+    // ---------- tabs ----------
+    document.getElementById("tabs").addEventListener("click", function(e) {
+      var btn = e.target.closest(".tab");
+      if (!btn) return;
+      document.querySelectorAll(".tab").forEach(function(t){ t.classList.remove("active"); });
+      document.querySelectorAll(".panel").forEach(function(p){ p.classList.remove("active"); });
+      btn.classList.add("active");
+      document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+      if (btn.dataset.tab === "trends") updateChart();
+      if (btn.dataset.tab === "stack") renderStack();
+      if (btn.dataset.tab === "today") renderToday();
+    });
+
+    // ---------- sliders ----------
+    ["Energy","Pain","SleepQ","Mood","Focus","Mobility"].forEach(function(k) {
+      var sl = document.getElementById("m" + k);
+      var val = document.getElementById("v" + k);
+      if (sl && val) {
+        sl.addEventListener("input", function(){ val.textContent = sl.value; });
+      }
+    });
+
+    // ---------- days ----------
+    function getDays() { return loadJSON(LS_DAYS, {}); }
+    function saveDays(obj) { return saveJSON(LS_DAYS, obj); }
+
+    function getDay(key) {
+      var days = getDays();
+      return days[key] || null;
+    }
+
+    function saveCurrentDay() {
+      var key = todayKey();
+      var entry = {
+        energy: +document.getElementById("mEnergy").value,
+        pain: +document.getElementById("mPain").value,
+        sleepHrs: parseFloat(document.getElementById("mSleepHrs").value) || null,
+        sleepQ: +document.getElementById("mSleepQ").value,
+        mood: +document.getElementById("mMood").value,
+        focus: +document.getElementById("mFocus").value,
+        mobility: +document.getElementById("mMobility").value,
+        hrv: parseFloat(document.getElementById("mHrv").value) || null,
+        notes: (document.getElementById("mNotes").value || "").trim(),
+        savedAt: new Date().toISOString()
+      };
+      var days = getDays();
+      days[key] = entry;
+      if (!saveDays(days)) {
+        showToast("Storage full", "err");
+        return;
+      }
+      showToast("Saved " + key);
+      renderToday();
+      updateChart();
+    }
+
+    function loadIntoForm(key) {
+      var d = getDay(key);
+      if (!d) {
+        // defaults
+        document.getElementById("mEnergy").value = 6; document.getElementById("vEnergy").textContent = "6";
+        document.getElementById("mPain").value = 2; document.getElementById("vPain").textContent = "2";
+        document.getElementById("mSleepHrs").value = "";
+        document.getElementById("mSleepQ").value = 7; document.getElementById("vSleepQ").textContent = "7";
+        document.getElementById("mMood").value = 7; document.getElementById("vMood").textContent = "7";
+        document.getElementById("mFocus").value = 6; document.getElementById("vFocus").textContent = "6";
+        document.getElementById("mMobility").value = 7; document.getElementById("vMobility").textContent = "7";
+        document.getElementById("mHrv").value = "";
+        document.getElementById("mNotes").value = "";
+        return;
+      }
+      document.getElementById("mEnergy").value = d.energy; document.getElementById("vEnergy").textContent = d.energy;
+      document.getElementById("mPain").value = d.pain; document.getElementById("vPain").textContent = d.pain;
+      document.getElementById("mSleepHrs").value = d.sleepHrs != null ? d.sleepHrs : "";
+      document.getElementById("mSleepQ").value = d.sleepQ; document.getElementById("vSleepQ").textContent = d.sleepQ;
+      document.getElementById("mMood").value = d.mood; document.getElementById("vMood").textContent = d.mood;
+      document.getElementById("mFocus").value = d.focus; document.getElementById("vFocus").textContent = d.focus;
+      document.getElementById("mMobility").value = d.mobility; document.getElementById("vMobility").textContent = d.mobility;
+      document.getElementById("mHrv").value = d.hrv != null ? d.hrv : "";
+      document.getElementById("mNotes").value = d.notes || "";
+    }
+
+    function calcStreak() {
+      var days = getDays();
+      var keys = Object.keys(days).sort().reverse();
+      if (!keys.length) return 0;
+      var streak = 0;
+      var cur = new Date();
+      for (var i = 0; i < 60; i++) {
+        var k = cur.getFullYear() + "-" + String(cur.getMonth()+1).padStart(2,"0") + "-" + String(cur.getDate()).padStart(2,"0");
+        if (days[k]) { streak++; cur.setDate(cur.getDate() - 1); }
+        else break;
+      }
+      return streak;
+    }
+
+    function checkAlerts(d) {
+      if (!d) { document.getElementById("alertBanner").className = "alert-banner"; return; }
+      var th = loadJSON(LS_THRESH, DEFAULT_THRESH);
+      var msgs = [];
+      var level = "ok";
+      if (d.energy <= th.energy) { msgs.push("Energy low (" + d.energy + " ≤ " + th.energy + ")"); level = "warn"; }
+      if (d.pain >= th.pain) { msgs.push("Pain elevated (" + d.pain + " ≥ " + th.pain + ")"); level = "danger"; }
+      if (d.sleepHrs != null && d.sleepHrs <= th.sleep) { msgs.push("Sleep short (" + d.sleepHrs + "h ≤ " + th.sleep + ")"); if (level !== "danger") level = "warn"; }
+      if (d.mood <= th.mood) { msgs.push("Mood low (" + d.mood + " ≤ " + th.mood + ")"); if (level !== "danger") level = "warn"; }
+      if (d.mobility <= th.mobility) { msgs.push("Mobility low (" + d.mobility + " ≤ " + th.mobility + ")"); if (level !== "danger") level = "warn"; }
+
+      var banner = document.getElementById("alertBanner");
+      if (!msgs.length) {
+        banner.className = "alert-banner show ok";
+        banner.textContent = "✓ All tracked metrics within your thresholds today";
+      } else {
+        banner.className = "alert-banner show " + level;
+        banner.textContent = (level === "danger" ? "⚠ " : "⚡ ") + msgs.join(" · ");
+      }
+    }
+
+    function renderToday() {
+      var key = todayKey();
+      document.getElementById("logDatePill").textContent = key;
+      var d = getDay(key);
+      var set = function(id, val) {
+        var el = document.getElementById(id);
+        el.textContent = val != null ? val : "—";
+      };
+      if (d) {
+        set("scoreEnergy", d.energy);
+        set("scorePain", d.pain);
+        set("scoreSleep", d.sleepHrs != null ? d.sleepHrs + "h" : "—");
+        set("scoreMood", d.mood);
+        set("scoreFocus", d.focus);
+        set("scoreMobility", d.mobility);
+        loadIntoForm(key);
+      } else {
+        ["scoreEnergy","scorePain","scoreSleep","scoreMood","scoreFocus","scoreMobility"].forEach(function(id){
+          document.getElementById(id).textContent = "—";
+        });
+      }
+      checkAlerts(d);
+      document.getElementById("streakEl").textContent = "🔥 " + calcStreak() + " day streak";
+
+      // adherence summary
+      var stack = getStack();
+      var taken = getTakenToday();
+      var done = stack.filter(function(s){ return taken[s.id]; }).length;
+      var pct = stack.length ? Math.round(100 * done / stack.length) : 0;
+      document.getElementById("adherenceSummary").textContent =
+        stack.length ? ("Stack adherence today: " + done + "/" + stack.length + " (" + pct + "%)") : "No supplements in stack yet";
+
+      // history
+      var days = getDays();
+      var keys = Object.keys(days).sort().reverse().slice(0, 14);
+      var list = document.getElementById("historyList");
+      document.getElementById("histCount").textContent = Object.keys(days).length;
+      if (!keys.length) {
+        list.innerHTML = '<div class="empty">No daily logs yet.<br>Save your first scorecard above.</div>';
+        return;
+      }
+      list.innerHTML = keys.map(function(k) {
+        var x = days[k];
+        var note = x.notes ? " · " + esc(x.notes) : "";
+        return '<div class="history-item">' +
+          '<div class="history-day">' + fmtDay(k) + '</div>' +
+          '<div class="history-body">' +
+            '<strong>E' + x.energy + '</strong> · Pain ' + x.pain +
+            ' · Sleep ' + (x.sleepHrs != null ? x.sleepHrs + 'h' : '—') +
+            ' · Mood ' + x.mood + ' · Focus ' + x.focus + ' · Mob ' + x.mobility +
+            note +
+          '</div></div>';
+      }).join("");
+    }
+
+    document.getElementById("saveDayBtn").addEventListener("click", saveCurrentDay);
+    document.getElementById("loadTodayBtn").addEventListener("click", function() {
+      loadIntoForm(todayKey());
+      showToast("Loaded today’s values");
+    });
+
+    // ---------- stack ----------
+    function getStack() {
+      var s = loadJSON(LS_STACK, null);
+      if (!s) { saveJSON(LS_STACK, DEFAULT_STACK); return DEFAULT_STACK.slice(); }
+      return s;
+    }
+    function saveStack(arr) { return saveJSON(LS_STACK, arr); }
+
+    function getTakenMap() {
+      return loadJSON(LS_TAKEN, {});
+    }
+    function getTakenToday() {
+      var all = getTakenMap();
+      return all[todayKey()] || {};
+    }
+    function setTakenToday(map) {
+      var all = getTakenMap();
+      all[todayKey()] = map;
+      // prune older than 60 days
+      var keys = Object.keys(all).sort();
+      if (keys.length > 60) {
+        keys.slice(0, keys.length - 60).forEach(function(k){ delete all[k]; });
+      }
+      saveJSON(LS_TAKEN, all);
+    }
+
+    function renderStack() {
+      var stack = getStack();
+      var taken = getTakenToday();
+      var list = document.getElementById("suppList");
+      if (!stack.length) {
+        list.innerHTML = '<div class="empty">Stack is empty.<br>Add your first supplement above.</div>';
+        document.getElementById("adhPill").textContent = "—";
+        return;
+      }
+      var done = 0;
+      list.innerHTML = stack.map(function(s) {
+        var isTaken = !!taken[s.id];
+        if (isTaken) done++;
+        return '<div class="supp-item' + (isTaken ? ' taken' : '') + '" data-id="' + esc(s.id) + '">' +
+          '<button class="supp-check" type="button">' + (isTaken ? '✓' : '') + '</button>' +
+          '<div class="supp-info">' +
+            '<div class="supp-name">' + esc(s.name) + '</div>' +
+            '<div class="supp-meta">' + esc(s.dose) + ' · ' + esc(s.time) + '</div>' +
+          '</div>' +
+          '<button class="supp-del" type="button" data-id="' + esc(s.id) + '">🗑️</button>' +
+        '</div>';
+      }).join("");
+
+      var pct = Math.round(100 * done / stack.length);
+      var pill = document.getElementById("adhPill");
+      pill.textContent = pct + "%";
+      pill.className = "pill" + (pct >= 80 ? "" : pct >= 50 ? " warn" : " danger");
+
+      list.querySelectorAll(".supp-check").forEach(function(btn) {
+        btn.onclick = function() {
+          var item = btn.closest(".supp-item");
+          var id = item.dataset.id;
+          var map = getTakenToday();
+          map[id] = !map[id];
+          setTakenToday(map);
+          renderStack();
+          renderToday();
+        };
+      });
+      list.querySelectorAll(".supp-del").forEach(function(btn) {
+        btn.onclick = function() {
+          if (!confirm("Remove this item from your stack?")) return;
+          var id = btn.dataset.id;
+          saveStack(getStack().filter(function(x){ return x.id !== id; }));
+          renderStack();
+        };
+      });
+    }
+
+    document.getElementById("toggleAddSupp").addEventListener("click", function() {
+      document.getElementById("addSuppForm").classList.toggle("show");
+    });
+    document.getElementById("addSuppBtn").addEventListener("click", function() {
+      var name = (document.getElementById("newSuppName").value || "").trim();
+      if (!name) { showToast("Enter a name", "err"); return; }
+      var dose = (document.getElementById("newSuppDose").value || "").trim() || "—";
+      var time = document.getElementById("newSuppTime").value;
+      var stack = getStack();
+      stack.push({
+        id: "s" + Date.now().toString(36),
+        name: name, dose: dose, time: time
+      });
+      saveStack(stack);
+      document.getElementById("newSuppName").value = "";
+      document.getElementById("newSuppDose").value = "";
+      document.getElementById("addSuppForm").classList.remove("show");
+      renderStack();
+      showToast("Added “" + name + "”");
+    });
+
+    // ---------- trends ----------
+    function getSeries(metric, range) {
+      var days = getDays();
+      var keys = Object.keys(days).sort();
+      var cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - range);
+      var out = [];
+      keys.forEach(function(k) {
+        var p = k.split("-");
+        var d = new Date(+p[0], +p[1]-1, +p[2]);
+        if (d < cutoff) return;
+        var v = days[k][metric];
+        if (v == null) return;
+        out.push({ key: k, val: v, label: (d.getMonth()+1) + "/" + d.getDate() });
+      });
+      return out;
+    }
+
+    function updateChart() {
+      var series = getSeries(activeMetric, activeRange);
+      var labels = series.map(function(x){ return x.label; });
+      var values = series.map(function(x){ return x.val; });
+      var colors = {
+        energy: "#34d399", pain: "#f87171", sleepQ: "#60a5fa",
+        mood: "#f472b6", focus: "#a78bfa", mobility: "#fbbf24", hrv: "#2dd4bf"
+      };
+      var col = colors[activeMetric] || "#a78bfa";
+
+      var ctx = document.getElementById("trendChart");
+      if (chart) {
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = values;
+        chart.data.datasets[0].borderColor = col;
+        chart.data.datasets[0].backgroundColor = col + "22";
+        chart.data.datasets[0].pointBackgroundColor = col;
+        chart.update("none");
+      } else {
+        chart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: activeMetric,
+              data: values,
+              borderColor: col,
+              backgroundColor: col + "22",
+              borderWidth: 2.5,
+              tension: 0.35,
+              fill: true,
+              pointRadius: 3.5,
+              pointBackgroundColor: col,
+              pointBorderColor: "#0c0d12",
+              pointBorderWidth: 1.5
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: "#161822",
+                titleColor: "#f0f1f5",
+                bodyColor: col,
+                borderColor: "#2a2e42",
+                borderWidth: 1,
+                padding: 10,
+                displayColors: false
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: "rgba(42,46,66,0.6)" },
+                ticks: { color: "#9ca3af", maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 11 } }
+              },
+              y: {
+                grid: { color: "rgba(42,46,66,0.6)" },
+                ticks: { color: "#9ca3af", font: { size: 11 } }
+              }
+            }
+          }
+        });
+      }
+
+      // weekly snapshot (last 7 days)
+      var week = getSeries("energy", 7);
+      var avg = function(metric) {
+        var s = getSeries(metric, 7);
+        if (!s.length) return "—";
+        var sum = s.reduce(function(a,b){ return a + b.val; }, 0);
+        return Math.round((sum / s.length) * 10) / 10;
+      };
+      document.getElementById("wAvgEnergy").textContent = avg("energy");
+      document.getElementById("wAvgPain").textContent = avg("pain");
+      var sleepS = getSeries("sleepHrs", 7);
+      document.getElementById("wAvgSleep").textContent = sleepS.length
+        ? (Math.round(sleepS.reduce(function(a,b){ return a+b.val; },0) / sleepS.length * 10)/10) + "h"
+        : "—";
+      document.getElementById("weeklyExtra").textContent =
+        week.length + " logged days in last 7 · Focus avg " + avg("focus") + " · Mobility avg " + avg("mobility");
+    }
+
+    document.getElementById("metricChips").addEventListener("click", function(e) {
+      var chip = e.target.closest(".chip");
+      if (!chip || !chip.dataset.m) return;
+      document.querySelectorAll("#metricChips .chip").forEach(function(c){ c.classList.remove("active"); });
+      chip.classList.add("active");
+      activeMetric = chip.dataset.m;
+      updateChart();
+    });
+    document.querySelectorAll("[data-range]").forEach(function(chip) {
+      chip.addEventListener("click", function() {
+        document.querySelectorAll("[data-range]").forEach(function(c){ c.classList.remove("active"); });
+        chip.classList.add("active");
+        activeRange = +chip.dataset.range;
+        updateChart();
+      });
+    });
+
+    // ---------- settings ----------
+    function loadThreshForm() {
+      var th = loadJSON(LS_THRESH, DEFAULT_THRESH);
+      document.getElementById("thEnergy").value = th.energy;
+      document.getElementById("thPain").value = th.pain;
+      document.getElementById("thSleep").value = th.sleep;
+      document.getElementById("thMood").value = th.mood;
+      document.getElementById("thMobility").value = th.mobility;
+    }
+    document.getElementById("saveThreshBtn").addEventListener("click", function() {
+      var th = {
+        energy: +document.getElementById("thEnergy").value || 4,
+        pain: +document.getElementById("thPain").value || 6,
+        sleep: +document.getElementById("thSleep").value || 6,
+        mood: +document.getElementById("thMood").value || 4,
+        mobility: +document.getElementById("thMobility").value || 4
+      };
+      saveJSON(LS_THRESH, th);
+      showToast("Thresholds saved");
+      renderToday();
+    });
+
+    document.getElementById("exportMetricsBtn").addEventListener("click", function() {
+      var days = getDays();
+      var keys = Object.keys(days).sort();
+      if (!keys.length) { showToast("Nothing to export", "warn"); return; }
+      var csv = "date,energy,pain,sleepHrs,sleepQ,mood,focus,mobility,hrv,notes\n";
+      keys.forEach(function(k) {
+        var x = days[k];
+        csv += [k, x.energy, x.pain, x.sleepHrs||"", x.sleepQ, x.mood, x.focus, x.mobility, x.hrv||"", JSON.stringify(x.notes||"")].join(",") + "\n";
+      });
+      var blob = new Blob([csv], { type: "text/csv" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "bio-log-metrics-" + todayKey() + ".csv";
+      a.click();
+    });
+
+    document.getElementById("exportAllBtn").addEventListener("click", function() {
+      var payload = {
+        days: getDays(),
+        stack: getStack(),
+        taken: getTakenMap(),
+        thresholds: loadJSON(LS_THRESH, DEFAULT_THRESH),
+        exportedAt: new Date().toISOString()
+      };
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "bio-log-full-" + todayKey() + ".json";
+      a.click();
+    });
+
+    document.getElementById("clearDaysBtn").addEventListener("click", function() {
+      if (!confirm("Delete all daily metric logs?")) return;
+      localStorage.removeItem(LS_DAYS);
+      if (chart) { chart.destroy(); chart = null; }
+      renderToday();
+      updateChart();
+      showToast("Daily logs cleared");
+    });
+    document.getElementById("clearStackBtn").addEventListener("click", function() {
+      if (!confirm("Reset supplement stack to defaults and clear taken history?")) return;
+      localStorage.removeItem(LS_STACK);
+      localStorage.removeItem(LS_TAKEN);
+      renderStack();
+      renderToday();
+      showToast("Stack reset");
+    });
+    document.getElementById("clearAllBtn").addEventListener("click", function() {
+      if (!confirm("Wipe ALL Bio Log data on this device?")) return;
+      [LS_DAYS, LS_STACK, LS_TAKEN, LS_THRESH].forEach(function(k){ localStorage.removeItem(k); });
+      if (chart) { chart.destroy(); chart = null; }
+      loadThreshForm();
+      renderStack();
+      renderToday();
+      updateChart();
+      showToast("Everything cleared");
+    });
+
+    // ---------- init ----------
+    loadThreshForm();
+    loadIntoForm(todayKey());
+    renderToday();
+    renderStack();
+    // chart will init on first Trends tab visit
+  </script>
+</body>
+</html>
