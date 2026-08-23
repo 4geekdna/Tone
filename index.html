@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Tone • Master Index</title>
-  <meta name="description" content="Central hub for the Tone repository – Chakra Tone Player, GPS Marker tools, Heart Rate dashboard, Bio Log, Bar inventory, and experiments.">
+  <meta name="description" content="Central hub for the Tone repository – Chakra player, GPS tools, health loggers, AI companions, and more.">
   <style>
     :root {
       --bg: #0c0d12;
@@ -15,18 +15,10 @@
       --text-muted: #9ca3af;
       --accent: #a78bfa;
       --accent-soft: rgba(167, 139, 250, 0.14);
-      --chakra: #f472b6;
-      --gps: #34d399;
-      --test: #60a5fa;
-      --health: #fbbf24;
-      --hello: #f472b6;
-      --bar: #f59e0b;
       --radius: 16px;
       --shadow: 0 8px 30px rgba(0,0,0,0.4);
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
@@ -35,7 +27,6 @@
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
     }
-
     body::before {
       content: "";
       position: fixed;
@@ -46,164 +37,54 @@
       pointer-events: none;
       z-index: 0;
     }
-
     .top-bar {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 10px 20px 0;
+      position: relative; z-index: 2;
+      display: flex; align-items: center; justify-content: space-between;
+      max-width: 680px; margin: 0 auto; padding: 10px 20px 0;
     }
-
-    .version {
-      font-size: 11px;
-      color: #6b7280;
-      letter-spacing: 0.04em;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .top-actions {
-      display: flex;
-      gap: 8px;
-    }
-
+    .version { font-size: 11px; color: #6b7280; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+    .top-actions { display: flex; gap: 8px; }
     .top-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-size: 12px;
-      font-weight: 500;
-      padding: 5px 11px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-      -webkit-tap-highlight-color: transparent;
+      background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+      font-size: 12px; font-weight: 500; padding: 5px 11px; border-radius: 8px; cursor: pointer;
     }
-
-    .top-btn:hover,
-    .top-btn:active {
-      background: var(--surface);
-      color: var(--text);
-      border-color: #3f4560;
-    }
-
-    .container {
-      position: relative;
-      z-index: 1;
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 20px 20px 90px;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-
+    .top-btn:hover, .top-btn:active { background: var(--surface); color: var(--text); border-color: #3f4560; }
+    .container { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 20px 20px 90px; }
+    header { text-align: center; margin-bottom: 40px; }
     .repo-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.03em;
-      padding: 7px 14px;
-      border-radius: 999px;
-      margin-bottom: 18px;
-      text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent-soft); color: var(--accent);
+      font-size: 12px; font-weight: 600; letter-spacing: 0.03em;
+      padding: 7px 14px; border-radius: 999px; margin-bottom: 18px; text-decoration: none;
     }
-
     h1 {
-      font-size: 30px;
-      font-weight: 700;
-      letter-spacing: -0.04em;
-      margin-bottom: 10px;
+      font-size: 30px; font-weight: 700; letter-spacing: -0.04em; margin-bottom: 10px;
       background: linear-gradient(135deg, #e0e7ff 0%, #c4b5fd 50%, #f9a8d4 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-
-    .subtitle {
-      color: var(--text-muted);
-      font-size: 15px;
-      max-width: 400px;
-      margin: 0 auto;
-      line-height: 1.55;
-    }
-
-    .section {
-      margin-bottom: 36px;
-    }
-
+    .subtitle { color: var(--text-muted); font-size: 15px; max-width: 400px; margin: 0 auto; line-height: 1.55; }
+    .section { margin-bottom: 36px; }
     .section-title {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
-      margin-bottom: 14px;
-      padding-left: 6px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-muted); margin-bottom: 14px; padding-left: 6px;
+      display: flex; align-items: center; gap: 8px;
     }
-
-    .section-title::after {
-      content: "";
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-      opacity: 0.6;
-    }
-
-    .card-grid {
-      display: grid;
-      gap: 12px;
-    }
-
+    .section-title::after { content: ""; flex: 1; height: 1px; background: var(--border); opacity: 0.6; }
+    .card-grid { display: grid; gap: 12px; }
     a.card {
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px 18px;
-      text-decoration: none;
-      color: inherit;
-      transition: all 0.22s ease;
-      box-shadow: var(--shadow);
+      display: flex; align-items: flex-start; gap: 16px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px; text-decoration: none; color: inherit;
+      transition: all 0.22s ease; box-shadow: var(--shadow);
     }
-
-    a.card:hover,
-    a.card:focus-visible {
-      background: var(--surface-hover);
-      border-color: var(--accent);
-      transform: translateY(-3px);
-      outline: none;
+    a.card:hover, a.card:focus-visible {
+      background: var(--surface-hover); border-color: var(--accent); transform: translateY(-3px); outline: none;
     }
-
-    a.card:active {
-      transform: translateY(-1px);
-    }
-
+    a.card:active { transform: translateY(-1px); }
     .icon {
-      flex-shrink: 0;
-      width: 46px;
-      height: 46px;
-      border-radius: 13px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
+      flex-shrink: 0; width: 46px; height: 46px; border-radius: 13px;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
     }
-
     .icon.chakra { background: rgba(244, 114, 182, 0.15); }
     .icon.gps    { background: rgba(52, 211, 153, 0.15); }
     .icon.test   { background: rgba(96, 165, 250, 0.15); }
@@ -211,100 +92,34 @@
     .icon.hello  { background: rgba(167, 139, 250, 0.18); }
     .icon.bar    { background: rgba(245, 158, 11, 0.18); }
     .icon.hr     { background: rgba(244, 114, 182, 0.18); }
-    .icon.bio    { background: rgba(52, 211, 153, 0.18); }
     .icon.file   { background: rgba(167, 139, 250, 0.12); }
     .icon.keys   { background: rgba(138, 180, 248, 0.18); }
     .icon.chat   { background: rgba(139, 92, 246, 0.18); }
     .icon.prompt { background: rgba(167, 139, 250, 0.2); }
-
-    .card-body {
-      flex: 1;
-      min-width: 0;
-    }
-
+    .icon.voice  { background: rgba(124, 92, 255, 0.18); }
+    .icon.bio    { background: rgba(52, 211, 153, 0.18); }
+    .card-body { flex: 1; min-width: 0; }
     .card-title {
-      font-size: 16.5px;
-      font-weight: 650;
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+      font-size: 16.5px; font-weight: 650; margin-bottom: 4px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
     }
-
     .card-title .tag {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      padding: 2px 7px;
-      border-radius: 6px;
-      background: rgba(255,255,255,0.08);
-      color: var(--text-muted);
+      font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 6px; background: rgba(255,255,255,0.08); color: var(--text-muted);
     }
-
-    .card-desc {
-      font-size: 13.5px;
-      color: var(--text-muted);
-      line-height: 1.45;
-    }
-
-    .arrow {
-      flex-shrink: 0;
-      color: var(--text-muted);
-      font-size: 18px;
-      margin-top: 4px;
-      transition: transform 0.2s, color 0.2s;
-    }
-
-    a.card:hover .arrow {
-      color: var(--accent);
-      transform: translateX(4px);
-    }
-
+    .card-desc { font-size: 13.5px; color: var(--text-muted); line-height: 1.45; }
+    .arrow { flex-shrink: 0; color: var(--text-muted); font-size: 18px; margin-top: 4px; transition: transform 0.2s, color 0.2s; }
+    a.card:hover .arrow { color: var(--accent); transform: translateX(4px); }
     .tip {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px 20px;
-      font-size: 13.5px;
-      color: var(--text-muted);
-      line-height: 1.6;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px 20px; font-size: 13.5px; color: var(--text-muted); line-height: 1.6;
     }
-
-    .tip strong {
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .tip a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
-    .tip a:hover {
-      text-decoration: underline;
-    }
-
-    .tip code {
-      background: rgba(255,255,255,0.07);
-      padding: 1px 6px;
-      border-radius: 5px;
-      font-size: 12.5px;
-    }
-
-    footer {
-      margin-top: 50px;
-      text-align: center;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    footer a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
+    .tip strong { color: var(--text); font-weight: 600; }
+    .tip a { color: var(--accent); text-decoration: none; }
+    .tip a:hover { text-decoration: underline; }
+    .tip code { background: rgba(255,255,255,0.07); padding: 1px 6px; border-radius: 5px; font-size: 12.5px; }
+    footer { margin-top: 50px; text-align: center; font-size: 13px; color: var(--text-muted); }
+    footer a { color: var(--accent); text-decoration: none; }
     @media (max-width: 480px) {
       .container { padding: 16px 16px 70px; }
       .top-bar { padding: 8px 16px 0; }
@@ -329,298 +144,194 @@
       </a>
       <h1>Master Index</h1>
       <p class="subtitle">
-        One-tap access to the Chakra Tone Player, GPS tools, Heart Rate, Bio Log, Bar inventory, and more.
+        Chakra player, GPS tools, health loggers, AI companions, and builders — one tap away.
       </p>
     </header>
 
-    <!-- Main App -->
     <section class="section">
       <div class="section-title">Main Application</div>
       <div class="card-grid">
         <a class="card" href="chakra01.html">
           <div class="icon chakra">🕉️</div>
           <div class="card-body">
-            <div class="card-title">
-              chakra01.html
-              <span class="tag">Primary</span>
-            </div>
-            <div class="card-desc">
-              Full Chakra Tone Player — 7 chakras with frequencies, natural ElevenLabs voice affirmations, crystal/Tibetan/warm bowl tones, play-all sequencing & volume control.
-            </div>
+            <div class="card-title">Chakra Tone Player <span class="tag">Primary</span></div>
+            <div class="card-desc">7 chakras with frequencies, ElevenLabs affirmations, crystal/Tibetan/warm bowl tones, play-all sequencing & volume control.</div>
           </div>
           <div class="arrow">→</div>
         </a>
       </div>
     </section>
 
-    <!-- Builders -->
     <section class="section">
       <div class="section-title">Builders</div>
       <div class="card-grid">
         <a class="card" href="prompt-builder.html">
           <div class="icon prompt">✨</div>
           <div class="card-body">
-            <div class="card-title">
-              prompt-builder.html
-              <span class="tag">New</span>
-            </div>
-            <div class="card-desc">
-              Tone Prompt Builder — choose an app type, pick optional extras, add free-form notes, then generate + copy a ready-to-paste prompt for creating the next Tone app.
-            </div>
+            <div class="card-title">Prompt Builder</div>
+            <div class="card-desc">Choose app type, pick optional extras, add free-form notes, then generate & copy a ready-to-paste prompt for the next Tone app.</div>
           </div>
           <div class="arrow">→</div>
         </a>
       </div>
     </section>
 
-    <!-- Lifestyle -->
     <section class="section">
       <div class="section-title">Lifestyle</div>
       <div class="card-grid">
         <a class="card" href="bar.html">
           <div class="icon bar">🍾</div>
           <div class="card-body">
-            <div class="card-title">
-              bar.html
-              <span class="tag">New</span>
-            </div>
-            <div class="card-desc">
-              My Bar — take or upload a photo of any bottle, name it, and build a personal drink collection with thumbnails.
-            </div>
+            <div class="card-title">My Bar</div>
+            <div class="card-desc">Photograph bottles, name them, and build a personal drink collection with thumbnails.</div>
           </div>
           <div class="arrow">→</div>
         </a>
       </div>
     </section>
 
-    <!-- Examples -->
     <section class="section">
-      <div class="section-title">Examples</div>
+      <div class="section-title">GPS & Location</div>
       <div class="card-grid">
-        <a class="card" href="hello.html">
-          <div class="icon hello">👋</div>
-          <div class="card-body">
-            <div class="card-title">
-              hello.html
-              <span class="tag">Starter</span>
-            </div>
-            <div class="card-desc">
-              Simple Hello World page — clean starter template matching the Tone dark theme.
-            </div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-      </div>
-    </section>
-
-    <!-- GPS Tools -->
-    <section class="section">
-      <div class="section-title">GPS Marker Tools</div>
-      <div class="card-grid">
-        <a class="card" href="gps-marker.html">
-          <div class="icon gps">📍</div>
-          <div class="card-body">
-            <div class="card-title">gps-marker.html</div>
-            <div class="card-desc">
-              Save & navigate locations • live distance + bearing • Overpass + Wikipedia POI search (food, art, historical, adult venues).
-            </div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-        <a class="card" href="gos-marker2.html">
-          <div class="icon gps">🗺️</div>
-          <div class="card-body">
-            <div class="card-title">gos-marker2.html</div>
-            <div class="card-desc">
-              GPS marker variant with enhanced food / restaurant search via Overpass API around active landmarks.
-            </div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-        <a class="card" href="test01.html">
-          <div class="icon gps">🧪</div>
-          <div class="card-body">
-            <div class="card-title">
-              test01.html
-              <span class="tag">Advanced</span>
-            </div>
-            <div class="card-desc">
-              Multi-mirror Overpass, Gemini AI descriptions, caching, compass, and fixed POI categories.
-            </div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
         <a class="card" href="test03.html">
           <div class="icon gps">🧭</div>
           <div class="card-body">
-            <div class="card-title">
-              test03.html
-              <span class="tag">Latest</span>
-            </div>
-            <div class="card-desc">
-              Customizable POI categories (12 defaults + add/edit/delete) • dropdown + editable Overpass criteria • multi-mirror • Gemini AI • local persistence.
-            </div>
+            <div class="card-title">GPS POI Explorer <span class="tag">Latest</span></div>
+            <div class="card-desc">Custom POI categories, editable Overpass criteria, multi-mirror, Gemini descriptions, live distance & bearing.</div>
           </div>
           <div class="arrow">→</div>
         </a>
-
         <a class="card" href="landmark-companion.html">
           <div class="icon chat">💬</div>
           <div class="card-body">
-            <div class="card-title">
-              landmark-companion.html
-              <span class="tag">New</span>
-            </div>
-            <div class="card-desc">
-              Gemini chat for your active landmark (or any place you type). Quick actions for history, nearby, practical info, accessibility & more. Per-place conversation history + notes.
-            </div>
+            <div class="card-title">Landmark Companion</div>
+            <div class="card-desc">Gemini chat for your active landmark or any place you type. Quick actions, per-place history & notes.</div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
+        <a class="card" href="gps-marker.html">
+          <div class="icon gps">📍</div>
+          <div class="card-body">
+            <div class="card-title">GPS Marker</div>
+            <div class="card-desc">Save & navigate locations • live distance + bearing • Overpass + Wikipedia POI search.</div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
+        <a class="card" href="gos-marker2.html">
+          <div class="icon gps">🍽️</div>
+          <div class="card-body">
+            <div class="card-title">GPS Food Search</div>
+            <div class="card-desc">Landmark-based food & restaurant search via Overpass.</div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
+        <a class="card" href="test01.html">
+          <div class="icon gps">🧪</div>
+          <div class="card-body">
+            <div class="card-title">GPS POI Advanced</div>
+            <div class="card-desc">Earlier multi-mirror Overpass + Gemini enrichment version.</div>
           </div>
           <div class="arrow">→</div>
         </a>
       </div>
     </section>
 
-    <!-- Health & Utilities -->
     <section class="section">
       <div class="section-title">Health & Utilities</div>
       <div class="card-grid">
-        <a class="card" href="bio-log.html">
-          <div class="icon bio">🧬</div>
-          <div class="card-body">
-            <div class="card-title">
-              bio-log.html
-              <span class="tag">New</span>
-            </div>
-            <div class="card-desc">
-              Bio Log — multi-metric daily tracker (energy, pain, sleep, mood, focus, mobility, HRV) + supplement/medication adherence, trend charts, configurable threshold alerts & streaks.
-            </div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
         <a class="card" href="heart-rate.html">
           <div class="icon hr">❤️</div>
           <div class="card-body">
-            <div class="card-title">
-              heart-rate.html
-              <span class="tag">New</span>
-            </div>
-            <div class="card-desc">
-              Heart Rate dashboard — log BPM from Apple Watch, RingConn, or manual checks. Large display, zones, history chart, stats & CSV export.
-            </div>
+            <div class="card-title">Heart Rate Log</div>
+            <div class="card-desc">Log BPM from Apple Watch, RingConn, or manual entry. Zones, history chart, stats & CSV export.</div>
           </div>
           <div class="arrow">→</div>
         </a>
-
-        <a class="card" href="health-logger.html">
-          <div class="icon health">📋</div>
+        <a class="card" href="bio-log.html">
+          <div class="icon bio">🧬</div>
           <div class="card-body">
-            <div class="card-title">
-              health-logger.html
-            </div>
-            <div class="card-desc">
-              Placeholder / earlier health logging page (currently shares the Bar inventory UI). Prefer heart-rate.html for BPM tracking.
-            </div>
+            <div class="card-title">Bio Log</div>
+            <div class="card-desc">Multi-metric daily tracker (energy, pain, sleep, mood, focus) + supplements, trends & streaks.</div>
           </div>
           <div class="arrow">→</div>
         </a>
-
-        <a class="card" href="test02.html">
-          <div class="icon test">🔊</div>
+        <a class="card" href="elevenlabs-tts.html">
+          <div class="icon voice">🔊</div>
           <div class="card-body">
-            <div class="card-title">test02.html</div>
-            <div class="card-desc">
-              ElevenLabs TTS playground — enter API key, pick voice/model, adjust settings, generate speech and download audio.
-            </div>
+            <div class="card-title">ElevenLabs TTS</div>
+            <div class="card-desc">Voice playground — pick voice & model, generate speech, download MP3.</div>
           </div>
           <div class="arrow">→</div>
         </a>
-
         <a class="card" href="api-key-tester.html">
           <div class="icon keys">🔑</div>
           <div class="card-body">
-            <div class="card-title">
-              api-key-tester.html
-              <span class="tag">New</span>
-            </div>
-            <div class="card-desc">
-              Test & save Google Places API (New) and Gemini API keys. Live validation with clear success/error feedback. Keys stay in browser localStorage.
-            </div>
+            <div class="card-title">API Key Tester</div>
+            <div class="card-desc">Test Google Places API (New) and Gemini keys. Save in browser localStorage.</div>
           </div>
           <div class="arrow">→</div>
         </a>
       </div>
     </section>
 
-    <!-- Supporting -->
     <section class="section">
-      <div class="section-title">Supporting Files</div>
+      <div class="section-title">Starter</div>
+      <div class="card-grid">
+        <a class="card" href="starter-template.html">
+          <div class="icon hello">👋</div>
+          <div class="card-body">
+            <div class="card-title">Starter Template</div>
+            <div class="card-desc">Minimal dark-theme Hello World page matching the Tone look.</div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">Supporting</div>
       <div class="card-grid">
         <a class="card" href="Chakra.txt">
           <div class="icon file">🎵</div>
           <div class="card-body">
-            <div class="card-title">Chakra.txt</div>
-            <div class="card-desc">Notes / reference data for chakra frequencies, tones, and affirmations.</div>
+            <div class="card-title">Chakra Notes</div>
+            <div class="card-desc">Reference data for chakra frequencies, tones, and affirmations.</div>
           </div>
           <div class="arrow">→</div>
         </a>
-
         <a class="card" href="README.md">
           <div class="icon file">📘</div>
           <div class="card-body">
-            <div class="card-title">README.md</div>
-            <div class="card-desc">Project documentation (currently minimal).</div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-        <a class="card" href="index-master.html">
-          <div class="icon file">📋</div>
-          <div class="card-body">
-            <div class="card-title">index-master.html</div>
-            <div class="card-desc">Original master index template (kept for reference).</div>
+            <div class="card-title">README</div>
+            <div class="card-desc">Project documentation.</div>
           </div>
           <div class="arrow">→</div>
         </a>
       </div>
     </section>
 
-    <!-- How to use -->
     <section class="section">
-      <div class="section-title">How to use this index</div>
+      <div class="section-title">How to use</div>
       <div class="tip">
-        <strong>Best experience:</strong> Enable <strong>GitHub Pages</strong> on this repo<br>
-        (Settings → Pages → Source: Deploy from a branch → main → / root).<br><br>
-        Then open:<br>
-        <code>https://4geekdna.github.io/Tone/</code><br><br>
-        <strong>Quick test without Pages:</strong><br>
-        Paste the raw URL of this file into<br>
-        <a href="https://htmlpreview.github.io/" target="_blank" rel="noopener">htmlpreview.github.io</a><br><br>
-        <strong>On your phone:</strong> Download the whole repo once, then open <code>index.html</code> in Safari — all relative links work perfectly.
+        <strong>Best experience:</strong> GitHub Pages on this repo<br>
+        (Settings → Pages → Deploy from branch → main → / root).<br><br>
+        Open: <code>https://4geekdna.github.io/Tone/</code><br><br>
+        <strong>Naming convention:</strong> descriptive kebab-case only<br>
+        (e.g. <code>gps-poi-explorer.html</code>, never <code>test01.html</code>).
       </div>
     </section>
 
     <footer>
       <a href="https://github.com/4geekdna/Tone" target="_blank" rel="noopener">github.com/4geekdna/Tone</a>
-      · Keep this file in the repo root
     </footer>
   </div>
 
   <script>
     document.getElementById("backBtn").addEventListener("click", () => {
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.location.href = "https://github.com/4geekdna/Tone";
-      }
+      if (window.history.length > 1) window.history.back();
+      else window.location.href = "https://github.com/4geekdna/Tone";
     });
-
-    document.getElementById("refreshBtn").addEventListener("click", () => {
-      window.location.reload();
-    });
+    document.getElementById("refreshBtn").addEventListener("click", () => window.location.reload());
   </script>
 </body>
 </html>
