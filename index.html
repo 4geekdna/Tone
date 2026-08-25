@@ -98,6 +98,7 @@
     .icon.prompt { background: rgba(167, 139, 250, 0.2); }
     .icon.voice  { background: rgba(124, 92, 255, 0.18); }
     .icon.bio    { background: rgba(52, 211, 153, 0.18); }
+    .icon.bot    { background: rgba(52, 211, 153, 0.15); }
     .card-body { flex: 1; min-width: 0; }
     .card-title {
       font-size: 16.5px; font-weight: 650; margin-bottom: 4px;
@@ -130,7 +131,7 @@
 </head>
 <body>
   <div class="top-bar">
-    <div class="version">v0.17</div>
+    <div class="version">v0.18</div>
     <div class="top-actions">
       <button class="top-btn" id="backBtn" type="button" title="Go back">← Back</button>
       <button class="top-btn" id="refreshBtn" type="button" title="Refresh page">Refresh</button>
@@ -170,6 +171,14 @@
           <div class="card-body">
             <div class="card-title">Prompt Builder</div>
             <div class="card-desc">Choose app type, pick optional extras, add free-form notes, then generate & copy a ready-to-paste prompt for the next Tone app.</div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
+        <a class="card" href="tone-automations.html">
+          <div class="icon bot">🤖</div>
+          <div class="card-body">
+            <div class="card-title">Tone Automations <span class="tag">New</span></div>
+            <div class="card-desc">Docs for the three Grok bots: Repo Watcher (on push), Weekly Health Check, and Deploy Prompt Pack.</div>
           </div>
           <div class="arrow">→</div>
         </a>
