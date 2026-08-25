@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Tone Automations</title>
+  <style>
+    :root {
+      --bg: #0c0d12;
+      --surface: #161822;
+      --border: #2a2e42;
+      --text: #f0f1f5;
+      --muted: #9ca3af;
+      --accent: #a78bfa;
+      --accent-soft: rgba(167, 139, 250, 0.14);
+      --success: #34d399;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      min-height: 100dvh;
+      padding: calc(16px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #e0e7ff, #c4b5fd 50%, #f9a8d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 22px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .card h2 {
+      font-size: 1.05rem;
+      font-weight: 650;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.08);
+      color: var(--muted);
+    }
+    .tag.live { background: rgba(52, 211, 153, 0.15); color: var(--success); }
+    .meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .card p { font-size: 0.92rem; color: #d1d5db; }
+    .card ul {
+      margin: 10px 0 0 18px;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+    .card li { margin-bottom: 4px; }
+    .flow {
+      background: rgba(167, 139, 250, 0.08);
+      border: 1px solid rgba(167, 139, 250, 0.2);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      font-size: 0.88rem;
+      color: #c4b5fd;
+      line-height: 1.6;
+    }
+    .flow strong { color: var(--text); }
+    a.back {
+      display: inline-block;
+      margin-top: 8px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    code {
+      background: rgba(255,255,255,0.07);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tone Automations</h1>
+  <p class="subtitle">Grok bots that keep the Tone design → deploy loop consistent</p>
+
+  <div class="flow">
+    <strong>How they fit together</strong><br>
+    You build with Prompt Builder → Grok deploys to GitHub →
+    <strong>Tone Repo Watcher</strong> reviews the push →
+    <strong>Weekly Health Check</strong> audits the catalog →
+    <strong>Deploy Prompt Pack</strong> hands you next week’s starter prompt.
+  </div>
+
+  <div class="card">
+    <h2>Tone Repo Watcher <span class="tag live">Live</span></h2>
+    <div class="meta">Trigger · GitHub push to <code>main</code> on 4geekdna/Tone</div>
+    <p>Runs after every deploy. Summarizes what changed, flags missing index updates, and calls out generic filenames.</p>
+    <ul>
+      <li>Incomplete deploy detection (new HTML without index card)</li>
+      <li>Naming cleanup suggestions (kebab-case, domain prefixes)</li>
+      <li>One-line status: complete / needs index / rename recommended</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Weekly Tone Health Check <span class="tag live">Live</span></h2>
+    <div class="meta">Schedule · Sundays 10:00 America/Los_Angeles</div>
+    <p>Weekly maintenance brief for the repo and Master Index.</p>
+    <ul>
+      <li>Repo tree vs index card comparison</li>
+      <li>Orphan files and dead links</li>
+      <li>Remaining generic names with rename list</li>
+      <li>Prioritized cleanup (max 5 items)</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Deploy Prompt Pack <span class="tag live">Live</span></h2>
+    <div class="meta">Schedule · Mondays 09:00 America/Los_Angeles</div>
+    <p>Ready-to-paste starter for the next Tone app, aligned with house rules.</p>
+    <ul>
+      <li>Lists recent apps for consistency</li>
+      <li>Restates core requirements + filename rules</li>
+      <li>Outputs a Prompt Builder–shaped prompt to copy into chat</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>House rules these bots enforce</h2>
+    <ul>
+      <li>Single self-contained HTML, dark mobile-first UI</li>
+      <li>localStorage persistence; reuse Gemini/Places keys when needed</li>
+      <li>Always update <code>index.html</code> with card + version bump</li>
+      <li>Descriptive kebab-case only — never <code>test01</code> / <code>app1</code> style names</li>
+      <li>Prefer prefixes: <code>gps-</code>, <code>chakra-</code>, <code>health-</code>, <code>ai-</code>, <code>tool-</code></li>
+    </ul>
+  </div>
+
+  <p style="font-size:0.8rem;color:var(--muted);margin-top:8px;">
+    Managed in Grok → Automations. Notifications: app + email.
+  </p>
+  <a class="back" href="index.html">← Back to Master Index</a>
+</body>
+</html>
