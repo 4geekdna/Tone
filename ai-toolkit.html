@@ -6,6 +6,621 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#0c0d12" />
   <title>AI Toolkit • Tone</title>
+  <style>
+    :root {
+      --bg: #0c0d12;
+      --surface: #161822;
+      --surface2: #1e2130;
+      --border: #2a2e42;
+      --text: #f0f1f5;
+      --muted: #9ca3af;
+      --accent: #a78bfa;
+      --accent-soft: rgba(167, 139, 250, 0.14);
+      --success: #34d399;
+      --danger: #f87171;
+      --user: #2a2150;
+      --bot: #151826;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: calc(10px + env(safe-area-inset-top)) 14px calc(10px + env(safe-area-inset-bottom));
+      max-width: 720px;
+      margin: 0 auto;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 90% 50% at 50% -20%, rgba(167,139,250,.18), transparent),
+        radial-gradient(ellipse 50% 40% at 100% 100%, rgba(244,114,182,.08), transparent);
+      pointer-events: none; z-index: 0;
+    }
+    header, main, nav, footer { position: relative; z-index: 1; }
+    .top {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 10px; margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 1.4rem; font-weight: 700; letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #e0e7ff, #c4b5fd 50%, #f9a8d4);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: var(--muted); font-size: .82rem; margin-top: 2px; }
+    .top-links { display: flex; gap: 6px; flex-shrink: 0; }
+    .ghost {
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 8px;
+      text-decoration: none; cursor: pointer;
+    }
+    .tabs {
+      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab {
+      flex-shrink: 0; border: 1px solid var(--border); background: var(--surface);
+      color: var(--muted); border-radius: 999px; padding: 7px 12px;
+      font-size: .78rem; font-weight: 650; cursor: pointer;
+    }
+    .tab.active { background: var(--accent-soft); color: var(--accent); border-color: rgba(167,139,250,.45); }
+    main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .panel { display: none; flex: 1; flex-direction: column; min-height: 0; }
+    .panel.active { display: flex; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px;
+    }
+    .label {
+      font-size: .68rem; text-transform: uppercase; letter-spacing: .07em;
+      color: var(--muted); font-weight: 700; margin-bottom: 6px;
+    }
+    input, textarea, select {
+      width: 100%; padding: 11px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: #111318; color: var(--text);
+      font-size: 16px; font-family: inherit;
+    }
+    textarea { min-height: 92px; resize: vertical; line-height: 1.45; }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      border: none; border-radius: 12px; padding: 11px 14px; font-size: .9rem;
+      font-weight: 650; cursor: pointer; color: #1a1025; background: var(--accent);
+      flex: 1; min-width: 90px;
+    }
+    .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn.danger { background: transparent; color: var(--danger); border: 1px solid rgba(248,113,113,.35); }
+    .btn:disabled { opacity: .45; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+    .chip {
+      background: var(--accent-soft); color: #c4b5fd; border: 1px solid rgba(167,139,250,.28);
+      border-radius: 999px; padding: 6px 11px; font-size: .75rem; font-weight: 650; cursor: pointer;
+    }
+    .chip.active { background: rgba(167,139,250,.28); color: #fff; }
+    #chat {
+      flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+      padding: 4px 2px 8px; min-height: 160px;
+    }
+    .msg {
+      max-width: 94%; padding: 10px 12px; border-radius: 14px;
+      font-size: .92rem; line-height: 1.45; white-space: pre-wrap; word-break: break-word;
+    }
+    .msg.user { align-self: flex-end; background: var(--user); }
+    .msg.bot { align-self: flex-start; background: var(--bot); border: 1px solid var(--border); }
+    .msg .meta { font-size: .68rem; color: var(--muted); margin-top: 5px; }
+    .composer { display: flex; gap: 8px; align-items: flex-end; padding-top: 8px; }
+    .composer textarea { flex: 1; min-height: 44px; max-height: 130px; resize: none; }
+    .composer .btn { flex: 0 0 52px; height: 44px; padding: 0; font-size: 1.15rem; }
+    .status { font-size: .78rem; color: var(--muted); min-height: 1.15em; margin-bottom: 6px; }
+    .status.ok { color: var(--success); }
+    .status.err { color: var(--danger); }
+    .hint { font-size: .75rem; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+    .lib-item, .hist-item {
+      background: rgba(255,255,255,.03); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 12px; margin-bottom: 8px;
+    }
+    .lib-item h3, .hist-item h3 { font-size: .92rem; margin-bottom: 4px; }
+    .lib-item p, .hist-item p { font-size: .8rem; color: var(--muted); white-space: pre-wrap; }
+    .empty { text-align: center; color: var(--muted); padding: 24px 8px; font-size: .9rem; }
+    .count { font-size: .72rem; color: var(--accent); text-align: right; margin-top: 4px; }
+    .slider-row { display: flex; align-items: center; gap: 10px; }
+    .slider-row input[type=range] { flex: 1; accent-color: var(--accent); }
+    footer { margin-top: 8px; text-align: center; font-size: 12px; color: var(--muted); }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
 </head>
+<body>
+  <header class="top">
+    <div>
+      <h1>AI Toolkit</h1>
+      <p class="subtitle">Gemini studio, transforms, and saved prompts — all on-device except the model call</p>
+    </div>
+    <div class="top-links">
+      <a class="ghost" href="index.html">Index</a>
+      <a class="ghost" href="api-key-tester.html">Keys</a>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="studio">Studio</button>
+    <button class="tab" data-tab="transform">Transform</button>
+    <button class="tab" data-tab="library">Library</button>
+    <button class="tab" data-tab="history">History</button>
+    <button class="tab" data-tab="setup">Setup</button>
+  </nav>
+
+  <div id="status" class="status">Ready</div>
+
+  <main>
+    <section class="panel active" id="panel-studio">
+      <div class="card">
+        <div class="label">System prompt</div>
+        <textarea id="systemPrompt" rows="3" placeholder="Optional personality / constraints…"></textarea>
+        <div class="chips" id="personaChips"></div>
+        <div class="slider-row" style="margin-top:8px;">
+          <span class="label" style="margin:0;">Temp</span>
+          <input type="range" id="temp" min="0" max="1.4" step="0.1" value="0.7" />
+          <span id="tempVal" class="hint" style="min-width:28px;margin:0;">0.7</span>
+        </div>
+      </div>
+      <div id="chat"><div class="empty">Ask anything, or pick a persona above.</div></div>
+      <div class="composer">
+        <textarea id="studioInput" rows="1" placeholder="Message Gemini…"></textarea>
+        <button class="btn" id="studioSend">➤</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button class="btn secondary" id="clearChat">Clear chat</button>
+        <button class="btn secondary" id="saveChat">Save thread</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-transform">
+      <div class="card">
+        <div class="label">Action</div>
+        <div class="chips" id="actionChips"></div>
+        <div class="label" style="margin-top:8px;">Input</div>
+        <textarea id="xformIn" placeholder="Paste text, a messy note, a draft, or a list…"></textarea>
+        <div class="count" id="xformCount">0 chars</div>
+        <div class="label" style="margin-top:10px;">Optional extra instruction</div>
+        <input id="xformExtra" placeholder="e.g. keep it under 80 words, NYC tone…" />
+        <div class="row" style="margin-top:12px;">
+          <button class="btn" id="runXform">Run</button>
+          <button class="btn secondary" id="copyXform">Copy result</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">Result</div>
+        <textarea id="xformOut" readonly placeholder="Result appears here…"></textarea>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-library">
+      <div class="card">
+        <div class="label">Save a prompt</div>
+        <input id="libTitle" placeholder="Title" maxlength="80" />
+        <textarea id="libBody" style="margin-top:8px;" placeholder="Prompt text…"></textarea>
+        <div class="row" style="margin-top:10px;">
+          <button class="btn" id="saveLib">Save to library</button>
+        </div>
+        <p class="hint">Saved locally. Tap a card to load it into Studio.</p>
+      </div>
+      <div id="libList"></div>
+    </section>
+
+    <section class="panel" id="panel-history">
+      <div class="row" style="margin-bottom:8px;">
+        <button class="btn secondary" id="exportHist">Export JSON</button>
+        <button class="btn danger" id="clearHist">Clear history</button>
+      </div>
+      <div id="histList"></div>
+    </section>
+
+    <section class="panel" id="panel-setup">
+      <div class="card">
+        <div class="label">Gemini API key</div>
+        <div class="row">
+          <input type="password" id="geminiKey" placeholder="AIza…" autocomplete="off" spellcheck="false" />
+          <button class="btn secondary" id="toggleKey" style="flex:0 0 48px;">👁</button>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <button class="btn" id="saveKey">Save key</button>
+          <button class="btn secondary" id="testKey">Test key</button>
+        </div>
+        <p class="hint">Reuses keys already saved by API Key Tester or GPS tools. Stored only in this browser.</p>
+      </div>
+      <div class="card">
+        <div class="label">Model</div>
+        <select id="modelSelect">
+          <option value="gemini-3.6-flash">gemini-3.6-flash</option>
+          <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+        </select>
+        <p class="hint">Tone apps currently call gemini-3.6-flash. Switch only if a model is unavailable on your key.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <a href="https://github.com/4geekdna/Tone">4geekdna / Tone</a>
+  </footer>
+
+<script>
+  const KEYS = {
+    geminiTester: "apiTester_geminiKey",
+    geminiGps: "gps_gemini_key",
+    toolkitKey: "aiToolkit_geminiKey",
+    model: "aiToolkit_model",
+    system: "aiToolkit_system",
+    temp: "aiToolkit_temp",
+    chat: "aiToolkit_chat_v1",
+    library: "aiToolkit_library_v1",
+    history: "aiToolkit_history_v1"
+  };
+
+  const PERSONAS = [
+    { id: "plain", label: "Plain", text: "You are a concise, practical assistant. Prefer short answers. Ask one clarifying question only when needed." },
+    { id: "editor", label: "Editor", text: "You are a sharp editor. Improve clarity and rhythm. Keep the author's voice. Explain only the important changes." },
+    { id: "coach", label: "Coach", text: "You are a calm coach. Be direct, kind, and specific. Offer next actions, not lectures." },
+    { id: "coder", label: "Coder", text: "You are a senior engineer. Give working snippets, call out edge cases, and avoid fluff." },
+    { id: "nyc", label: "NYC", text: "You live in New York City. Be useful, slightly dry, and street-smart. No tourist brochure tone." }
+  ];
+
+  const ACTIONS = [
+    { id: "summarize", label: "Summarize", prompt: "Summarize the text. Keep the important facts and drop filler. Use short paragraphs or bullets." },
+    { id: "rewrite", label: "Rewrite", prompt: "Rewrite the text so it is clearer and more natural. Keep meaning. Do not add new claims." },
+    { id: "tighten", label: "Tighten", prompt: "Tighten the text. Cut repetition and weak words. Keep the voice." },
+    { id: "expand", label: "Expand", prompt: "Expand the text into a fuller draft while staying faithful to the original intent." },
+    { id: "outline", label: "Outline", prompt: "Turn the text into a clean outline with headings and nested bullets." },
+    { id: "tasks", label: "Extract tasks", prompt: "Extract concrete tasks from the text as a checklist. Include owners or dates only if present." },
+    { id: "translate", label: "Translate", prompt: "Translate the text into clear English. If it is already English, translate into Spanish." },
+    { id: "critique", label: "Critique", prompt: "Critique the text. What works, what is weak, and what to change first. Be specific." }
+  ];
+
+  const $ = id => document.getElementById(id);
+  let chat = [];
+  let library = [];
+  let history = [];
+  let sending = false;
+  let activeAction = "summarize";
+  let activePersona = "plain";
+
+  function setStatus(msg, type="") {
+    $("status").textContent = msg;
+    $("status").className = "status " + type;
+  }
+
+  function getKey() {
+    return ($("geminiKey").value || "").trim()
+      || localStorage.getItem(KEYS.toolkitKey)
+      || localStorage.getItem(KEYS.geminiTester)
+      || localStorage.getItem(KEYS.geminiGps)
+      || "";
+  }
+
+  function modelName() {
+    return $("modelSelect").value || "gemini-3.6-flash";
+  }
+
+  function loadAll() {
+    $("geminiKey").value = localStorage.getItem(KEYS.toolkitKey)
+      || localStorage.getItem(KEYS.geminiTester)
+      || localStorage.getItem(KEYS.geminiGps)
+      || "";
+    $("modelSelect").value = localStorage.getItem(KEYS.model) || "gemini-3.6-flash";
+    $("systemPrompt").value = localStorage.getItem(KEYS.system) || PERSONAS[0].text;
+    const t = parseFloat(localStorage.getItem(KEYS.temp) || "0.7");
+    $("temp").value = Number.isFinite(t) ? t : 0.7;
+    $("tempVal").textContent = $("temp").value;
+    try { chat = JSON.parse(localStorage.getItem(KEYS.chat) || "[]"); } catch { chat = []; }
+    try { library = JSON.parse(localStorage.getItem(KEYS.library) || "[]"); } catch { library = []; }
+    try { history = JSON.parse(localStorage.getItem(KEYS.history) || "[]"); } catch { history = []; }
+    if (!library.length) {
+      library = [
+        { id: "p1", title: "Daily plan", body: "Turn these messy notes into a realistic plan for today. Group by must / should / later." },
+        { id: "p2", title: "Meeting recap", body: "Write a short recap with decisions, owners, and open questions." },
+        { id: "p3", title: "Tone app prompt", body: "Draft a prompt for a new Tone single-file HTML app: dark theme, mobile-first, localStorage, then add it to index.html." }
+      ];
+    }
+  }
+
+  function persistChat() { localStorage.setItem(KEYS.chat, JSON.stringify(chat)); }
+  function persistLib() { localStorage.setItem(KEYS.library, JSON.stringify(library)); }
+  function persistHist() { localStorage.setItem(KEYS.history, JSON.stringify(history)); }
+
+  function renderChips(el, items, active, onClick) {
+    el.innerHTML = "";
+    items.forEach(item => {
+      const b = document.createElement("button");
+      b.className = "chip" + (item.id === active ? " active" : "");
+      b.textContent = item.label;
+      b.onclick = () => onClick(item);
+      el.appendChild(b);
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ "&":"&","<":"<",">":">","\"":""","'":"&#39;" }[c]));
+  }
+
+  function renderChat() {
+    const box = $("chat");
+    box.innerHTML = "";
+    if (!chat.length) {
+      box.innerHTML = '<div class="empty">Ask anything, or pick a persona above.</div>';
+      return;
+    }
+    chat.forEach(m => {
+      const d = document.createElement("div");
+      d.className = "msg " + (m.role === "user" ? "user" : "bot");
+      d.textContent = m.text;
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = m.role === "user" ? "You" : "Gemini";
+      d.appendChild(meta);
+      box.appendChild(d);
+    });
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function renderLibrary() {
+    const wrap = $("libList");
+    wrap.innerHTML = "";
+    if (!library.length) { wrap.innerHTML = '<div class="empty">No saved prompts yet.</div>'; return; }
+    library.forEach(item => {
+      const d = document.createElement("div");
+      d.className = "lib-item";
+      d.innerHTML = `<h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p>`;
+      const row = document.createElement("div");
+      row.className = "row";
+      row.style.marginTop = "8px";
+      const use = document.createElement("button");
+      use.className = "btn";
+      use.textContent = "Use in Studio";
+      use.onclick = () => {
+        $("studioInput").value = item.body;
+        document.querySelector('[data-tab="studio"]').click();
+        setStatus("Loaded " + item.title, "ok");
+      };
+      const del = document.createElement("button");
+      del.className = "btn danger";
+      del.textContent = "Delete";
+      del.onclick = () => {
+        library = library.filter(x => x.id !== item.id);
+        persistLib();
+        renderLibrary();
+      };
+      row.append(use, del);
+      d.appendChild(row);
+      wrap.appendChild(d);
+    });
+  }
+
+  function renderHistory() {
+    const wrap = $("histList");
+    wrap.innerHTML = "";
+    if (!history.length) { wrap.innerHTML = '<div class="empty">No saved threads yet.</div>'; return; }
+    history.slice().reverse().forEach(h => {
+      const d = document.createElement("div");
+      d.className = "hist-item";
+      const preview = (h.messages || []).map(m => m.text).join(" ").slice(0, 160);
+      d.innerHTML = `<h3>${escapeHtml(h.title)}</h3><p>${escapeHtml(preview)}</p>`;
+      const row = document.createElement("div");
+      row.className = "row";
+      row.style.marginTop = "8px";
+      const load = document.createElement("button");
+      load.className = "btn";
+      load.textContent = "Reload";
+      load.onclick = () => {
+        chat = h.messages || [];
+        persistChat();
+        renderChat();
+        document.querySelector('[data-tab="studio"]').click();
+      };
+      row.appendChild(load);
+      d.appendChild(row);
+      wrap.appendChild(d);
+    });
+  }
+
+  async function callGemini({ system, user, historyMsgs }) {
+    const key = getKey();
+    if (!key) throw new Error("No Gemini key. Save one in Setup or API Key Tester.");
+    const contents = [];
+    if (system) {
+      contents.push({ role: "user", parts: [{ text: system }] });
+      contents.push({ role: "model", parts: [{ text: "Understood." }] });
+    }
+    (historyMsgs || []).forEach(m => {
+      contents.push({
+        role: m.role === "user" ? "user" : "model",
+        parts: [{ text: m.text }]
+      });
+    });
+    contents.push({ role: "user", parts: [{ text: user }] });
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName())}:generateContent?key=${encodeURIComponent(key)}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents,
+        generationConfig: {
+          temperature: parseFloat($("temp").value) || 0.7,
+          maxOutputTokens: 1200
+        }
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || ("HTTP " + res.status));
+    return data.candidates?.[0]?.content?.parts?.map(p => p.text).filter(Boolean).join("\n") || "(No response)";
+  }
+
+  async function sendStudio() {
+    const text = $("studioInput").value.trim();
+    if (!text || sending) return;
+    $("studioInput").value = "";
+    chat.push({ role: "user", text, ts: Date.now() });
+    persistChat();
+    renderChat();
+    sending = true;
+    $("studioSend").disabled = true;
+    setStatus("Gemini is thinking…");
+    try {
+      const reply = await callGemini({
+        system: $("systemPrompt").value.trim(),
+        user: text,
+        historyMsgs: chat.slice(0, -1).slice(-10)
+      });
+      chat.push({ role: "bot", text: reply, ts: Date.now() });
+      persistChat();
+      renderChat();
+      setStatus("Ready", "ok");
+    } catch (err) {
+      chat.pop();
+      persistChat();
+      renderChat();
+      setStatus("Error: " + err.message, "err");
+    } finally {
+      sending = false;
+      $("studioSend").disabled = false;
+    }
+  }
+
+  async function runTransform() {
+    const input = $("xformIn").value.trim();
+    if (!input) { setStatus("Paste some text first.", "err"); return; }
+    const action = ACTIONS.find(a => a.id === activeAction) || ACTIONS[0];
+    const extra = $("xformExtra").value.trim();
+    const user = action.prompt + (extra ? "\n\nExtra instruction: " + extra : "") + "\n\n---\n" + input;
+    sending = true;
+    $("runXform").disabled = true;
+    setStatus("Transforming…");
+    try {
+      const reply = await callGemini({
+        system: "You transform text. Return only the transformed result unless a critique is requested.",
+        user
+      });
+      $("xformOut").value = reply;
+      setStatus("Done", "ok");
+    } catch (err) {
+      setStatus("Error: " + err.message, "err");
+    } finally {
+      sending = false;
+      $("runXform").disabled = false;
+    }
+  }
+
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      tab.classList.add("active");
+      $("panel-" + tab.dataset.tab).classList.add("active");
+    };
+  });
+
+  $("temp").oninput = () => {
+    $("tempVal").textContent = $("temp").value;
+    localStorage.setItem(KEYS.temp, $("temp").value);
+  };
+  $("systemPrompt").onchange = () => localStorage.setItem(KEYS.system, $("systemPrompt").value);
+  $("modelSelect").onchange = () => localStorage.setItem(KEYS.model, $("modelSelect").value);
+  $("xformIn").oninput = () => { $("xformCount").textContent = $("xformIn").value.length + " chars"; };
+
+  $("studioSend").onclick = sendStudio;
+  $("studioInput").addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendStudio(); }
+  });
+  $("clearChat").onclick = () => { chat = []; persistChat(); renderChat(); setStatus("Chat cleared"); };
+  $("saveChat").onclick = () => {
+    if (!chat.length) { setStatus("Nothing to save.", "err"); return; }
+    const title = (chat.find(m => m.role === "user")?.text || "Thread").slice(0, 48);
+    history.push({ id: Date.now().toString(36), title, ts: Date.now(), messages: chat.slice() });
+    persistHist();
+    renderHistory();
+    setStatus("Thread saved", "ok");
+  };
+
+  $("runXform").onclick = runTransform;
+  $("copyXform").onclick = async () => {
+    const text = $("xformOut").value;
+    if (!text) return;
+    try { await navigator.clipboard.writeText(text); setStatus("Copied", "ok"); }
+    catch { $("xformOut").select(); document.execCommand("copy"); setStatus("Copied", "ok"); }
+  };
+
+  $("saveLib").onclick = () => {
+    const title = $("libTitle").value.trim();
+    const body = $("libBody").value.trim();
+    if (!title || !body) { setStatus("Need a title and prompt.", "err"); return; }
+    library.unshift({ id: Date.now().toString(36), title, body });
+    persistLib();
+    $("libTitle").value = "";
+    $("libBody").value = "";
+    renderLibrary();
+    setStatus("Saved to library", "ok");
+  };
+
+  $("exportHist").onclick = () => {
+    const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "ai-toolkit-history.json";
+    a.click();
+  };
+  $("clearHist").onclick = () => {
+    if (!confirm("Clear all saved threads?")) return;
+    history = []; persistHist(); renderHistory();
+  };
+
+  $("saveKey").onclick = () => {
+    const key = $("geminiKey").value.trim();
+    localStorage.setItem(KEYS.toolkitKey, key);
+    if (key) localStorage.setItem(KEYS.geminiTester, key);
+    setStatus(key ? "Key saved in this browser" : "Key cleared", "ok");
+  };
+  $("toggleKey").onclick = () => {
+    const input = $("geminiKey");
+    input.type = input.type === "password" ? "text" : "password";
+  };
+  $("testKey").onclick = async () => {
+    setStatus("Testing key…");
+    try {
+      const reply = await callGemini({ user: "Reply with exactly: AI Toolkit key is working." });
+      setStatus(reply, "ok");
+    } catch (err) {
+      setStatus("Error: " + err.message, "err");
+    }
+  };
+
+  function paintPersonas() {
+    renderChips($("personaChips"), PERSONAS, activePersona, item => {
+      activePersona = item.id;
+      $("systemPrompt").value = item.text;
+      localStorage.setItem(KEYS.system, item.text);
+      paintPersonas();
+    });
+  }
+  function paintActions() {
+    renderChips($("actionChips"), ACTIONS, activeAction, item => {
+      activeAction = item.id;
+      paintActions();
+    });
+  }
+
+  loadAll();
+  paintPersonas();
+  paintActions();
+  renderChat();
+  renderLibrary();
+  renderHistory();
+  $("xformCount").textContent = $("xformIn").value.length + " chars";
+  setStatus(getKey() ? "Key found — ready" : "Add a Gemini key in Setup to run the model");
+</script>
+</body>
 </html>
-PLACEHOLDER
