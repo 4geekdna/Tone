@@ -5,10 +5,14 @@
   const LS_NAMES="govee-custom-names";
   const LS_SELECTED="govee-selected";
   const LS_PICKED="cj_govee_picked";
-  let devices=[],picked={},names={},busy=false,last=-1,lastError="",loading=false;
+  const LS_DEVICES="cj_govee_devices";
+  let devices=[],picked={},names={},busy=false,last=-1,lastError="",loading=false,powered={};
 
   const $=id=>document.getElementById(id);
-  function journeyOn(){const b=$("play");return !!(b&&b.textContent==="Running")}
+  function running(){
+    const b=$("play");
+    return !!(b&&b.textContent==="Running")||!!window.run;
+  }
   function line(msg){const el=$("status");if(el)el.textContent=msg}
   function box(msg){const el=$("goveeList");if(el)el.textContent=msg}
   function key(){
@@ -32,6 +36,7 @@
   function idOf(d){return d.device||d.sku||d.model}
   function nameOf(d){return names[idOf(d)]||d.deviceName||d.sku||d.model||"Light"}
   function savePicked(){try{localStorage.setItem(LS_PICKED,JSON.stringify(picked))}catch(e){}}
+  function saveDevices(){try{localStorage.setItem(LS_DEVICES,JSON.stringify(devices))}catch(e){}}
   function normalize(list){
     return (list||[]).map(function(d){
       return {sku:d.sku||d.model,device:d.device,deviceName:d.deviceName,supportCmds:d.supportCmds||[],capabilities:d.capabilities||[]};
@@ -50,12 +55,13 @@
     });
     return Object.keys(map).map(function(k){return map[k]});
   }
+  function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
 
   async function request(url,options,ms){
     const k=key();
     if(!k)throw new Error("Enter your Govee API key first");
     const ctrl=new AbortController();
-    const timer=setTimeout(function(){ctrl.abort()},ms||15000);
+    const timer=setTimeout(function(){ctrl.abort()},ms||12000);
     const method=(options&&options.method)||"GET";
     try{
       const res=await fetch(url,{
@@ -80,16 +86,15 @@
   }
 
   async function getNew(){
-    const result=await request(API_NEW+"/user/devices",{method:"GET"},15000);
+    const result=await request(API_NEW+"/user/devices",{method:"GET"},12000);
     const list=Array.isArray(result.data)?result.data:(result.data&&result.data.devices)||[];
     return normalize(list);
   }
   async function getOld(){
-    const old=await request(API_OLD+"/devices",{method:"GET"},15000);
+    const old=await request(API_OLD+"/devices",{method:"GET"},12000);
     const list=(old.data&&old.data.devices)||old.data||[];
     return normalize(list);
   }
-
   async function fetchDevices(){
     const notes=[];
     let a=[],b=[];
@@ -102,26 +107,30 @@
     return list;
   }
 
-  async function control(device,capability){
-    try{
-      await request(API_NEW+"/device/control",{method:"POST",body:JSON.stringify({
-        requestId:uuid(),payload:{sku:device.sku,device:device.device,capability}
-      })},15000);
-    }catch(e){
-      await request(API_OLD+"/devices/control",{method:"PUT",body:JSON.stringify({
-        device:device.device,model:device.sku,
-        cmd:capability.instance==="powerSwitch"?{name:"turn",value:capability.value===1?"on":"off"}:
-            capability.instance==="brightness"?{name:"brightness",value:capability.value}:
-            {name:"color",value:{r:(capability.value>>16)&255,g:(capability.value>>8)&255,b:capability.value&255}}
-      })},15000);
-    }
+  async function controlNew(device,capability){
+    await request(API_NEW+"/device/control",{method:"POST",body:JSON.stringify({
+      requestId:uuid(),payload:{sku:device.sku,device:device.device,capability}
+    })},12000);
   }
+  async function controlOld(device,capability){
+    const cmd=capability.instance==="powerSwitch"?{name:"turn",value:capability.value===1?"on":"off"}:
+      capability.instance==="brightness"?{name:"brightness",value:capability.value}:
+      {name:"color",value:{r:(capability.value>>16)&255,g:(capability.value>>8)&255,b:capability.value&255}};
+    await request(API_OLD+"/devices/control",{method:"PUT",body:JSON.stringify({
+      device:device.device,model:device.sku,cmd:cmd
+    })},12000);
+  }
+  async function control(device,capability){
+    try{await controlNew(device,capability)}
+    catch(e){await controlOld(device,capability)}
+  }
+
   function targets(){return devices.filter(function(d){return picked[idOf(d)]})}
   function render(){
     const el=$("goveeList");
     if(!el)return;
     if(!devices.length){el.textContent=lastError||"No Govee devices returned for this key.";return}
-    var html="<div>"+devices.length+" devices</div>";
+    var html="<div>"+devices.length+" devices. Checked ones follow the journey.</div>";
     devices.forEach(function(d){
       const id=idOf(d);
       const rgb=canColor(d)?"RGB":"on/off";
@@ -138,6 +147,7 @@
       };
     });
   }
+
   async function loadLights(ev){
     if(ev){if(ev.preventDefault)ev.preventDefault();if(ev.stopPropagation)ev.stopPropagation()}
     if(loading){box("Still talking to Govee…");return}
@@ -160,6 +170,7 @@
       picked=saved;
       if(!Object.keys(picked).length)devices.forEach(function(d){picked[idOf(d)]=true});
       savePicked();
+      saveDevices();
       render();
       line(devices.length+" Govee devices loaded");
     }catch(e){
@@ -170,49 +181,103 @@
       if($("goveeLoad"))$("goveeLoad").disabled=false;
     }
   }
-  async function follow(i){
-    if(!journeyOn())return;
+
+  async function paint(i,force){
     const on=$("goveeOn");
-    if(!on||!on.checked)return;
+    if(!force&&on&&!on.checked)return;
     if(!window.C||i<0||!C[i])return;
-    last=i;
+    if(!devices.length){
+      try{devices=JSON.parse(localStorage.getItem(LS_DEVICES)||"[]")}catch(e){devices=[]}
+    }
     const list=targets();
-    if(!list.length||busy)return;
+    if(!list.length){
+      line("No Govee lights selected. Load Lights first.");
+      return;
+    }
+    if(busy){last=i;return}
     busy=true;
+    last=i;
     const hex=C[i][4];
     const rgb=hexInt(hex);
     const bright=Math.max(10,Math.min(100,Number(($("goveeBright")||{}).value)||70));
-    line(C[i][0]+" lights · "+hex);
+    line("Setting "+list.length+" lights to "+C[i][0]+" "+hex);
+    let ok=0,fail="";
     try{
-      await Promise.all(list.map(async function(d){
-        try{await control(d,{type:"devices.capabilities.on_off",instance:"powerSwitch",value:1})}catch(e){}
-        try{await control(d,{type:"devices.capabilities.range",instance:"brightness",value:bright})}catch(e){}
-        if(canColor(d))await control(d,{type:"devices.capabilities.color_setting",instance:"colorRgb",value:rgb});
-      }));
-    }catch(e){line("Govee: "+(e.message||"color failed"))}
-    finally{
+      for(let n=0;n<list.length;n++){
+        const d=list[n];
+        const id=idOf(d);
+        try{
+          if(!powered[id]){
+            await control(d,{type:"devices.capabilities.on_off",instance:"powerSwitch",value:1});
+            await sleep(120);
+            await control(d,{type:"devices.capabilities.range",instance:"brightness",value:bright});
+            await sleep(120);
+            powered[id]=true;
+          }
+          if(canColor(d)){
+            await control(d,{type:"devices.capabilities.color_setting",instance:"colorRgb",value:rgb});
+          }
+          ok++;
+        }catch(e){
+          fail=(e&&e.message)||"control failed";
+        }
+        await sleep(80);
+      }
+      line(ok+" lights → "+C[i][0]+(fail?" · "+fail:""));
+    }finally{
       busy=false;
-      if(last!==i&&$("goveeOn")&&$("goveeOn").checked)follow(last);
+      if(last!==i)paint(last);
     }
   }
+
   async function allOff(){
     const list=targets().length?targets():devices;
     line("Turning Govee lights off");
     try{
-      await Promise.all(list.map(function(d){return control(d,{type:"devices.capabilities.on_off",instance:"powerSwitch",value:0}).catch(function(){})}));
+      for(let n=0;n<list.length;n++){
+        try{await control(list[n],{type:"devices.capabilities.on_off",instance:"powerSwitch",value:0})}catch(e){}
+        powered[idOf(list[n])]=false;
+        await sleep(80);
+      }
       line("Govee lights off");
     }catch(e){line(e.message||"Could not turn lights off")}
   }
 
-  window.goveeFollow=follow;
+  window.goveeFollow=function(i){return paint(i)};
   window.goveeLoadLights=loadLights;
   window.goveeAllOff=allOff;
+
+  function wrapFns(){
+    if(typeof current==="function"&&!current._goveeWrapped){
+      const orig=current;
+      window.current=function(i,d){orig(i,d);if(i>=0)paint(i)};
+      window.current._goveeWrapped=true;
+    }
+    if(typeof activate==="function"&&!activate._goveeWrapped){
+      const origA=activate;
+      window.activate=function(i,t){const r=origA(i,t);if(i>=0)paint(i);return r};
+      window.activate._goveeWrapped=true;
+    }
+    if(typeof start==="function"&&!start._goveeWrapped){
+      const origS=start;
+      window.start=function(){
+        const r=origS.apply(this,arguments);
+        setTimeout(function(){if(running()&&typeof cur==="number"&&cur>=0)paint(cur);else if(running())paint(0)},700);
+        return r;
+      };
+      window.start._goveeWrapped=true;
+    }
+  }
 
   function boot(){
     const keyEl=$("goveeKey");
     const saved=localStorage.getItem(LS_KEY);
     if(keyEl&&saved)keyEl.value=saved;
     if(localStorage.getItem("cj_goveeOn")==="0"&&$("goveeOn"))$("goveeOn").checked=false;
+    try{devices=JSON.parse(localStorage.getItem(LS_DEVICES)||"[]")}catch(e){devices=[]}
+    try{picked=JSON.parse(localStorage.getItem(LS_PICKED)||localStorage.getItem(LS_SELECTED)||"{}")}catch(e){picked={}}
+    try{names=JSON.parse(localStorage.getItem(LS_NAMES)||"{}")}catch(e){names={}}
+    if(devices.length)render();
     const loadBtn=$("goveeLoad");
     if(loadBtn){loadBtn.type="button";loadBtn.onclick=loadLights}
     const offBtn=$("goveeOff");
@@ -220,12 +285,9 @@
     if($("goveeBright")&&$("goveeBrightv"))$("goveeBright").addEventListener("input",function(){$("goveeBrightv").textContent=$("goveeBright").value+"%"});
     if(keyEl)keyEl.addEventListener("change",function(){const k=keyEl.value.trim();if(k)localStorage.setItem(LS_KEY,k)});
     if($("goveeOn"))$("goveeOn").onchange=function(){localStorage.setItem("cj_goveeOn",$("goveeOn").checked?"1":"0")};
-    if(typeof current==="function"&&!current._goveeWrapped){
-      const orig=current;
-      window.current=function(i,d){orig(i,d);if(journeyOn()&&i>=0)follow(i)};
-      window.current._goveeWrapped=true;
-    }
-    if(key()&&key().length>=8)setTimeout(function(){loadLights()},400);
+    wrapFns();
+    setTimeout(wrapFns,800);
+    if(key()&&key().length>=8&&!devices.length)setTimeout(function(){loadLights()},400);
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);
   else boot();
