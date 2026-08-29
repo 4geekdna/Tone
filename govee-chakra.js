@@ -83,6 +83,7 @@
     }
   }
   async function follow(i){
+    if(!window.run)return;
     const on=$("goveeOn");
     if(!on||!on.checked)return;
     if(!window.C||i<0||!C[i])return;
@@ -123,6 +124,28 @@
   window.goveeLoadLights=loadLights;
   window.goveeAllOff=allOff;
 
+  function stopAutoplay(){
+    const video=window.yt||$("player");
+    if(!video)return;
+    video.removeAttribute("autoplay");
+    if(!window.run){
+      try{video.pause();if(video.currentTime>0.2&&!window.run)video.currentTime=0}catch(e){}
+    }
+    window.unlockMedia=function(){
+      try{if(typeof audio==="function")audio()}catch(e){}
+      try{speechSynthesis.resume()}catch(e){}
+      if(!video)return;
+      video.setAttribute("playsinline","");
+      video.playsInline=true;
+      if(!(window.run&&!window.paused)){
+        try{video.pause()}catch(e){}
+        return;
+      }
+      const p=video.play();
+      if(p&&p.catch)p.catch(function(){});
+    };
+  }
+
   function boot(){
     const keyEl=$("goveeKey");
     const saved=localStorage.getItem(LS_KEY);
@@ -140,13 +163,20 @@
     if($("goveeOn"))$("goveeOn").onchange=function(){
       localStorage.setItem("cj_goveeOn",$("goveeOn").checked?"1":"0");
     };
-    if(saved)loadLights();
+
+    stopAutoplay();
+    const video=window.yt||$("player");
+    if(video){
+      video.addEventListener("loadedmetadata",stopAutoplay);
+      video.addEventListener("play",function(){if(!window.run){try{video.pause()}catch(e){}}});
+    }
+    if(typeof status==="function")status("Ready · tap Start Journey");
 
     if(typeof current==="function"&&!current._goveeWrapped){
       const orig=current;
       window.current=function(i,d){
         orig(i,d);
-        if(i>=0)follow(i);
+        if(window.run&&i>=0)follow(i);
       };
       window.current._goveeWrapped=true;
     }
