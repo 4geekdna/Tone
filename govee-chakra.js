@@ -7,6 +7,7 @@
   let devices=[],picked={},names={},busy=false,last=-1;
 
   const $=id=>document.getElementById(id);
+  function journeyOn(){const b=$("play");return !!(b&&b.textContent==="Running")}
   function uuid(){
     if(crypto.randomUUID)return crypto.randomUUID();
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,function(c){
@@ -83,7 +84,7 @@
     }
   }
   async function follow(i){
-    if(!window.run)return;
+    if(!journeyOn())return;
     const on=$("goveeOn");
     if(!on||!on.checked)return;
     if(!window.C||i<0||!C[i])return;
@@ -128,8 +129,8 @@
     const video=window.yt||$("player");
     if(!video)return;
     video.removeAttribute("autoplay");
-    if(!window.run){
-      try{video.pause();if(video.currentTime>0.2&&!window.run)video.currentTime=0}catch(e){}
+    if(!journeyOn()){
+      try{video.pause()}catch(e){}
     }
     window.unlockMedia=function(){
       try{if(typeof audio==="function")audio()}catch(e){}
@@ -137,7 +138,7 @@
       if(!video)return;
       video.setAttribute("playsinline","");
       video.playsInline=true;
-      if(!(window.run&&!window.paused)){
+      if(!journeyOn()){
         try{video.pause()}catch(e){}
         return;
       }
@@ -168,7 +169,9 @@
     const video=window.yt||$("player");
     if(video){
       video.addEventListener("loadedmetadata",stopAutoplay);
-      video.addEventListener("play",function(){if(!window.run){try{video.pause()}catch(e){}}});
+      video.addEventListener("play",function(){
+        if(!journeyOn()){try{video.pause()}catch(e){}}
+      });
     }
     if(typeof status==="function")status("Ready · tap Start Journey");
 
@@ -176,7 +179,7 @@
       const orig=current;
       window.current=function(i,d){
         orig(i,d);
-        if(window.run&&i>=0)follow(i);
+        if(journeyOn()&&i>=0)follow(i);
       };
       window.current._goveeWrapped=true;
     }
