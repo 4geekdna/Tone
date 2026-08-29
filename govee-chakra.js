@@ -116,7 +116,8 @@
       saveDevices();
       render();
       line(devices.length+" Govee devices loaded");
-      await paint(0,true);
+      const active=activeChakra();
+      await paint(active>=0?active:0,true);
     }catch(e){
       box(e.message||"Could not load Govee lights");
       line(e.message||"Could not load Govee lights");
@@ -129,7 +130,11 @@
   async function paint(i,force){
     const on=$("goveeOn");
     if(!force&&on&&!on.checked)return;
-    if(!window.C||i<0||!C[i])return;
+    const chakras=window.C||(typeof C!=="undefined"?C:null);
+    if(!chakras||i<0||!chakras[i]){
+      if(force)line("Chakra colors are not ready. Reload the page.");
+      return;
+    }
     if(!devices.length){
       try{devices=JSON.parse(localStorage.getItem(LS_DEVICES)||"[]")}catch(e){devices=[]}
     }
@@ -141,10 +146,11 @@
     if(busy){last=i;return}
     busy=true;
     last=i;
-    const hex=C[i][4];
+    const chakra=chakras[i];
+    const hex=chakra[4];
     const rgb=hexInt(hex);
     const bright=Math.max(10,Math.min(100,Number(($("goveeBright")||{}).value)||70));
-    line("Coloring "+list.length+" lights "+C[i][0]+" "+hex);
+    line("Coloring "+list.length+" lights "+chakra[0]+" "+hex);
     let ok=0,fail="";
     try{
       for(let n=0;n<list.length;n++){
@@ -165,7 +171,7 @@
         }
         await sleep(120);
       }
-      line(ok+" lights → "+C[i][0]+" "+hex+(fail?" · "+fail:""));
+      line(ok+" lights → "+chakra[0]+" "+hex+(fail?" · "+fail:""));
     }finally{
       busy=false;
       if(last!==i)paint(last,force);
@@ -211,7 +217,7 @@
       const i=activeChakra();
       if(i>=0&&i!==last)paint(i);
     },700);
-    if(key()&&key().length>=8&&!devices.length)setTimeout(function(){loadLights()},500);
+    if(key()&&key().length>=8&&!devices.length)setTimeout(function(){if(!devices.length&&!loading)loadLights()},500);
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);
   else boot();
