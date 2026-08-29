@@ -3,20 +3,18 @@
   const LS1="cj_audio_out_1";
   const LS2="cj_audio_out_2";
   let outputs=[];
-
-  function note(msg){if(typeof status==="function")status(msg)}
+  function note(msg){const el=document.getElementById("status");if(el)el.textContent=msg}
   function isiPhone(){return /iPhone|iPad|iPod/i.test(navigator.userAgent)}
   function canPick(){
     const v=$("player");
     return !!(v&&v.setSinkId)||!!(navigator.mediaDevices&&navigator.mediaDevices.selectAudioOutput);
   }
-
   function fillSelect(sel, selected, extraLabel){
     if(!sel)return;
-    const opts=['<option value="">System default</option>'];
+    const opts=["<option value=''>System default</option>"];
     outputs.forEach(d=>{
       const label=d.label||"Bluetooth device";
-      opts.push('<option value="'+d.deviceId+'"'+(selected===d.deviceId?" selected":"")+">'+label+"</option>");
+      opts.push("<option value='"+d.deviceId+"'"+(selected===d.deviceId?" selected":"")+">"+label+"</option>");
     });
     sel.innerHTML=opts.join("");
     if(selected)sel.value=selected;
@@ -26,7 +24,6 @@
       sel.appendChild(o);
     }
   }
-
   async function listOutputs(){
     if(!navigator.mediaDevices||!navigator.mediaDevices.enumerateDevices)return [];
     try{
@@ -37,7 +34,6 @@
     fillSelect($("out2"), localStorage.getItem(LS2)||"");
     return outputs;
   }
-
   async function chooseOne(which){
     try{
       if(navigator.mediaDevices&&navigator.mediaDevices.selectAudioOutput){
@@ -58,20 +54,14 @@
     await listOutputs();
     if(!outputs.length)note(isiPhone()?"iPhone Safari cannot pick Bluetooth from a webpage. Use Share Audio below.":"No extra audio outputs found. Connect AirPods, then tap Refresh devices.");
   }
-
   async function applyOutputs(){
     const video=$("player");
     const id1=($("out1")&&$("out1").value)||"";
     const id2=($("out2")&&$("out2").value)||"";
     if($("out1"))localStorage.setItem(LS1,id1);
     if($("out2"))localStorage.setItem(LS2,id2);
-    try{
-      if(video&&video.setSinkId)await video.setSinkId(id1||"");
-    }catch(e){note("Could not move video audio: "+(e.message||e))}
-    try{
-      if(window.ctx&&window.ctx.setSinkId)await window.ctx.setSinkId(id1||"");
-    }catch(e){}
-
+    try{if(video&&video.setSinkId)await video.setSinkId(id1||"")}catch(e){note("Could not move video audio: "+(e.message||e))}
+    try{if(window.ctx&&window.ctx.setSinkId)await window.ctx.setSinkId(id1||"")}catch(e){}
     let extra=$("playerTwin");
     const wantSecond=id2&&id2!==id1;
     if(wantSecond&&video&&video.captureStream){
@@ -83,11 +73,8 @@
         document.body.appendChild(extra);
         video.addEventListener("play",()=>{if(extra.srcObject)extra.play().catch(()=>{})});
         video.addEventListener("pause",()=>{try{extra.pause()}catch(e){}});
-        video.addEventListener("seeked",()=>{try{extra.currentTime=video.currentTime}catch(e){}});
       }
-      if(!extra.srcObject){
-        try{extra.srcObject=video.captureStream()}catch(e){}
-      }
+      if(!extra.srcObject){try{extra.srcObject=video.captureStream()}catch(e){}}
       try{if(extra.setSinkId)await extra.setSinkId(id2)}catch(e){note("Second headphone not available in this browser")}
       extra.volume=video.volume;
       if(!video.paused)extra.play().catch(()=>{});
@@ -95,19 +82,13 @@
       try{extra.pause();extra.srcObject=null}catch(e){}
     }
   }
-
   function showHelp(){
-    const box=$("audioHelp");
-    if(!box)return;
-    if(isiPhone()){
-      box.innerHTML="iPhone cannot let a website pick AirPods directly. To use <b>two pairs</b>:<br>1. Connect the first AirPods in Settings → Bluetooth.<br>2. Swipe to Control Center.<br>3. Touch and hold the audio card (the one with the triangle).<br>4. Tap <b>Share Audio</b>.<br>5. Choose the second AirPods and tap the checkmark.<br>Both pairs then play whatever this page sends.";
-    }else if(canPick()){
-      box.textContent="Pick Headphone 1 and Headphone 2, then tap Apply. Chrome can send the journey to two paired Bluetooth devices. On iPhone use Share Audio instead.";
-    }else{
-      box.textContent="This browser uses the system output. Connect AirPods in Bluetooth settings, or open this page in Chrome to pick devices.";
-    }
+    const help=$("audioHelp");
+    if(!help)return;
+    if(isiPhone())help.textContent="iPhone cannot pick AirPods from a website. Use Control Center, Share Audio, then pick the second pair.";
+    else if(canPick())help.textContent="Pick Headphone 1 and Headphone 2, then tap Apply.";
+    else help.textContent="This browser uses the system output.";
   }
-
   function boot(){
     showHelp();
     listOutputs();
@@ -116,21 +97,13 @@
         try{const s=await navigator.mediaDevices.getUserMedia({audio:true});s.getTracks().forEach(t=>t.stop())}catch(e){}
       }
       const list=await listOutputs();
-      note(list.length?list.length+" output devices found":"No named outputs yet. Connect AirPods and try again.");
+      note(list.length?list.length+" output devices found":"No named outputs yet.");
     };
-    if($("outPick1"))$("outPick1").onclick=()=>chooseOne("1");
-    if($("outPick2"))$("outPick2").onclick=()=>chooseOne("2");
-    if($("outApply"))$("outApply").onclick=async function(){await applyOutputs();note("Audio output updated")};
+    if($("outPick1"))$("outPick1").onclick=function(){chooseOne("1")};
+    if($("outPick2"))$("outPick2").onclick=function(){chooseOne("2")};
+    if($("outApply"))$("outApply").onclick=function(){applyOutputs().then(function(){note("Audio output updated")})};
     if($("out1"))$("out1").onchange=applyOutputs;
     if($("out2"))$("out2").onchange=applyOutputs;
-    const video=$("player");
-    if(video){
-      video.addEventListener("volumechange",function(){
-        const twin=$("playerTwin");
-        if(twin)twin.volume=video.volume;
-      });
-    }
-    if(navigator.mediaDevices)navigator.mediaDevices.addEventListener("devicechange",listOutputs);
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);
   else boot();
