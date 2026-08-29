@@ -5,16 +5,12 @@
   const LS_NAMES="govee-custom-names";
   const LS_SELECTED="govee-selected";
   const LS_PICKED="cj_govee_picked";
-  let devices=[],picked={},names={},busy=false,last=-1;
+  let devices=[],picked={},names={},busy=false,last=-1,lastError="";
 
   const $=id=>document.getElementById(id);
   function journeyOn(){const b=$("play");return !!(b&&b.textContent==="Running")}
-  function say(msg){
-    const box=$("goveeList");
-    if(box)box.textContent=msg;
-    const line=$("status");
-    if(line)line.textContent=msg;
-  }
+  function line(msg){const el=$("status");if(el)el.textContent=msg}
+  function box(msg){const el=$("goveeList");if(el)el.textContent=msg}
   function key(){
     const typed=((($("goveeKey")||{}).value)||"").trim();
     const saved=(localStorage.getItem(LS_KEY)||"").trim();
@@ -31,8 +27,7 @@
   function canColor(d){
     const caps=d.capabilities||[];
     if(caps.some(c=>c&&(c.instance==="colorRgb"||c.instance==="color")))return true;
-    const cmds=d.supportCmds||[];
-    return cmds.indexOf("color")>=0;
+    return (d.supportCmds||[]).indexOf("color")>=0;
   }
   function idOf(d){return d.device||d.sku||d.model}
   function nameOf(d){return names[idOf(d)]||d.deviceName||d.sku||d.model||"Light"}
@@ -46,12 +41,8 @@
     }));
     let body=null;
     try{body=await res.json()}catch(e){}
-    if(!res.ok){
-      throw new Error((body&&(body.message||body.msg))||("Govee HTTP "+res.status));
-    }
-    if(body&&body.code&&body.code!==200){
-      throw new Error(body.message||body.msg||("Govee code "+body.code));
-    }
+    if(!res.ok)throw new Error((body&&(body.message||body.msg))||("Govee HTTP "+res.status));
+    if(body&&body.code&&body.code!==200)throw new Error(body.message||body.msg||("Govee code "+body.code));
     return body||{};
   }
 
@@ -60,23 +51,14 @@
       const result=await request(API+"/user/devices",{method:"GET"});
       const list=Array.isArray(result.data)?result.data:(result.data&&result.data.devices)||[];
       if(list.length)return list;
-    }catch(e){
-      lastError=e.message;
-    }
+    }catch(e){lastError=e.message}
     const old=await request(API_OLD+"/devices",{method:"GET"});
     const list=(old.data&&old.data.devices)||old.data||[];
     return (list||[]).map(function(d){
-      return {
-        sku:d.sku||d.model,
-        device:d.device,
-        deviceName:d.deviceName,
-        supportCmds:d.supportCmds||[],
-        capabilities:d.capabilities||[]
-      };
+      return {sku:d.sku||d.model,device:d.device,deviceName:d.deviceName,supportCmds:d.supportCmds||[],capabilities:d.capabilities||[]};
     });
   }
 
-  let lastError="";
   async function control(device,capability){
     await request(API+"/device/control",{method:"POST",body:JSON.stringify({
       requestId:uuid(),
@@ -85,21 +67,18 @@
   }
   function targets(){return devices.filter(d=>picked[idOf(d)])}
   function render(){
-    const box=$("goveeList");
-    if(!box)return;
-    if(!devices.length){
-      box.textContent=lastError||"No Govee devices returned for this key.";
-      return;
-    }
-    box.innerHTML=devices.map(d=>{
+    const el=$("goveeList");
+    if(!el)return;
+    if(!devices.length){el.textContent=lastError||"No Govee devices returned for this key.";return}
+    el.innerHTML=devices.map(d=>{
       const id=idOf(d);
       const rgb=canColor(d)?"RGB":"no color";
       return '<label style="display:flex;gap:8px;align-items:center;margin:6px 0;color:#ddd"><input type="checkbox" data-govee="'+id+'" '+(picked[id]?"checked":"")+"> '+nameOf(d)+' <span style="color:#888">'+(d.sku||"")+' · '+rgb+"</span></label>";
     }).join("");
-    box.querySelectorAll("[data-govee]").forEach(el=>{
-      el.onchange=function(){
-        if(el.checked)picked[el.dataset.govee]=true;
-        else delete picked[el.dataset.govee];
+    el.querySelectorAll("[data-govee]").forEach(function(cb){
+      cb.onchange=function(){
+        if(cb.checked)picked[cb.dataset.govee]=true;
+        else delete picked[cb.dataset.govee];
         savePicked();
       };
     });
@@ -108,12 +87,14 @@
     if(ev&&ev.preventDefault)ev.preventDefault();
     const k=key();
     if(k.length<8){
-      say("Paste your Govee API key above, then tap Load Lights.");
+      box("Paste your Govee API key above, then tap Load Lights.");
+      line("Govee key missing");
       return;
     }
     if($("goveeKey"))$("goveeKey").value=k;
     if($("goveeLoad"))$("goveeLoad").disabled=true;
-    say("Loading lights from Govee…");
+    box("Loading lights from Govee…");
+    line("Loading Govee lights");
     try{
       localStorage.setItem(LS_KEY,k);
       try{names=JSON.parse(localStorage.getItem(LS_NAMES)||"{}")}catch(e){names={}}
@@ -129,10 +110,11 @@
       savePicked();
       render();
       const rgb=devices.filter(canColor).length;
-      say(devices.length+" Govee device"+(devices.length===1?"":"s")+" loaded · "+rgb+" can change color");
+      line(devices.length+" Govee device"+(devices.length===1?"":"s")+" · "+rgb+" RGB");
     }catch(e){
       lastError=e.message||"Could not load Govee lights";
-      say(lastError+("/user/devices failed. Check the key and that this phone can reach Govee."));
+      box(lastError);
+      line(lastError);
     }finally{
       if($("goveeLoad"))$("goveeLoad").disabled=false;
     }
@@ -150,7 +132,7 @@
     const hex=C[i][4];
     const rgb=hexInt(hex);
     const bright=Math.max(10,Math.min(100,Number(($("goveeBright")||{}).value)||70));
-    say(C[i][0]+" lights · "+hex);
+    line(C[i][0]+" lights · "+hex);
     try{
       await Promise.all(list.map(async function(d){
         try{await control(d,{type:"devices.capabilities.on_off",instance:"powerSwitch",value:1})}catch(e){}
@@ -158,7 +140,7 @@
         if(canColor(d))await control(d,{type:"devices.capabilities.color_setting",instance:"colorRgb",value:rgb});
       }));
     }catch(e){
-      say("Govee: "+(e.message||"color failed"));
+      line("Govee: "+(e.message||"color failed"));
     }finally{
       busy=false;
       if(last!==i&&$("goveeOn")&&$("goveeOn").checked)follow(last);
@@ -166,13 +148,11 @@
   }
   async function allOff(){
     const list=targets().length?targets():devices;
-    say("Turning Govee lights off");
+    line("Turning Govee lights off");
     try{
       await Promise.all(list.map(d=>control(d,{type:"devices.capabilities.on_off",instance:"powerSwitch",value:0}).catch(function(){})));
-      say("Govee lights off");
-    }catch(e){
-      say(e.message||"Could not turn lights off");
-    }
+      line("Govee lights off");
+    }catch(e){line(e.message||"Could not turn lights off")}
   }
 
   window.goveeFollow=follow;
@@ -185,15 +165,9 @@
     if(keyEl&&saved)keyEl.value=saved;
     if(localStorage.getItem("cj_goveeOn")==="0"&&$("goveeOn"))$("goveeOn").checked=false;
     const loadBtn=$("goveeLoad");
-    if(loadBtn){
-      loadBtn.type="button";
-      loadBtn.addEventListener("click",loadLights);
-    }
+    if(loadBtn){loadBtn.type="button";loadBtn.addEventListener("click",loadLights)}
     const offBtn=$("goveeOff");
-    if(offBtn){
-      offBtn.type="button";
-      offBtn.addEventListener("click",allOff);
-    }
+    if(offBtn){offBtn.type="button";offBtn.addEventListener("click",allOff)}
     if($("goveeBright")&&$("goveeBrightv")){
       $("goveeBright").addEventListener("input",function(){$("goveeBrightv").textContent=$("goveeBright").value+"%"});
     }
@@ -204,7 +178,6 @@
     if($("goveeOn"))$("goveeOn").onchange=function(){
       localStorage.setItem("cj_goveeOn",$("goveeOn").checked?"1":"0");
     };
-
     if(typeof current==="function"&&!current._goveeWrapped){
       const orig=current;
       window.current=function(i,d){
