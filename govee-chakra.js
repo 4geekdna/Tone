@@ -11,7 +11,6 @@
   function journeyOn(){const b=$("play");return !!(b&&b.textContent==="Running")}
   function line(msg){const el=$("status");if(el)el.textContent=msg}
   function box(msg){const el=$("goveeList");if(el)el.textContent=msg}
-  function isiPhone(){return /iPhone|iPad|iPod/i.test(navigator.userAgent)}
   function key(){
     const typed=((($("goveeKey")||{}).value)||"").trim();
     const saved=(localStorage.getItem(LS_KEY)||"").trim();
@@ -27,7 +26,7 @@
   function hexInt(hex){return parseInt(String(hex||"#ffffff").replace("#",""),16)}
   function canColor(d){
     const caps=d.capabilities||[];
-    if(caps.some(c=>c&&(c.instance==="colorRgb"||c.instance==="color")))return true;
+    if(caps.some(function(c){return c&&(c.instance==="colorRgb"||c.instance==="color")}))return true;
     return (d.supportCmds||[]).indexOf("color")>=0;
   }
   function idOf(d){return d.device||d.sku||d.model}
@@ -36,19 +35,35 @@
   function normalize(list){
     return (list||[]).map(function(d){
       return {sku:d.sku||d.model,device:d.device,deviceName:d.deviceName,supportCmds:d.supportCmds||[],capabilities:d.capabilities||[]};
+    }).filter(function(d){return d.device||d.sku});
+  }
+  function merge(a,b){
+    const map={};
+    a.concat(b).forEach(function(d){
+      const id=idOf(d);
+      if(!id)return;
+      if(!map[id])map[id]=d;
+      else {
+        if((d.capabilities||[]).length>(map[id].capabilities||[]).length)map[id].capabilities=d.capabilities;
+        if(!map[id].deviceName&&d.deviceName)map[id].deviceName=d.deviceName;
+      }
     });
+    return Object.keys(map).map(function(k){return map[k]});
   }
 
   async function request(url,options,ms){
     const k=key();
     if(!k)throw new Error("Enter your Govee API key first");
     const ctrl=new AbortController();
-    const timer=setTimeout(function(){ctrl.abort()},ms||6000);
+    const timer=setTimeout(function(){ctrl.abort()},ms||15000);
     const method=(options&&options.method)||"GET";
-    const headers={"Govee-API-Key":k};
-    if(method!=="GET")headers["Content-Type"]="application/json";
     try{
-      const res=await fetch(url,Object.assign({},options,{method:method,signal:ctrl.signal,headers:Object.assign(headers,options&&options.headers||{})}));
+      const res=await fetch(url,{
+        method:method,
+        signal:ctrl.signal,
+        headers:{"Content-Type":"application/json","Govee-API-Key":k},
+        body:options&&options.body
+      });
       const text=await res.text();
       let body=null;
       if(text){try{body=JSON.parse(text)}catch(e){body={raw:text}}}
@@ -65,55 +80,56 @@
   }
 
   async function getNew(){
-    const result=await request(API_NEW+"/user/devices",{method:"GET"},6000);
+    const result=await request(API_NEW+"/user/devices",{method:"GET"},15000);
     const list=Array.isArray(result.data)?result.data:(result.data&&result.data.devices)||[];
     return normalize(list);
   }
   async function getOld(){
-    const old=await request(API_OLD+"/devices",{method:"GET"},6000);
+    const old=await request(API_OLD+"/devices",{method:"GET"},15000);
     const list=(old.data&&old.data.devices)||old.data||[];
     return normalize(list);
   }
+
   async function fetchDevices(){
-    const errors=[];
-    const tries=isiPhone()
-      ?[{name:"classic Govee API",fn:getOld},{name:"new Govee API",fn:getNew}]
-      :[{name:"new Govee API",fn:getNew},{name:"classic Govee API",fn:getOld}];
-    for(let i=0;i<tries.length;i++){
-      try{
-        box("Calling "+tries[i].name+"…");
-        const list=await tries[i].fn();
-        if(list&&list.length)return list;
-        errors.push(tries[i].name+": zero devices");
-      }catch(e){errors.push(tries[i].name+": "+(e.message||e))}
-    }
-    throw new Error(errors.join(" | "));
+    const notes=[];
+    let a=[],b=[];
+    box("Asking Govee for every device…");
+    try{a=await getNew();notes.push("new API "+a.length)}catch(e){notes.push("new API "+(e.message||e))}
+    try{b=await getOld();notes.push("classic API "+b.length)}catch(e){notes.push("classic API "+(e.message||e))}
+    const list=merge(a,b);
+    if(!list.length)throw new Error(notes.join(" | "));
+    lastError=notes.join(" · ");
+    return list;
   }
 
   async function control(device,capability){
     try{
       await request(API_NEW+"/device/control",{method:"POST",body:JSON.stringify({
         requestId:uuid(),payload:{sku:device.sku,device:device.device,capability}
-      })},6000);
+      })},15000);
     }catch(e){
       await request(API_OLD+"/devices/control",{method:"PUT",body:JSON.stringify({
         device:device.device,model:device.sku,
         cmd:capability.instance==="powerSwitch"?{name:"turn",value:capability.value===1?"on":"off"}:
             capability.instance==="brightness"?{name:"brightness",value:capability.value}:
             {name:"color",value:{r:(capability.value>>16)&255,g:(capability.value>>8)&255,b:capability.value&255}}
-      })},6000);
+      })},15000);
     }
   }
-  function targets(){return devices.filter(d=>picked[idOf(d)])}
+  function targets(){return devices.filter(function(d){return picked[idOf(d)]})}
   function render(){
     const el=$("goveeList");
     if(!el)return;
     if(!devices.length){el.textContent=lastError||"No Govee devices returned for this key.";return}
-    el.innerHTML=devices.map(d=>{
+    var html="<div>"+devices.length+" devices</div>";
+    devices.forEach(function(d){
       const id=idOf(d);
-      const rgb=canColor(d)?"RGB":"no color";
-      return "<label style='display:flex;gap:8px;align-items:center;margin:6px 0;color:#ddd'><input type='checkbox' data-govee='"+id+"' "+(picked[id]?"checked":"")+"> "+nameOf(d)+" <span style='color:#888'>"+(d.sku||"")+" · "+rgb+"</span></label>";
-    }).join("");
+      const rgb=canColor(d)?"RGB":"on/off";
+      html+="<label style='display:flex;gap:8px;align-items:center;margin:6px 0;color:#ddd'>";
+      html+="<input type='checkbox' data-govee='"+id+"' "+(picked[id]?"checked":"")+"> ";
+      html+=nameOf(d)+" <span style='color:#888'>"+(d.sku||"")+" · "+rgb+"</span></label>";
+    });
+    el.innerHTML=html;
     el.querySelectorAll("[data-govee]").forEach(function(cb){
       cb.onchange=function(){
         if(cb.checked)picked[cb.dataset.govee]=true;
@@ -127,7 +143,7 @@
     if(loading){box("Still talking to Govee…");return}
     const k=key();
     box(k.length<8?"Paste the Govee API key in the box above.":"Tapped Load Lights.");
-    line(k.length<8?"Govee key missing":"Loading Govee lights");
+    line(k.length<8?"Govee key missing":"Loading every Govee device");
     if(k.length<8)return;
     if($("goveeKey"))$("goveeKey").value=k;
     loading=true;
@@ -135,7 +151,6 @@
     try{
       localStorage.setItem(LS_KEY,k);
       try{names=JSON.parse(localStorage.getItem(LS_NAMES)||"{}")}catch(e){names={}}
-      lastError="";
       devices=await fetchDevices();
       let saved={};
       try{saved=JSON.parse(localStorage.getItem(LS_PICKED)||"{}")}catch(e){}
@@ -143,11 +158,10 @@
         try{saved=JSON.parse(localStorage.getItem(LS_SELECTED)||"{}")}catch(e){}
       }
       picked=saved;
-      if(!Object.keys(picked).length)devices.forEach(d=>picked[idOf(d)]=true);
+      if(!Object.keys(picked).length)devices.forEach(function(d){picked[idOf(d)]=true});
       savePicked();
       render();
-      const rgb=devices.filter(canColor).length;
-      line(devices.length+" Govee device"+(devices.length===1?"":"s")+" · "+rgb+" RGB");
+      line(devices.length+" Govee devices loaded");
     }catch(e){
       lastError=e.message||"Could not load Govee lights";
       box(lastError);line(lastError);
@@ -185,7 +199,7 @@
     const list=targets().length?targets():devices;
     line("Turning Govee lights off");
     try{
-      await Promise.all(list.map(d=>control(d,{type:"devices.capabilities.on_off",instance:"powerSwitch",value:0}).catch(function(){})));
+      await Promise.all(list.map(function(d){return control(d,{type:"devices.capabilities.on_off",instance:"powerSwitch",value:0}).catch(function(){})}));
       line("Govee lights off");
     }catch(e){line(e.message||"Could not turn lights off")}
   }
@@ -194,18 +208,15 @@
   window.goveeLoadLights=loadLights;
   window.goveeAllOff=allOff;
 
-  function bind(){
-    const loadBtn=$("goveeLoad");
-    if(loadBtn&&!loadBtn._goveeBound){loadBtn._goveeBound=true;loadBtn.type="button";loadBtn.addEventListener("click",loadLights,true)}
-    const offBtn=$("goveeOff");
-    if(offBtn&&!offBtn._goveeBound){offBtn._goveeBound=true;offBtn.type="button";offBtn.addEventListener("click",allOff,true)}
-  }
   function boot(){
     const keyEl=$("goveeKey");
     const saved=localStorage.getItem(LS_KEY);
     if(keyEl&&saved)keyEl.value=saved;
     if(localStorage.getItem("cj_goveeOn")==="0"&&$("goveeOn"))$("goveeOn").checked=false;
-    bind();
+    const loadBtn=$("goveeLoad");
+    if(loadBtn){loadBtn.type="button";loadBtn.onclick=loadLights}
+    const offBtn=$("goveeOff");
+    if(offBtn){offBtn.type="button";offBtn.onclick=allOff}
     if($("goveeBright")&&$("goveeBrightv"))$("goveeBright").addEventListener("input",function(){$("goveeBrightv").textContent=$("goveeBright").value+"%"});
     if(keyEl)keyEl.addEventListener("change",function(){const k=keyEl.value.trim();if(k)localStorage.setItem(LS_KEY,k)});
     if($("goveeOn"))$("goveeOn").onchange=function(){localStorage.setItem("cj_goveeOn",$("goveeOn").checked?"1":"0")};
@@ -214,6 +225,7 @@
       window.current=function(i,d){orig(i,d);if(journeyOn()&&i>=0)follow(i)};
       window.current._goveeWrapped=true;
     }
+    if(key()&&key().length>=8)setTimeout(function(){loadLights()},400);
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);
   else boot();
