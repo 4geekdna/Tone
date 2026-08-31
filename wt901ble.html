@@ -1,36 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#0b1020" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
 <title>WT901BLE Web Bluetooth</title>
 <style>
 :root{--bg:#0b1020;--card:#151c30;--card2:#10182a;--text:#f7f9fc;--muted:#9ba9c2;--accent:#4f8cff;--good:#2dd4bf;--bad:#fb7185;--border:#27324d}
-*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0b1020,#0e1426 50%,#0b1020);color:var(--text);min-height:100vh}
-.wrap{max-width:980px;margin:0 auto;padding:24px 16px 56px} h1{margin:0;font-size:clamp(30px,6vw,48px)} .subtitle{color:var(--muted);margin-top:7px;line-height:1.45}
-.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:22px 0} button{border:0;border-radius:14px;padding:13px 18px;font-size:16px;font-weight:700;cursor:pointer;color:white;background:var(--accent)} button.secondary{background:#243252} button.danger{background:#7f1d1d} button:disabled{opacity:.5;cursor:not-allowed}
-.status{display:flex;align-items:center;gap:10px;padding:14px 16px;border:1px solid var(--border);border-radius:16px;background:var(--card2);margin-bottom:14px}.dot{width:12px;height:12px;border-radius:50%;background:#64748b}.dot.good{background:var(--good)}.dot.bad{background:var(--bad)}
-.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 18px}.step{padding:10px;border-radius:12px;background:#121a2d;border:1px solid var(--border);font-size:12px;color:var(--muted)}.step.active{color:white;border-color:#4f8cff}.step.done{color:#8af2df;border-color:#2dd4bf}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{background:rgba(21,28,48,.95);border:1px solid var(--border);border-radius:18px;padding:18px}.card h2{font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:#c4d0e8;margin:0 0 12px}.metric{display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.06);padding:11px 0}.metric:first-of-type{border-top:0}.metric span:first-child{color:var(--muted)}.value{font-variant-numeric:tabular-nums;font-weight:800;font-size:21px}
-.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}.mini{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:13px}.mini b{display:block;font-size:17px;margin-top:4px;word-break:break-word}.mini span{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
-details{margin-top:16px;background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:14px}summary{cursor:pointer;font-weight:700}pre{white-space:pre-wrap;word-break:break-word;max-height:340px;overflow:auto;color:#b9f6d2;font-size:12px;line-height:1.5}.note{margin-top:16px;color:var(--muted);font-size:14px;line-height:1.5}.warning{margin:0 0 18px;padding:13px 15px;background:#2b1c12;border:1px solid #71421b;border-radius:14px;color:#ffd7a0;display:none}
-@media(max-width:760px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr 1fr}.toolbar button{flex:1 1 45%}}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0b1020,#0e1426 50%,#0b1020);color:var(--text);min-height:100vh}.wrap{max-width:980px;margin:auto;padding:24px 16px 56px}h1{margin:0;font-size:clamp(30px,6vw,48px)}.subtitle{color:var(--muted);margin-top:7px;line-height:1.45}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:22px 0}button{border:0;border-radius:14px;padding:13px 18px;font-size:16px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent)}button.secondary{background:#243252}button.danger{background:#7f1d1d}button:disabled{opacity:.5;cursor:not-allowed}.status{display:flex;align-items:center;gap:10px;padding:14px 16px;border:1px solid var(--border);border-radius:16px;background:var(--card2);margin-bottom:14px}.dot{width:12px;height:12px;border-radius:50%;background:#64748b}.dot.good{background:var(--good)}.dot.bad{background:var(--bad)}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px}.card h2{font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:#c4d0e8;margin:0 0 12px}.metric{display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.06);padding:11px 0}.metric:first-of-type{border-top:0}.metric span:first-child{color:var(--muted)}.value{font-variant-numeric:tabular-nums;font-weight:800;font-size:21px}.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}.mini{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:13px}.mini b{display:block;font-size:17px;margin-top:4px;word-break:break-word}.mini span{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}details{margin-top:16px;background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:14px}summary{cursor:pointer;font-weight:700}pre{white-space:pre-wrap;word-break:break-word;max-height:360px;overflow:auto;color:#b9f6d2;font-size:12px;line-height:1.5}.warning{display:none;margin:0 0 16px;padding:13px 15px;background:#2b1c12;border:1px solid #71421b;border-radius:14px;color:#ffd7a0}.note{margin-top:16px;color:var(--muted);font-size:14px;line-height:1.5}@media(max-width:760px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr 1fr}.toolbar button{flex:1 1 45%}}
 </style>
 </head>
 <body>
 <main class="wrap">
 <h1>WT901BLE</h1>
-<div class="subtitle">Chrome Web Bluetooth diagnostic viewer for WIT Motion sensors</div>
+<div class="subtitle">Chrome Web Bluetooth viewer for WIT Motion BLE sensors</div>
 <div id="warning" class="warning"></div>
-<div class="toolbar">
-<button id="connectBtn">Find & Connect Sensor</button>
-<button id="disconnectBtn" class="danger" disabled>Disconnect</button>
-<button id="zeroBtn" class="secondary" disabled>Zero / Reference</button>
-<button id="clearBtn" class="secondary">Clear Log</button>
-</div>
+<div class="toolbar"><button id="connectBtn">Find & Connect Sensor</button><button id="disconnectBtn" class="danger" disabled>Disconnect</button><button id="zeroBtn" class="secondary" disabled>Zero / Reference</button><button id="clearBtn" class="secondary">Clear Log</button></div>
 <div class="status"><div id="statusDot" class="dot"></div><div><div id="statusText"><b>Ready</b></div><div id="deviceName" class="subtitle">No sensor connected</div></div></div>
-<div class="steps"><div id="s1" class="step">1. Choose device</div><div id="s2" class="step">2. GATT connect</div><div id="s3" class="step">3. Find profile</div><div id="s4" class="step">4. Notifications</div></div>
 <section class="grid">
 <div class="card"><h2>Acceleration</h2><div class="metric"><span>X</span><span id="ax" class="value">0.000 g</span></div><div class="metric"><span>Y</span><span id="ay" class="value">0.000 g</span></div><div class="metric"><span>Z</span><span id="az" class="value">0.000 g</span></div></div>
 <div class="card"><h2>Gyroscope</h2><div class="metric"><span>X</span><span id="gx" class="value">0.00 °/s</span></div><div class="metric"><span>Y</span><span id="gy" class="value">0.00 °/s</span></div><div class="metric"><span>Z</span><span id="gz" class="value">0.00 °/s</span></div></div>
@@ -38,71 +24,84 @@ details{margin-top:16px;background:var(--card2);border:1px solid var(--border);b
 </section>
 <section class="meta"><div class="mini"><span>Packets</span><b id="packetCount">0</b></div><div class="mini"><span>Update Rate</span><b id="rate">0.0 Hz</b></div><div class="mini"><span>Profile</span><b id="profile">—</b></div><div class="mini"><span>Last Packet</span><b id="lastPacket">—</b></div></section>
 <details open><summary>Connection / raw BLE log</summary><pre id="log">Ready. Click Find & Connect Sensor.</pre></details>
-<div class="note">Version 2: chooser is no longer restricted to names beginning with “WT”. It supports both the common WIT FFE5 profile and the Microchip Transparent UART profile seen on some WIT-family Bluetooth hardware.</div>
+<div class="note">Version 3 requests WITMOTION's exact 128-bit BLE UUIDs ending in <b>5f9a34fb</b>, plus the standard Bluetooth-base and Microchip UART variants for compatibility.</div>
 </main>
 <script>
 (()=>{
-const FFE5_SERVICE='0000ffe5-0000-1000-8000-00805f9b34fb';
-const FFE4_NOTIFY='0000ffe4-0000-1000-8000-00805f9b34fb';
-const FFE9_WRITE='0000ffe9-0000-1000-8000-00805f9b34fb';
+const WIT_SERVICE='0000ffe5-0000-1000-8000-00805f9a34fb';
+const WIT_NOTIFY='0000ffe4-0000-1000-8000-00805f9a34fb';
+const WIT_WRITE='0000ffe9-0000-1000-8000-00805f9a34fb';
+const STD_SERVICE='0000ffe5-0000-1000-8000-00805f9b34fb';
+const STD_NOTIFY='0000ffe4-0000-1000-8000-00805f9b34fb';
+const STD_WRITE='0000ffe9-0000-1000-8000-00805f9b34fb';
 const UART_SERVICE='49535343-fe7d-4ae5-8fa9-9fafd205e455';
 const UART_TX='49535343-1e4d-4bd9-ba61-23c647249616';
 const UART_RX='49535343-8841-43f4-a8d4-ecbe34729bb3';
 let device=null,server=null,notifyCharacteristic=null,writeCharacteristic=null;
 let packetCount=0,packetWindow=0,windowStart=performance.now();
-let zero={roll:0,pitch:0,yaw:0},latest={roll:0,pitch:0,yaw:0};
-let rxBuffer=[];
+let zero={roll:0,pitch:0,yaw:0},latest={roll:0,pitch:0,yaw:0},rxBuffer=[];
 const $=id=>document.getElementById(id),logEl=$('log');
 function log(m){const t=new Date().toLocaleTimeString();logEl.textContent+=`\n[${t}] ${m}`;logEl.scrollTop=logEl.scrollHeight}
-function status(t,type='neutral'){ $('statusText').innerHTML=`<b>${t}</b>`; $('statusDot').className='dot'+(type==='good'?' good':type==='bad'?' bad':'') }
-function steps(n){for(let i=1;i<=4;i++){const e=$('s'+i);e.className='step'+(i<n?' done':i===n?' active':'')}}
+function status(t,type='neutral'){$('statusText').innerHTML=`<b>${t}</b>`;$('statusDot').className='dot'+(type==='good'?' good':type==='bad'?' bad':'')}
 function warn(t){$('warning').textContent=t;$('warning').style.display='block'}
-function normUUID(u){return u.toLowerCase()}
-function hex(view){return Array.from({length:view.byteLength},(_,i)=>view.getUint8(i).toString(16).padStart(2,'0').toUpperCase()).join(' ')}
+function hex(v){return Array.from({length:v.byteLength},(_,i)=>v.getUint8(i).toString(16).padStart(2,'0').toUpperCase()).join(' ')}
 async function connect(){
- if(!window.isSecureContext){warn('This page must be opened from HTTPS. GitHub Pages is HTTPS, so use the github.io link.');status('HTTPS required','bad');return}
- if(!navigator.bluetooth){warn('navigator.bluetooth is not available. Use desktop Chrome or supported Chrome/Chromium hardware. Chrome on iPhone/iPad does not expose Web Bluetooth.');status('Web Bluetooth unavailable','bad');return}
- $('warning').style.display='none';logEl.textContent='Starting connection…';packetCount=0;$('packetCount').textContent='0';$('profile').textContent='—';steps(1);
+ if(!window.isSecureContext){warn('HTTPS is required. Use the GitHub Pages link.');return}
+ if(!navigator.bluetooth){warn('Web Bluetooth is not available in this browser. Use desktop Chrome/Chromium.');return}
+ $('warning').style.display='none';logEl.textContent='Starting connection…';packetCount=0;$('packetCount').textContent='0';$('profile').textContent='—';rxBuffer=[];
  try{
-   status('Choose your sensor…');
-   device=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:[FFE5_SERVICE,UART_SERVICE,'device_information']});
-   $('deviceName').textContent=`${device.name||'Unnamed BLE device'} • ${device.id}`;log(`Selected: ${device.name||'(unnamed)'} id=${device.id}`);steps(2);
-   device.addEventListener('gattserverdisconnected',onDisconnected);
-   status('Connecting to GATT…');server=await device.gatt.connect();log('GATT connected');steps(3);
-   await detectProfile();
- }catch(e){status('Connection failed','bad');log(`ERROR ${e.name}: ${e.message}`);warn(`${e.name}: ${e.message}`);$('connectBtn').disabled=false;steps(1)}
+  status('Choose your sensor…');
+  device=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:[WIT_SERVICE,STD_SERVICE,UART_SERVICE,'device_information']});
+  $('deviceName').textContent=`${device.name||'Unnamed BLE device'} • ${device.id}`;log(`Selected: ${device.name||'(unnamed)'} id=${device.id}`);
+  device.addEventListener('gattserverdisconnected',onDisconnected);
+  status('Connecting to GATT…');server=await device.gatt.connect();log('GATT connected');
+  await detectProfile();
+ }catch(e){status('Connection failed','bad');log(`ERROR ${e.name}: ${e.message}`);warn(`${e.name}: ${e.message}`)}
+}
+async function tryProfile(label,serviceUUID,notifyUUID,writeUUID){
+ log(`Trying ${label}…`);
+ const s=await server.getPrimaryService(serviceUUID);
+ notifyCharacteristic=await s.getCharacteristic(notifyUUID);
+ try{writeCharacteristic=await s.getCharacteristic(writeUUID)}catch(e){writeCharacteristic=null;log(`${label}: write characteristic not found; receive-only mode`)}
+ $('profile').textContent=label;
+ await notifyCharacteristic.startNotifications();
+ notifyCharacteristic.addEventListener('characteristicvaluechanged',handleData);
+ $('connectBtn').disabled=true;$('disconnectBtn').disabled=false;$('zeroBtn').disabled=false;
+ status('Connected — waiting for data','good');log(`Notifications started on ${notifyUUID}`);return true;
 }
 async function detectProfile(){
- let errors=[];
- try{
-   log('Trying WIT FFE5 profile…');
-   const s=await server.getPrimaryService(FFE5_SERVICE);
-   notifyCharacteristic=await s.getCharacteristic(FFE4_NOTIFY);
-   try{writeCharacteristic=await s.getCharacteristic(FFE9_WRITE)}catch(e){log('FFE9 write characteristic not found; receive-only mode.')}
-   $('profile').textContent='WIT FFE5';
-   await startNotify('WIT FFE5 / FFE4');return;
- }catch(e){errors.push(`FFE5: ${e.message}`);log(`FFE5 profile not available: ${e.message}`)}
- try{
-   log('Trying Microchip Transparent UART profile…');
-   const s=await server.getPrimaryService(UART_SERVICE);
-   notifyCharacteristic=await s.getCharacteristic(UART_TX);
-   try{writeCharacteristic=await s.getCharacteristic(UART_RX)}catch(e){log('UART RX write characteristic not found; receive-only mode.')}
-   $('profile').textContent='Microchip UART';
-   await startNotify('Microchip UART TX');return;
- }catch(e){errors.push(`UART: ${e.message}`);log(`UART profile not available: ${e.message}`)}
- log('Known profiles were not found. Attempting diagnostic service enumeration…');
- try{const services=await server.getPrimaryServices();for(const s of services){log(`Service ${s.uuid}`);try{const cs=await s.getCharacteristics();for(const c of cs)log(`  Characteristic ${c.uuid} notify=${c.properties.notify} indicate=${c.properties.indicate} write=${c.properties.write} writeNoResp=${c.properties.writeWithoutResponse}`)}catch(e){log(`  Cannot enumerate characteristics: ${e.message}`)}}}catch(e){log(`Enumeration failed: ${e.message}`)}
- status('Connected, but WIT data service not found','bad');warn('The Bluetooth link connected, but neither known WT901BLE data profile was exposed. Copy the Connection / raw BLE log and send it to me.');log(errors.join(' | '));
+ const profiles=[['WIT custom FFE5',WIT_SERVICE,WIT_NOTIFY,WIT_WRITE],['Standard-base FFE5',STD_SERVICE,STD_NOTIFY,STD_WRITE],['Microchip UART',UART_SERVICE,UART_TX,UART_RX]];
+ const errors=[];
+ for(const p of profiles){try{await tryProfile(...p);return}catch(e){errors.push(`${p[0]}: ${e.message}`);log(`${p[0]} unavailable: ${e.message}`)}}
+ status('Connected, but no known data service found','bad');warn('GATT connected, but no known WIT data profile was exposed. Send the log below.');log(errors.join(' | '));
 }
-async function startNotify(label){steps(4);status('Starting notifications…');await notifyCharacteristic.startNotifications();notifyCharacteristic.addEventListener('characteristicvaluechanged',handleData);$('connectBtn').disabled=true;$('disconnectBtn').disabled=false;$('zeroBtn').disabled=false;status('Connected — waiting for data','good');steps(5);log(`Notifications started: ${label}`)}
-function onDisconnected(){status('Disconnected','bad');$('connectBtn').disabled=false;$('disconnectBtn').disabled=true;$('zeroBtn').disabled=true;steps(1);log('Device disconnected')}
 function disconnect(){if(device?.gatt?.connected)device.gatt.disconnect()}
+function onDisconnected(){status('Disconnected','bad');$('connectBtn').disabled=false;$('disconnectBtn').disabled=true;$('zeroBtn').disabled=true;log('Device disconnected')}
 function i16(v,o){return v.getInt16(o,true)}
-function parse20(bytes){const v=new DataView(Uint8Array.from(bytes).buffer);if(v.byteLength<20||v.getUint8(0)!==0x55||v.getUint8(1)!==0x61)return false;const ax=i16(v,2)/32768*16,ay=i16(v,4)/32768*16,az=i16(v,6)/32768*16;const gx=i16(v,8)/32768*2000,gy=i16(v,10)/32768*2000,gz=i16(v,12)/32768*2000;const roll=i16(v,14)/32768*180,pitch=i16(v,16)/32768*180,yaw=i16(v,18)/32768*180;latest={roll,pitch,yaw};$('ax').textContent=`${ax.toFixed(3)} g`;$('ay').textContent=`${ay.toFixed(3)} g`;$('az').textContent=`${az.toFixed(3)} g`;$('gx').textContent=`${gx.toFixed(2)} °/s`;$('gy').textContent=`${gy.toFixed(2)} °/s`;$('gz').textContent=`${gz.toFixed(2)} °/s`;$('roll').textContent=`${(roll-zero.roll).toFixed(2)}°`;$('pitch').textContent=`${(pitch-zero.pitch).toFixed(2)}°`;$('yaw').textContent=`${normalize180(yaw-zero.yaw).toFixed(2)}°`;return true}
-function handleData(ev){const v=ev.target.value;packetCount++;packetWindow++;$('packetCount').textContent=packetCount;$('lastPacket').textContent=new Date().toLocaleTimeString();const now=performance.now();if(now-windowStart>=1000){$('rate').textContent=`${(packetWindow*1000/(now-windowStart)).toFixed(1)} Hz`;packetWindow=0;windowStart=now}log(`RX ${v.byteLength}B: ${hex(v)}`);const incoming=Array.from({length:v.byteLength},(_,i)=>v.getUint8(i));rxBuffer.push(...incoming);if(parse20(incoming)){status('Receiving sensor data','good');return}while(rxBuffer.length>=20){const idx=rxBuffer.findIndex((b,i)=>b===0x55&&rxBuffer[i+1]===0x61);if(idx<0){rxBuffer=rxBuffer.slice(-1);break}if(idx>0)rxBuffer.splice(0,idx);if(rxBuffer.length<20)break;const packet=rxBuffer.slice(0,20);if(parse20(packet)){rxBuffer.splice(0,20);status('Receiving sensor data','good')}else rxBuffer.shift()}}
 function normalize180(d){while(d>180)d-=360;while(d<-180)d+=360;return d}
+function parse20(bytes){
+ if(bytes.length<20||bytes[0]!==0x55||bytes[1]!==0x61)return false;
+ const v=new DataView(Uint8Array.from(bytes.slice(0,20)).buffer);
+ const ax=i16(v,2)/32768*16,ay=i16(v,4)/32768*16,az=i16(v,6)/32768*16;
+ const gx=i16(v,8)/32768*2000,gy=i16(v,10)/32768*2000,gz=i16(v,12)/32768*2000;
+ const roll=i16(v,14)/32768*180,pitch=i16(v,16)/32768*180,yaw=i16(v,18)/32768*180;
+ latest={roll,pitch,yaw};
+ $('ax').textContent=`${ax.toFixed(3)} g`;$('ay').textContent=`${ay.toFixed(3)} g`;$('az').textContent=`${az.toFixed(3)} g`;
+ $('gx').textContent=`${gx.toFixed(2)} °/s`;$('gy').textContent=`${gy.toFixed(2)} °/s`;$('gz').textContent=`${gz.toFixed(2)} °/s`;
+ $('roll').textContent=`${(roll-zero.roll).toFixed(2)}°`;$('pitch').textContent=`${(pitch-zero.pitch).toFixed(2)}°`;$('yaw').textContent=`${normalize180(yaw-zero.yaw).toFixed(2)}°`;
+ return true;
+}
+function handleData(ev){
+ const v=ev.target.value;packetCount++;packetWindow++;$('packetCount').textContent=packetCount;$('lastPacket').textContent=new Date().toLocaleTimeString();
+ const now=performance.now();if(now-windowStart>=1000){$('rate').textContent=`${(packetWindow*1000/(now-windowStart)).toFixed(1)} Hz`;packetWindow=0;windowStart=now}
+ log(`RX ${v.byteLength}B: ${hex(v)}`);
+ const incoming=Array.from({length:v.byteLength},(_,i)=>v.getUint8(i));
+ if(parse20(incoming)){status('Receiving sensor data','good');return}
+ rxBuffer.push(...incoming);
+ while(rxBuffer.length>=20){const idx=rxBuffer.findIndex((b,i)=>b===0x55&&rxBuffer[i+1]===0x61);if(idx<0){rxBuffer=rxBuffer.slice(-1);break}if(idx>0)rxBuffer.splice(0,idx);if(rxBuffer.length<20)break;if(parse20(rxBuffer.slice(0,20))){rxBuffer.splice(0,20);status('Receiving sensor data','good')}else rxBuffer.shift()}
+}
 $('connectBtn').addEventListener('click',connect);$('disconnectBtn').addEventListener('click',disconnect);$('zeroBtn').addEventListener('click',()=>{zero={...latest};log(`Reference set roll=${zero.roll.toFixed(2)} pitch=${zero.pitch.toFixed(2)} yaw=${zero.yaw.toFixed(2)}`)});$('clearBtn').addEventListener('click',()=>logEl.textContent='Log cleared.');
-if(!navigator.bluetooth){status('Web Bluetooth not detected','bad');warn('Web Bluetooth is not available in this browser. Use desktop Chrome/Chromium over HTTPS.')}else{navigator.bluetooth.getAvailability?.().then(a=>log(`Bluetooth adapter availability: ${a}`)).catch(()=>{})}
+if(!navigator.bluetooth){status('Web Bluetooth not detected','bad');warn('Use desktop Chrome/Chromium over HTTPS.')}
 })();
 </script>
 </body>
