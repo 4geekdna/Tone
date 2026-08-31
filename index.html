@@ -101,6 +101,7 @@
     .icon.bot    { background: rgba(52, 211, 153, 0.15); }
     .icon.ai     { background: rgba(167, 139, 250, 0.22); }
     .icon.lab    { background: rgba(96, 165, 250, 0.18); }
+    .icon.sensor { background: rgba(52, 211, 153, 0.2); }
     .card-body { flex: 1; min-width: 0; }
     .card-title {
       font-size: 16.5px; font-weight: 650; margin-bottom: 4px;
@@ -128,7 +129,7 @@
 </head>
 <body>
   <div class="top-bar">
-    <div class="version">v0.21</div>
+    <div class="version">v0.22</div>
     <div class="top-actions">
       <button class="top-btn" id="backBtn" type="button">← Back</button>
       <button class="top-btn" id="refreshBtn" type="button">Refresh</button>
@@ -258,6 +259,20 @@
           <div class="card-body">
             <div class="card-title">GPS POI Advanced</div>
             <div class="card-desc">Earlier multi-mirror Overpass + Gemini enrichment version.</div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">Sensors</div>
+      <div class="card-grid">
+        <a class="card" href="sensor-wit.html">
+          <div class="icon sensor">📡</div>
+          <div class="card-body">
+            <div class="card-title">Wit IMU <span class="tag">New</span></div>
+            <div class="card-desc">Web Bluetooth to WitMotion WT901BLE. Live roll/pitch/yaw, accel, gyro. Chrome/Android (not iOS Safari).</div>
           </div>
           <div class="arrow">→</div>
         </a>
