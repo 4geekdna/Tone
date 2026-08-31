@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>WT901BLE Web Bluetooth</title>
+  <style>
+    :root {
+      --bg:#0b1020;
+      --card:#151c30;
+      --card2:#10182a;
+      --text:#f7f9fc;
+      --muted:#9ba9c2;
+      --accent:#4f8cff;
+      --good:#2dd4bf;
+      --bad:#fb7185;
+      --border:#27324d;
+      --shadow:0 14px 36px rgba(0,0,0,.24);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      background:linear-gradient(180deg,#0b1020,#0e1426 50%,#0b1020);
+      color:var(--text);
+      min-height:100vh;
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:24px 16px 56px}
+    h1{margin:0;font-size:clamp(30px,6vw,48px)}
+    .subtitle{color:var(--muted);margin-top:7px;line-height:1.5}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:22px 0}
+    button{
+      border:0;border-radius:14px;padding:13px 18px;font-size:16px;font-weight:700;
+      cursor:pointer;color:white;background:var(--accent);box-shadow:var(--shadow)
+    }
+    button.secondary{background:#243252}
+    button.danger{background:#7f1d1d}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .status{
+      display:flex;align-items:center;gap:10px;padding:14px 16px;border:1px solid var(--border);
+      border-radius:16px;background:var(--card2);margin-bottom:18px
+    }
+    .dot{width:12px;height:12px;border-radius:999px;background:#64748b;box-shadow:0 0 0 4px rgba(100,116,139,.12)}
+    .dot.good{background:var(--good);box-shadow:0 0 0 4px rgba(45,212,191,.12)}
+    .dot.bad{background:var(--bad);box-shadow:0 0 0 4px rgba(251,113,133,.12)}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .card{background:rgba(21,28,48,.95);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+    .card h2{font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:#c4d0e8;margin:0 0 12px}
+    .metric{display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,.06);padding:11px 0}
+    .metric:first-of-type{border-top:0}
+    .metric span:first-child{color:var(--muted)}
+    .value{font-variant-numeric:tabular-nums;font-weight:800;font-size:21px}
+    .meta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+    .mini{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:13px}
+    .mini b{display:block;font-size:20px;margin-top:4px}
+    .mini span{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+    details{margin-top:16px;background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:14px}
+    summary{cursor:pointer;font-weight:700}
+    pre{white-space:pre-wrap;word-break:break-word;max-height:260px;overflow:auto;color:#b9f6d2;font-size:12px;line-height:1.5}
+    .note{margin-top:16px;color:var(--muted);font-size:14px;line-height:1.5}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}.meta{grid-template-columns:1fr 1fr}.toolbar button{flex:1 1 45%}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>WT901BLE</h1>
+    <div class="subtitle">Chrome Web Bluetooth viewer for WIT Motion BLE sensors</div>
+
+    <div class="toolbar">
+      <button id="connectBtn">Connect WT901BLE</button>
+      <button id="disconnectBtn" class="danger" disabled>Disconnect</button>
+      <button id="zeroBtn" class="secondary" disabled>Zero / Reference</button>
+      <button id="clearBtn" class="secondary">Clear Log</button>
+    </div>
+
+    <div class="status">
+      <div id="statusDot" class="dot"></div>
+      <div>
+        <div id="statusText"><b>Ready</b></div>
+        <div id="deviceName" class="subtitle">No sensor connected</div>
+      </div>
+    </div>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Acceleration</h2>
+        <div class="metric"><span>X</span><span id="ax" class="value">0.000 g</span></div>
+        <div class="metric"><span>Y</span><span id="ay" class="value">0.000 g</span></div>
+        <div class="metric"><span>Z</span><span id="az" class="value">0.000 g</span></div>
+      </div>
+
+      <div class="card">
+        <h2>Gyroscope</h2>
+        <div class="metric"><span>X</span><span id="gx" class="value">0.00 °/s</span></div>
+        <div class="metric"><span>Y</span><span id="gy" class="value">0.00 °/s</span></div>
+        <div class="metric"><span>Z</span><span id="gz" class="value">0.00 °/s</span></div>
+      </div>
+
+      <div class="card">
+        <h2>Orientation</h2>
+        <div class="metric"><span>Roll</span><span id="roll" class="value">0.00°</span></div>
+        <div class="metric"><span>Pitch</span><span id="pitch" class="value">0.00°</span></div>
+        <div class="metric"><span>Yaw</span><span id="yaw" class="value">0.00°</span></div>
+      </div>
+    </section>
+
+    <section class="meta">
+      <div class="mini"><span>Packets</span><b id="packetCount">0</b></div>
+      <div class="mini"><span>Update Rate</span><b id="rate">0.0 Hz</b></div>
+      <div class="mini"><span>Last Packet</span><b id="lastPacket">—</b></div>
+    </section>
+
+    <details open>
+      <summary>Raw BLE packet log</summary>
+      <pre id="log">Waiting for connection…</pre>
+    </details>
+
+    <div class="note">
+      Expected BLE profile: service FFE5, notifications FFE4, writes FFE9. The app also logs all discovered services and characteristics if the sensor profile differs.
+    </div>
+  </main>
+
+<script>
+(() => {
+  const SERVICE_UUID = 0xFFE5;
+  const NOTIFY_UUID = 0xFFE4;
+  const WRITE_UUID = 0xFFE9;
+
+  let device = null;
+  let server = null;
+  let notifyCharacteristic = null;
+  let writeCharacteristic = null;
+  let packetCount = 0;
+  let packetWindow = 0;
+  let windowStart = performance.now();
+  let zero = { roll:0, pitch:0, yaw:0 };
+  let latest = { roll:0, pitch:0, yaw:0 };
+
+  const $ = id => document.getElementById(id);
+  const logEl = $('log');
+
+  function log(message) {
+    const time = new Date().toLocaleTimeString();
+    logEl.textContent += `\n[${time}] ${message}`;
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function setStatus(text, type='neutral') {
+    $('statusText').innerHTML = `<b>${text}</b>`;
+    $('statusDot').className = 'dot' + (type === 'good' ? ' good' : type === 'bad' ? ' bad' : '');
+  }
+
+  function formatHex(view) {
+    const out = [];
+    for (let i=0;i<view.byteLength;i++) out.push(view.getUint8(i).toString(16).padStart(2,'0').toUpperCase());
+    return out.join(' ');
+  }
+
+  async function connect() {
+    if (!navigator.bluetooth) {
+      setStatus('Web Bluetooth unavailable', 'bad');
+      log('This browser does not expose navigator.bluetooth. Use a supported Chrome/Chromium browser over HTTPS.');
+      return;
+    }
+
+    try {
+      setStatus('Choose your WT901BLE…');
+      device = await navigator.bluetooth.requestDevice({
+        filters: [{ namePrefix: 'WT' }],
+        optionalServices: [SERVICE_UUID]
+      });
+
+      device.addEventListener('gattserverdisconnected', onDisconnected);
+      $('deviceName').textContent = device.name || 'WIT BLE sensor';
+      setStatus('Connecting…');
+
+      server = await device.gatt.connect();
+      log(`Connected to ${device.name || device.id}`);
+
+      const services = await server.getPrimaryServices();
+      for (const service of services) {
+        log(`Service ${service.uuid}`);
+        try {
+          const chars = await service.getCharacteristics();
+          for (const ch of chars) log(`  Characteristic ${ch.uuid} notify=${ch.properties.notify} write=${ch.properties.write || ch.properties.writeWithoutResponse}`);
+        } catch (e) {
+          log(`  Could not enumerate characteristics: ${e.message}`);
+        }
+      }
+
+      const service = await server.getPrimaryService(SERVICE_UUID);
+      notifyCharacteristic = await service.getCharacteristic(NOTIFY_UUID);
+      try { writeCharacteristic = await service.getCharacteristic(WRITE_UUID); } catch (_) {}
+
+      await notifyCharacteristic.startNotifications();
+      notifyCharacteristic.addEventListener('characteristicvaluechanged', handleData);
+
+      $('connectBtn').disabled = true;
+      $('disconnectBtn').disabled = false;
+      $('zeroBtn').disabled = false;
+      setStatus('Receiving sensor data', 'good');
+      log('Notifications started on FFE4');
+    } catch (error) {
+      setStatus('Connection failed', 'bad');
+      log(`ERROR: ${error.message}`);
+    }
+  }
+
+  function disconnect() {
+    if (device?.gatt?.connected) device.gatt.disconnect();
+  }
+
+  function onDisconnected() {
+    setStatus('Disconnected', 'bad');
+    $('deviceName').textContent = device?.name || 'No sensor connected';
+    $('connectBtn').disabled = false;
+    $('disconnectBtn').disabled = true;
+    $('zeroBtn').disabled = true;
+    notifyCharacteristic = null;
+    writeCharacteristic = null;
+    log('Sensor disconnected');
+  }
+
+  function i16(view, offset) {
+    return view.getInt16(offset, true);
+  }
+
+  function handleData(event) {
+    const view = event.target.value;
+    packetCount++;
+    packetWindow++;
+    $('packetCount').textContent = packetCount;
+    $('lastPacket').textContent = new Date().toLocaleTimeString();
+
+    const now = performance.now();
+    if (now - windowStart >= 1000) {
+      const hz = packetWindow * 1000 / (now - windowStart);
+      $('rate').textContent = `${hz.toFixed(1)} Hz`;
+      packetWindow = 0;
+      windowStart = now;
+    }
+
+    const hex = formatHex(view);
+    log(hex);
+
+    if (view.byteLength < 20) return;
+    if (view.getUint8(0) !== 0x55 || view.getUint8(1) !== 0x61) return;
+
+    const ax = i16(view,2) / 32768 * 16;
+    const ay = i16(view,4) / 32768 * 16;
+    const az = i16(view,6) / 32768 * 16;
+    const gx = i16(view,8) / 32768 * 2000;
+    const gy = i16(view,10) / 32768 * 2000;
+    const gz = i16(view,12) / 32768 * 2000;
+    const roll = i16(view,14) / 32768 * 180;
+    const pitch = i16(view,16) / 32768 * 180;
+    const yaw = i16(view,18) / 32768 * 180;
+
+    latest = { roll, pitch, yaw };
+
+    $('ax').textContent = `${ax.toFixed(3)} g`;
+    $('ay').textContent = `${ay.toFixed(3)} g`;
+    $('az').textContent = `${az.toFixed(3)} g`;
+    $('gx').textContent = `${gx.toFixed(2)} °/s`;
+    $('gy').textContent = `${gy.toFixed(2)} °/s`;
+    $('gz').textContent = `${gz.toFixed(2)} °/s`;
+    $('roll').textContent = `${(roll-zero.roll).toFixed(2)}°`;
+    $('pitch').textContent = `${(pitch-zero.pitch).toFixed(2)}°`;
+    $('yaw').textContent = `${normalize180(yaw-zero.yaw).toFixed(2)}°`;
+  }
+
+  function normalize180(deg) {
+    while (deg > 180) deg -= 360;
+    while (deg < -180) deg += 360;
+    return deg;
+  }
+
+  $('connectBtn').addEventListener('click', connect);
+  $('disconnectBtn').addEventListener('click', disconnect);
+  $('zeroBtn').addEventListener('click', () => {
+    zero = { ...latest };
+    log(`Reference set: roll=${zero.roll.toFixed(2)} pitch=${zero.pitch.toFixed(2)} yaw=${zero.yaw.toFixed(2)}`);
+  });
+  $('clearBtn').addEventListener('click', () => { logEl.textContent = 'Log cleared.'; });
+
+  if (!navigator.bluetooth) {
+    setStatus('Web Bluetooth not detected', 'bad');
+    logEl.textContent = 'Web Bluetooth is not available in this browser. Open this page in a supported Chrome/Chromium browser over HTTPS.';
+  }
+})();
+</script>
+</body>
+</html>
