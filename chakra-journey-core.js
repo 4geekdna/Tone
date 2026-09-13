@@ -8,38 +8,11 @@ function status(s=""){$("status").textContent=s}
 function useYT(){return src!=="tones"}
 function useTone(){return src!=="youtube"}
 function audio(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==="suspended")ctx.resume();return ctx}
-function isiPhone(){return /iPhone|iPad|iPod/i.test(navigator.userAgent)}
-let outDest,outEl;
-function tapOut(){
-  audio();
-  if(!isiPhone())return ctx.destination;
-  if(!outDest){
-    outDest=ctx.createMediaStreamDestination();
-    outEl=document.createElement("audio");
-    outEl.id="toneShare";
-    outEl.setAttribute("playsinline","");
-    outEl.setAttribute("webkit-playsinline","");
-    outEl.playsInline=true;
-    outEl.autoplay=true;
-    outEl.controls=false;
-    outEl.style.cssText="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none";
-    outEl.srcObject=outDest.stream;
-    document.body.appendChild(outEl);
-  }
-  outEl.play().catch(()=>{});
-  try{
-    if(navigator.mediaSession){
-      navigator.mediaSession.metadata=new MediaMetadata({title:"Chakra Journey",artist:"Tone"});
-      navigator.mediaSession.playbackState="playing";
-    }
-  }catch(e){}
-  return outDest;
-}
 function mediaSrc(src){if(!src)return "";if(/^https?:/i.test(src))return src;return encodeURI(src)}
 function loadVideoSrc(src){if(!yt||!src||triedSrc===src)return;triedSrc=src;ytReady=false;yt.setAttribute("playsinline","");yt.setAttribute("webkit-playsinline","");yt.playsInline=true;yt.src=mediaSrc(src);yt.load()}
 function tryNextVideo(){let i=VIDEO_FILES.indexOf(triedSrc);let next=VIDEO_FILES[i+1];if(next){status("Trying "+next);loadVideoSrc(next)}}
 function seekVideo(sec){if(!yt)return;try{yt.currentTime=Math.max(0,sec)}catch{}}
-function unlockMedia(){try{tapOut()}catch{}try{speechSynthesis.resume()}catch{}if(!yt)return;yt.setAttribute("playsinline","");yt.setAttribute("webkit-playsinline","");yt.playsInline=true;yt.muted=false;let p=yt.play();if(p&&p.catch)p.catch(()=>{})}
+function unlockMedia(){try{audio()}catch{}try{speechSynthesis.resume()}catch{}if(!yt)return;yt.setAttribute("playsinline","");yt.setAttribute("webkit-playsinline","");yt.playsInline=true;yt.muted=false;let p=yt.play();if(p&&p.catch)p.catch(()=>{})}
 function stillThis(i,t){return run&&t===token&&cur===i}
 function stampText(seconds){seconds=Math.max(0,Math.floor(seconds||0));let h=Math.floor(seconds/3600),m=Math.floor(seconds%3600/60),s=seconds%60;return h?h+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0"):m+":"+String(s).padStart(2,"0")}
 function applyAnalyzed(){ANALYZED.forEach((sec,i)=>{let el=document.querySelector('[data-ts="'+i+'"]');if(el)el.value=stampText(sec)});$("mode").value="timestamps";if(src==="tones")src="both";save();ui();status("Using analyzed bowl timestamps from the 11:10 video")}
@@ -50,16 +23,16 @@ function shuffleDeck(c){let order=c[5].map((_,i)=>i);for(let i=order.length-1;i>
 function next(c){let d=decks[c[0]];if(!d||d.pos>=d.order.length)shuffleDeck(c);d=decks[c[0]];let i=d.order[d.pos++];return[c[5][i],i+1]}
 function show(c,a){$("al").textContent=c[0]+" • AFFIRMATION "+a[1]+" OF 5";$("at").textContent=a[0];let em=document.querySelector('.card[data-i="'+C.indexOf(c)+'"] em');if(em)em.textContent=a[0]}
 function stopTone(f=.45){if(!tone||!ctx)return;let t=tone;tone=null;let n=ctx.currentTime;try{t.g.gain.setTargetAtTime(.0001,n,.12)}catch{}t.o.forEach(o=>{try{o.stop(n+f)}catch{}})}
-function startTone(c){if(!useTone())return;audio();stopTone();let g=ctx.createGain(),o=[],n=ctx.currentTime,style=$("style").value,l=style==="pure"?[[1,.8]]:style==="tibetan"?[[1,.4],[2.02,.25],[2.98,.14],[4.18,.08]]:style==="warm"?[[.5,.16],[1,.45],[1.5,.14],[2,.1]]:[[1,.48],[2,.23],[3,.12],[4,.06]];g.gain.setValueAtTime(.0001,n);g.connect(tapOut());l.forEach(([m,v])=>{let x=ctx.createOscillator(),q=ctx.createGain();x.frequency.value=c[2]*m;q.gain.value=v;x.connect(q);q.connect(g);x.start();o.push(x)});g.gain.linearRampToValueAtTime(+$("tv").value,n+1);tone={g,o}}
+function startTone(c){if(!useTone())return;audio();stopTone();let g=ctx.createGain(),o=[],n=ctx.currentTime,style=$("style").value,l=style==="pure"?[[1,.8]]:style==="tibetan"?[[1,.4],[2.02,.25],[2.98,.14],[4.18,.08]]:style==="warm"?[[.5,.16],[1,.45],[1.5,.14],[2,.1]]:[[1,.48],[2,.23],[3,.12],[4,.06]];g.gain.setValueAtTime(.0001,n);g.connect(ctx.destination);l.forEach(([m,v])=>{let x=ctx.createOscillator(),q=ctx.createGain();x.frequency.value=c[2]*m;q.gain.value=v;x.connect(q);q.connect(g);x.start();o.push(x)});g.gain.linearRampToValueAtTime(+$("tv").value,n+1);tone={g,o}}
 function ytVol(){return +$("yv").value}
 function fadeYT(v){if(!yt)return;try{yt.volume=cl(v,0,100)/100}catch{}}
 function duck(on){if(tone&&ctx)try{tone.g.gain.setTargetAtTime(Math.max(.0001,+$("tv").value*(on?.18:1)),ctx.currentTime,.2)}catch{}if(useYT())fadeYT(on?+$("dv").value:ytVol())}
 function stopVoice(){if(aborter){aborter.abort();aborter=null}if(voiceNode){try{voiceNode.stop()}catch{}voiceNode=null}if(utter){utter.onend=utter.onerror=null;utter=null}try{speechSynthesis.cancel()}catch{}duck(false)}
-function unlockVoiceAudio(){let ac=audio();try{let b=ac.createBuffer(1,1,ac.sampleRate),s=ac.createBufferSource(),g=ac.createGain();g.gain.value=.00001;s.buffer=b;s.connect(g);g.connect(tapOut());s.start()}catch{}try{speechSynthesis.resume()}catch{}return ac.resume?.().catch(()=>{})}
+function unlockVoiceAudio(){let ac=audio();try{let b=ac.createBuffer(1,1,ac.sampleRate),s=ac.createBufferSource(),g=ac.createGain();g.gain.value=.00001;s.buffer=b;s.connect(g);g.connect(ctx.destination);s.start()}catch{}try{speechSynthesis.resume()}catch{}return ac.resume?.().catch(()=>{})}
 async function device(t){return new Promise(r=>{let u=new SpeechSynthesisUtterance(t);utter=u;u.rate=+$("speed").value;u.volume=+$("vv").value;duck(true);let done=ok=>{if(utter===u)utter=null;duck(false);r(ok)};u.onend=()=>done(true);u.onerror=()=>done(false);speechSynthesis.cancel();speechSynthesis.resume();speechSynthesis.speak(u)})}
 let hallIR;
 function hallImpulse(){if(hallIR&&hallIR.sampleRate===ctx.sampleRate)return hallIR;let length=Math.floor(ctx.sampleRate*2.8),ir=ctx.createBuffer(2,length,ctx.sampleRate);for(let ch=0;ch<2;ch++){let data=ir.getChannelData(ch);for(let i=0;i<length;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/length,2.4)}hallIR=ir;return ir}
-async function speak(t,label){stopVoice();await unlockVoiceAudio();let key=$("key").value.trim(),voiceId=$("voice").value||"JBFqnCBsd6RMkjVDRZzb";if(!key){status(label+" • device voice");return device(t)}aborter=new AbortController();status(label+" • generating ElevenLabs voice");try{let r=await fetch("https://api.elevenlabs.io/v1/text-to-speech/"+voiceId,{method:"POST",signal:aborter.signal,headers:{"Content-Type":"application/json","xi-api-key":key,Accept:"audio/mpeg"},body:JSON.stringify({text:t,model_id:$("model").value,voice_settings:{stability:+$("stability").value,similarity_boost:+$("similarity").value,style:+$("voiceStyle").value,use_speaker_boost:$("speakerBoost").checked,speed:+$("speed").value}})});if(!r.ok)throw new Error("HTTP "+r.status);let bytes=await(await r.blob()).arrayBuffer();aborter=null;await unlockVoiceAudio();let b=await ctx.decodeAudioData(bytes),s=ctx.createBufferSource(),g=ctx.createGain(),warm=ctx.createBiquadFilter(),dry=ctx.createGain(),wet=ctx.createGain(),conv=ctx.createConvolver(),mix=+$("reverbMix").value;s.buffer=b;g.gain.value=+$("vv").value;warm.type="lowshelf";warm.frequency.value=+$("warmthFreq").value;warm.gain.value=3;dry.gain.value=1-mix;wet.gain.value=mix;conv.buffer=hallImpulse();s.connect(g);g.connect(warm);warm.connect(dry);dry.connect(tapOut());warm.connect(conv);conv.connect(wet);wet.connect(tapOut());voiceNode=s;duck(true);status(label+" • speaking");return await new Promise(ok=>{s.onended=()=>{voiceNode=null;setTimeout(()=>{duck(false);ok(true)},350)};s.start()})}catch(e){if(aborter&&aborter.signal.aborted)return false;aborter=null;status("ElevenLabs unavailable • device voice");return device(t)}}
+async function speak(t,label){stopVoice();await unlockVoiceAudio();let key=$("key").value.trim(),voiceId=$("voice").value||"JBFqnCBsd6RMkjVDRZzb";if(!key){status(label+" • device voice");return device(t)}aborter=new AbortController();status(label+" • generating ElevenLabs voice");try{let r=await fetch("https://api.elevenlabs.io/v1/text-to-speech/"+voiceId,{method:"POST",signal:aborter.signal,headers:{"Content-Type":"application/json","xi-api-key":key,Accept:"audio/mpeg"},body:JSON.stringify({text:t,model_id:$("model").value,voice_settings:{stability:+$("stability").value,similarity_boost:+$("similarity").value,style:+$("voiceStyle").value,use_speaker_boost:$("speakerBoost").checked,speed:+$("speed").value}})});if(!r.ok)throw new Error("HTTP "+r.status);let bytes=await(await r.blob()).arrayBuffer();aborter=null;await unlockVoiceAudio();let b=await ctx.decodeAudioData(bytes),s=ctx.createBufferSource(),g=ctx.createGain(),warm=ctx.createBiquadFilter(),dry=ctx.createGain(),wet=ctx.createGain(),conv=ctx.createConvolver(),mix=+$("reverbMix").value;s.buffer=b;g.gain.value=+$("vv").value;warm.type="lowshelf";warm.frequency.value=+$("warmthFreq").value;warm.gain.value=3;dry.gain.value=1-mix;wet.gain.value=mix;conv.buffer=hallImpulse();s.connect(g);g.connect(warm);warm.connect(dry);dry.connect(ctx.destination);warm.connect(conv);conv.connect(wet);wet.connect(ctx.destination);voiceNode=s;duck(true);status(label+" • speaking");return await new Promise(ok=>{s.onended=()=>{voiceNode=null;setTimeout(()=>{duck(false);ok(true)},350)};s.start()})}catch(e){if(aborter&&aborter.signal.aborted)return false;aborter=null;status("ElevenLabs unavailable • device voice");return device(t)}}
 const voicePresets={philosophical:{speed:.82,stability:.68,similarity:.83,style:.05,boost:true,warmth:180,reverb:.065,note:"Calm pitch and warm chest resonance."},meditation:{speed:.82,stability:.69,similarity:.83,style:.04,boost:true,note:"Slower pace."},natural:{speed:1,stability:.67,similarity:.82,style:.02,boost:true,note:"Balanced."},narration:{speed:.92,stability:.72,similarity:.85,style:.08,boost:true,note:"Polished."},expressive:{speed:.97,stability:.65,similarity:.8,style:.10,boost:true,note:"More emotion."}};
 function applyVoicePreset(name,doSave=true){let p=voicePresets[name]||voicePresets.philosophical;$("speed").value=p.speed;$("stability").value=p.stability;$("similarity").value=p.similarity;$("voiceStyle").value=p.style;$("speakerBoost").checked=p.boost;if(p.warmth)$("warmthFreq").value=p.warmth;if(p.reverb)$("reverbMix").value=p.reverb;if($("voiceInfo"))$("voiceInfo").textContent=name+" preset: "+p.note;ui();if(doSave)save()}
 async function loadElevenVoices(){let key=$("key").value.trim();if(!key)return status("Enter your ElevenLabs API key first");$("loadVoices").disabled=true;status("Loading voices");try{let found=[],page="";do{let q=new URLSearchParams({page_size:"100"});if(page)q.set("next_page_token",page);let r=await fetch("https://api.elevenlabs.io/v2/voices?"+q,{headers:{"xi-api-key":key}});if(!r.ok)throw new Error("Could not load voices ("+r.status+")");let j=await r.json();found.push.apply(found,j.voices||[]);page=j.has_more?j.next_page_token||"":""}while(page&&found.length<1000);allVoices=found;renderVoiceOptions();status(found.length+" voices loaded");localStorage.setItem("cj_key",key)}catch(e){status(e.message)}finally{$("loadVoices").disabled=false}}
