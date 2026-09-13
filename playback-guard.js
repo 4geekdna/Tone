@@ -5,6 +5,8 @@
   function running(){const b=playBtn();return !!(b&&b.textContent==="Running")}
   function pausedByApp(){const b=pauseBtn();return !!(b&&b.textContent==="Resume")}
 
+  // Resume the audio context only. Never pause — that used to eat the
+  // video Play tap so the picture never moved.
   window.unlockMedia=function(){
     try{if(typeof audio==="function")audio()}catch(e){}
     try{speechSynthesis.resume()}catch(e){}
@@ -13,26 +15,14 @@
     yt.removeAttribute("autoplay");
     yt.setAttribute("playsinline","");
     yt.playsInline=true;
-    if(!running()||pausedByApp()){
-      try{yt.pause()}catch(e){}
-    }
   };
-
-  function holdPause(){
-    const yt=player();
-    if(!yt)return;
-    if(!running()||pausedByApp()){
-      try{yt.pause()}catch(e){}
-    }
-  }
 
   function boot(){
     const yt=player();
     if(!yt)return;
     yt.removeAttribute("autoplay");
-    yt.addEventListener("loadedmetadata",holdPause);
-    yt.addEventListener("playing",function(){
-      if(!running()||pausedByApp()){
+    yt.addEventListener("loadedmetadata",function(){
+      if(!running()){
         try{yt.pause()}catch(e){}
       }
     });
