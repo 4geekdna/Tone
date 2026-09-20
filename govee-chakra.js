@@ -4,7 +4,7 @@
   const LS_NAMES="govee-custom-names";
   const LS_SELECTED="govee-selected";
   const LS_PICKED="cj_govee_picked";
-  const LS_DEVICES="cj_govee_devices";
+  const LS_DEVICES="cj_govee_devices";\n  const LS_CAL="cj_govee_calibration_v2";
   let devices=[],picked={},names={},busy=false,last=-1,loading=false,powered={};
 
   const $=id=>document.getElementById(id);
@@ -24,6 +24,22 @@
     });
   }
   function hexInt(hex){return parseInt(String(hex||"#ffffff").replace("#",""),16)}
+  function calibration(){let x={};try{x=JSON.parse(localStorage.getItem(LS_CAL)||"{}")}catch(e){}return x}
+  function saveCalibration(x){localStorage.setItem(LS_CAL,JSON.stringify(x));}
+  function profile(i,chakra,id){
+    let all=calibration(),p=all[i]||{},dev=(p.devices||{})[id]||{};
+    return {color:p.color||chakra[4],brightness:Number(dev.brightness??p.brightness??70)};
+  }
+  function calibratedColor(i){let ch=(window.C||[])[i],p=calibration()[i]||{};return p.color||(ch&&ch[4])||"#ffffff"}
+  window.goveeCalibration={
+    get:calibration,
+    setColor:function(i,color){let x=calibration();x[i]=x[i]||{};x[i].color=color;saveCalibration(x);paint(i,true)},
+    setMaster:function(i,v){let x=calibration();x[i]=x[i]||{};x[i].brightness=+v;saveCalibration(x);paint(i,true)},
+    setDevice:function(i,id,v){let x=calibration();x[i]=x[i]||{};x[i].devices=x[i].devices||{};x[i].devices[id]={brightness:+v};saveCalibration(x);paint(i,true)},
+    reset:function(i){let x=calibration();delete x[i];saveCalibration(x);paint(i,true)},
+    devices:function(){return devices.map(d=>({id:idOf(d),name:nameOf(d)}))},
+    color:calibratedColor
+  };
   function idOf(d){return d.device||d.sku||d.model}
   function nameOf(d){return names[idOf(d)]||d.deviceName||d.sku||d.model||"Light"}
   function savePicked(){try{localStorage.setItem(LS_PICKED,JSON.stringify(picked))}catch(e){}}
@@ -160,11 +176,11 @@
           if(!powered[id]){
             await sendControl(d,{type:"devices.capabilities.on_off",instance:"powerSwitch",value:1});
             await sleep(150);
-            try{await sendControl(d,{type:"devices.capabilities.range",instance:"brightness",value:bright})}catch(e){}
+            try{let pp=profile(i,chakra,id);await sendControl(d,{type:"devices.capabilities.range",instance:"brightness",value:Math.max(1,Math.min(100,pp.brightness))})}catch(e){}
             await sleep(150);
             powered[id]=true;
           }
-          await sendControl(d,{type:"devices.capabilities.color_setting",instance:"colorRgb",value:rgb});
+          let pp=profile(i,chakra,id);await sendControl(d,{type:"devices.capabilities.range",instance:"brightness",value:Math.max(1,Math.min(100,pp.brightness))}).catch(()=>{});await sendControl(d,{type:"devices.capabilities.color_setting",instance:"colorRgb",value:hexInt(pp.color)});
           ok++;
         }catch(e){
           fail=(e&&e.message)||"color failed";
