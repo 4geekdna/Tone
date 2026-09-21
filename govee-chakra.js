@@ -29,7 +29,7 @@
   function saveCalibration(x){localStorage.setItem(LS_CAL,JSON.stringify(x));}
   function profile(i,chakra,id){
     let all=calibration(),p=all[i]||{},dev=(p.devices||{})[id]||{};
-    return {color:p.color||chakra[4],brightness:Number(dev.brightness??p.brightness??70)};
+    let base=Number((($("goveeBright")||{}).value)||70);return {color:p.color||chakra[4],brightness:Number(dev.brightness??p.brightness??base)};
   }
   function calibratedColor(i){let ch=(window.C||[])[i],p=calibration()[i]||{};return p.color||(ch&&ch[4])||"#ffffff"}
   window.goveeCalibration={
@@ -223,7 +223,7 @@
     if(loadBtn){loadBtn.type="button";loadBtn.onclick=loadLights}
     const offBtn=$("goveeOff");
     if(offBtn){offBtn.type="button";offBtn.onclick=allOff}
-    if($("goveeBright")&&$("goveeBrightv"))$("goveeBright").addEventListener("input",function(){$("goveeBrightv").textContent=$("goveeBright").value+"%"});
+    if($("goveeBright")&&$("goveeBrightv"))$("goveeBright").addEventListener("input",function(){$("goveeBrightv").textContent=$("goveeBright").value+"%";let i=activeChakra();if(i>=0)paint(i,true)});
     if(keyEl)keyEl.addEventListener("change",function(){const k=keyEl.value.trim();if(k)localStorage.setItem(LS_KEY,k)});
     if($("goveeOn"))$("goveeOn").onchange=function(){localStorage.setItem("cj_goveeOn",$("goveeOn").checked?"1":"0")};
     const play=$("play");
