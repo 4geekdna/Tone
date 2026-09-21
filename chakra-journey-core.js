@@ -90,7 +90,14 @@ function ui(){document.querySelectorAll("#tabs button").forEach(b=>b.classList.t
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{src=b.dataset.s;save();ui()});
 document.querySelectorAll("input,select").forEach(x=>x.addEventListener("change",()=>{save();ui()}));
 ["yv","dv","vv","tv","speed","stability","similarity","voiceStyle","warmthFreq","reverbMix"].forEach(id=>{if($(id))$(id).addEventListener("input",()=>{ui();save();if(id==="yv")fadeYT(ytVol())})});
-$("loadVoices").onclick=loadElevenVoices;if($("testVoiceApi"))$("testVoiceApi").onclick=()=>testElevenKey();$("previewVoice").onclick=previewSelectedVoice;if($("clearVoiceKey"))$("clearVoiceKey").onclick=()=>{$("key").value="";localStorage.removeItem("cj_key");status("ElevenLabs key cleared");updateVoiceAccount()};$("voiceSearch").oninput=renderVoiceOptions;$("voicePreset").onchange=()=>applyVoicePreset($("voicePreset").value);$("speakerBoost").onchange=save;$("distributeTimestamps").onclick=distributeTimestamps;$("play").onclick=start;$("pause").onclick=togglePause;$("stop").onclick=stop;
+function bindVoiceControls(){
+ const test=$("testVoiceApi"),preview=$("previewVoice"),loadBtn=$("loadVoices"),clear=$("clearVoiceKey");
+ if(test)test.onclick=()=>{status("Voice API button pressed…");testElevenKey().catch(e=>status("Voice API error: "+e.message))};
+ if(preview)preview.onclick=()=>{status("Preview button pressed…");fromPreview=true;previewSelectedVoice().catch(e=>status("Preview error: "+e.message)).finally(()=>{fromPreview=false})};
+ if(loadBtn)loadBtn.onclick=()=>{status("Load voices button pressed…");loadElevenVoices().catch(e=>status("Load voices error: "+e.message))};
+ if(clear)clear.onclick=()=>{$("key").value="";localStorage.removeItem("cj_key");status("ElevenLabs key cleared");updateVoiceAccount()};
+}
+bindVoiceControls();$("voiceSearch").oninput=renderVoiceOptions;$("voicePreset").onchange=()=>applyVoicePreset($("voicePreset").value);$("speakerBoost").onchange=save;$("distributeTimestamps").onclick=distributeTimestamps;$("play").onclick=start;$("pause").onclick=togglePause;$("stop").onclick=stop;
 yt.addEventListener("loadedmetadata",()=>{ytReady=true;fadeYT(ytVol());status("Video ready • "+(triedSrc||VIDEO_FILES[0])+" • "+stampText(yt.duration||670))});
 yt.addEventListener("canplay",()=>{ytReady=true});
 yt.addEventListener("play",()=>{if(ctx&&ctx.state!=="running")ctx.resume().catch(()=>{});if(!run&&!fromPreview&&useYT())start()});
