@@ -97,7 +97,10 @@ function bindVoiceControls(){
  if(loadBtn)loadBtn.onclick=()=>{status("Load voices button pressed…");loadElevenVoices().catch(e=>status("Load voices error: "+e.message))};
  if(clear)clear.onclick=()=>{$("key").value="";localStorage.removeItem("cj_key");status("ElevenLabs key cleared");updateVoiceAccount()};
 }
-bindVoiceControls();$("voiceSearch").oninput=renderVoiceOptions;$("voicePreset").onchange=()=>applyVoicePreset($("voicePreset").value);$("speakerBoost").onchange=save;$("distributeTimestamps").onclick=distributeTimestamps;$("play").onclick=start;$("pause").onclick=togglePause;$("stop").onclick=stop;
+bindVoiceControls();
+window.CJVoiceTest=()=>{status("Voice API button pressed…");return testElevenKey().catch(e=>status("Voice API error: "+e.message))};
+window.CJVoicePreview=()=>{status("Preview button pressed…");fromPreview=true;return previewSelectedVoice().catch(e=>status("Preview error: "+e.message)).finally(()=>{fromPreview=false})};
+window.CJVoiceLoad=()=>{status("Load voices button pressed…");return loadElevenVoices().catch(e=>status("Load voices error: "+e.message))};$("voiceSearch").oninput=renderVoiceOptions;$("voicePreset").onchange=()=>applyVoicePreset($("voicePreset").value);$("speakerBoost").onchange=save;$("distributeTimestamps").onclick=distributeTimestamps;$("play").onclick=start;$("pause").onclick=togglePause;$("stop").onclick=stop;
 yt.addEventListener("loadedmetadata",()=>{ytReady=true;fadeYT(ytVol());status("Video ready • "+(triedSrc||VIDEO_FILES[0])+" • "+stampText(yt.duration||670))});
 yt.addEventListener("canplay",()=>{ytReady=true});
 yt.addEventListener("play",()=>{if(ctx&&ctx.state!=="running")ctx.resume().catch(()=>{});if(!run&&!fromPreview&&useYT())start()});
