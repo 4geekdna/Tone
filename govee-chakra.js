@@ -4,7 +4,8 @@
   const LS_NAMES="govee-custom-names";
   const LS_SELECTED="govee-selected";
   const LS_PICKED="cj_govee_picked";
-  const LS_DEVICES="cj_govee_devices";\n  const LS_CAL="cj_govee_calibration_v2";
+  const LS_DEVICES="cj_govee_devices";
+  const LS_CAL="cj_govee_calibration_v2";
   let devices=[],picked={},names={},busy=false,last=-1,loading=false,powered={};
 
   const $=id=>document.getElementById(id);
