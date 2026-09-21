@@ -47,9 +47,9 @@ const VOICE_CACHE="cj_voice_audio_v1";
 function voiceCacheKey(t,voiceId,model){return [voiceId,model,$("speed").value,$("stability").value,$("similarity").value,$("voiceStyle").value,$("speakerBoost").checked?"1":"0",t].join("|")}
 async function cacheGet(k){try{let db=await new Promise((ok,no)=>{let q=indexedDB.open(VOICE_CACHE,1);q.onupgradeneeded=()=>q.result.createObjectStore("audio");q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)});return await new Promise(ok=>{let q=db.transaction("audio").objectStore("audio").get(k);q.onsuccess=()=>ok(q.result||null);q.onerror=()=>ok(null)})}catch(e){return null}}
 async function cachePut(k,v){try{let db=await new Promise((ok,no)=>{let q=indexedDB.open(VOICE_CACHE,1);q.onupgradeneeded=()=>q.result.createObjectStore("audio");q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)});let tx=db.transaction("audio","readwrite");tx.objectStore("audio").put(v,k)}catch(e){}}
-function chosenModel(t){let m=$("#model").value;if($("#autoModel")?.checked){m=t.length<=220?"eleven_flash_v2_5":"eleven_multilingual_v2"}return m}
+function chosenModel(t){let m=$("model").value;if($("autoModel")?.checked){m=t.length<=220?"eleven_flash_v2_5":"eleven_multilingual_v2"}return m}
 async function updateVoiceAccount(){
- let key=$("#key").value.trim();if(!key){if($("#voiceAccount"))$("#voiceAccount").textContent="API: no key • device voice fallback ready";return}
+ let key=$("key").value.trim();if(!key){if($("voiceAccount"))$("#voiceAccount").textContent="API: no key • device voice fallback ready";return}
  try{let r=await fetch("https://api.elevenlabs.io/v1/user/subscription",{headers:{"xi-api-key":key}}),j=await r.json();if(!r.ok)throw new Error("HTTP "+r.status);let used=j.character_count??0,limit=j.character_limit??0,remain=Math.max(0,limit-used);if($("#voiceAccount"))$("#voiceAccount").textContent="API connected • "+remain.toLocaleString()+" characters remaining"+(j.tier?" • "+j.tier:"")}catch(e){if($("#voiceAccount"))$("#voiceAccount").textContent="API check failed • device voice fallback ready"}}
 let hallIR;
 function hallImpulse(){if(hallIR&&hallIR.sampleRate===ctx.sampleRate)return hallIR;let length=Math.floor(ctx.sampleRate*2.8),ir=ctx.createBuffer(2,length,ctx.sampleRate);for(let ch=0;ch<2;ch++){let data=ir.getChannelData(ch);for(let i=0;i<length;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/length,2.4)}hallIR=ir;return ir}
@@ -64,7 +64,6 @@ async function testElevenKey(){
    let raw=await r.text(),j={};try{j=JSON.parse(raw)}catch(e){}
    if(!r.ok){let msg=(j.detail&&j.detail.message)||(j.detail&&j.detail.status)||j.message||("HTTP "+r.status);throw new Error(msg)}
    localStorage.setItem("cj_key",key);status("ElevenLabs: connected ✓");updateVoiceAccount();
-   if(speakBack){fromPreview=true;try{await speak("Voice system connected. ElevenLabs is ready.","API test")}finally{fromPreview=false}}
    return true
  }catch(e){status("ElevenLabs: "+(e.message||"connection failed"));return false}
 }
@@ -91,7 +90,7 @@ function ui(){document.querySelectorAll("#tabs button").forEach(b=>b.classList.t
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{src=b.dataset.s;save();ui()});
 document.querySelectorAll("input,select").forEach(x=>x.addEventListener("change",()=>{save();ui()}));
 ["yv","dv","vv","tv","speed","stability","similarity","voiceStyle","warmthFreq","reverbMix"].forEach(id=>{if($(id))$(id).addEventListener("input",()=>{ui();save();if(id==="yv")fadeYT(ytVol())})});
-$("loadVoices").onclick=loadElevenVoices;if($("testVoiceApi"))$("testVoiceApi").onclick=()=>testElevenKey();$("previewVoice").onclick=previewSelectedVoice;$("voiceSearch").oninput=renderVoiceOptions;$("voicePreset").onchange=()=>applyVoicePreset($("voicePreset").value);$("speakerBoost").onchange=save;$("distributeTimestamps").onclick=distributeTimestamps;$("play").onclick=start;$("pause").onclick=togglePause;$("stop").onclick=stop;
+$("loadVoices").onclick=loadElevenVoices;if($("testVoiceApi"))$("testVoiceApi").onclick=()=>testElevenKey();$("previewVoice").onclick=previewSelectedVoice;if($("clearVoiceKey"))$("clearVoiceKey").onclick=()=>{$("key").value="";localStorage.removeItem("cj_key");status("ElevenLabs key cleared");updateVoiceAccount()};$("voiceSearch").oninput=renderVoiceOptions;$("voicePreset").onchange=()=>applyVoicePreset($("voicePreset").value);$("speakerBoost").onchange=save;$("distributeTimestamps").onclick=distributeTimestamps;$("play").onclick=start;$("pause").onclick=togglePause;$("stop").onclick=stop;
 yt.addEventListener("loadedmetadata",()=>{ytReady=true;fadeYT(ytVol());status("Video ready • "+(triedSrc||VIDEO_FILES[0])+" • "+stampText(yt.duration||670))});
 yt.addEventListener("canplay",()=>{ytReady=true});
 yt.addEventListener("play",()=>{if(ctx&&ctx.state!=="running")ctx.resume().catch(()=>{});if(!run&&!fromPreview&&useYT())start()});
