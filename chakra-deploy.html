@@ -9,9 +9,10 @@ body{transition:background 5s ease;background:var(--chakra,#0f0f12)}body.immersi
 <div class="panel"><b>Room Color Calibration</b><p class="voice-note">Tune each chakra color and brightness for your room. Individual lights can compensate for different lamps and wall colors.</p><div class="row"><label>Chakra</label><select id="calChakra"></select></div><div class="row"><label>Color</label><input id="calColor" class="calColor" type="color" value="#8B0000"></div><div class="row"><label>Master bright</label><input id="calBright" type="range" min="1" max="100" value="70"><span class="v" id="calBrightV">70%</span></div><div id="calibrationUI"></div><button class="btn" id="calReset" type="button">Reset This Chakra</button></div>
 <div class="panel"><b>Journey History / Starfleet Outbox</b><p class="voice-note">Completed and stopped sessions are stored locally as structured Starfleet-ready records. Export produces the JSON outbox for your storage workflow.</p><div id="journeyHistory"></div><div class="voice-tools"><button class="btn" id="starfleetExport" type="button">Export Sessions</button><button class="btn" id="historyClear" type="button">Clear History</button></div></div>
 <div class="buttons"><button class="btn play" id="play">Start Journey</button><button class="btn pause" id="pause">Pause</button><button class="btn stop" id="stop">Stop</button></div><div class="status" id="status"></div></div>
-<script src="chakra-journey-core.js?v=20260921g"></script>
+<script src="chakra-journey-core.js?v=20260921h"></script>
 <script src="chakra-automation.js?v=20260921a"></script>
-<script src="govee-chakra.js?v=20260921a"></script>
+<script src="chakra-diagnostics.js?v=20260921a"></script>
+<script src="govee-chakra.js?v=20260921b"></script>
 <script src="chakra-calibration-ui.js?v=20260921a"></script>
 <script src="audio-output.js?v=20260917a"></script>
 <script src="playback-guard.js?v=20260917a"></script></body></html>
