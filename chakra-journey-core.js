@@ -57,15 +57,18 @@ async function speak(t,label){stopVoice();await unlockVoiceAudio();let key=$("ke
 const voicePresets={philosophical:{speed:.82,stability:.68,similarity:.83,style:.05,boost:true,warmth:180,reverb:.065,note:"Calm pitch and warm chest resonance."},meditation:{speed:.82,stability:.69,similarity:.83,style:.04,boost:true,note:"Slower pace."},natural:{speed:1,stability:.67,similarity:.82,style:.02,boost:true,note:"Balanced."},narration:{speed:.92,stability:.72,similarity:.85,style:.08,boost:true,note:"Polished."},expressive:{speed:.97,stability:.65,similarity:.8,style:.10,boost:true,note:"More emotion."}};
 function applyVoicePreset(name,doSave=true){let p=voicePresets[name]||voicePresets.philosophical;$("speed").value=p.speed;$("stability").value=p.stability;$("similarity").value=p.similarity;$("voiceStyle").value=p.style;$("speakerBoost").checked=p.boost;if(p.warmth)$("warmthFreq").value=p.warmth;if(p.reverb)$("reverbMix").value=p.reverb;if($("voiceInfo"))$("voiceInfo").textContent=name+" preset: "+p.note;ui();if(doSave)save()}
 async function testElevenKey(){
- let key=$("key").value.trim(); if(!key){status("ElevenLabs: API key missing");return false}
- status("ElevenLabs: checking API key…");
+ let key=$("key").value.trim();
+ if(!key){status("ElevenLabs: API key missing");return false}
+ status("ElevenLabs: testing key…");
  try{
-   let r=await fetch("https://api.elevenlabs.io/v1/user",{headers:{"xi-api-key":key}});
+   let r=await fetch("https://api.elevenlabs.io/v2/voices?page_size=1",{headers:{"xi-api-key":key}});
    let raw=await r.text(),j={};try{j=JSON.parse(raw)}catch(e){}
-   if(!r.ok){let msg=(j.detail&&j.detail.message)||(j.detail&&j.detail.status)||j.message||("HTTP "+r.status);throw new Error(msg)}
-   localStorage.setItem("cj_key",key);status("ElevenLabs: connected ✓");updateVoiceAccount();
+   if(!r.ok){let d=j.detail,msg=(d&&d.message)||(d&&d.status)||j.message||("HTTP "+r.status);throw new Error(msg)}
+   localStorage.setItem("cj_key",key);
+   status("ElevenLabs: connected ✓");
+   updateVoiceAccount();
    return true
- }catch(e){status("ElevenLabs: "+(e.message||"connection failed"));return false}
+ }catch(e){status("ElevenLabs test failed: "+(e&&e.message?e.message:"connection failed"));return false}
 }
 async function loadElevenVoices(){let key=$("key").value.trim();if(!key)return status("Enter your ElevenLabs API key first");$("loadVoices").disabled=true;status("Loading voices");try{let found=[],page="";do{let q=new URLSearchParams({page_size:"100"});if(page)q.set("next_page_token",page);let r=await fetch("https://api.elevenlabs.io/v2/voices?"+q,{headers:{"xi-api-key":key}});if(!r.ok)throw new Error("Could not load voices ("+r.status+")");let j=await r.json();found.push.apply(found,j.voices||[]);page=j.has_more?j.next_page_token||"":""}while(page&&found.length<1000);allVoices=found;renderVoiceOptions();status(found.length+" voices loaded");localStorage.setItem("cj_key",key)}catch(e){status(e.message)}finally{$("loadVoices").disabled=false}}
 function renderVoiceOptions(){let q=$("voiceSearch").value.trim().toLowerCase(),selected=$("voice").value,list=allVoices.filter(v=>(v.name+" "+Object.values(v.labels||{}).join(" ")).toLowerCase().includes(q));if(!allVoices.length)return;let s=$("voice");s.innerHTML="";list.sort((a,b)=>a.name.localeCompare(b.name)).forEach(v=>{let o=document.createElement("option");o.value=v.voice_id;o.textContent=v.name;s.appendChild(o)});if(list.some(v=>v.voice_id===selected))s.value=selected;else if(list.length)s.value=list[0].voice_id;save()}
