@@ -69,7 +69,18 @@ async function testElevenKey(){
 }
 async function loadElevenVoices(){let key=$("key").value.trim();if(!key)return status("Enter your ElevenLabs API key first");$("loadVoices").disabled=true;status("Loading voices");try{let found=[],page="";do{let q=new URLSearchParams({page_size:"100"});if(page)q.set("next_page_token",page);let r=await fetch("https://api.elevenlabs.io/v2/voices?"+q,{headers:{"xi-api-key":key}});if(!r.ok)throw new Error("Could not load voices ("+r.status+")");let j=await r.json();found.push.apply(found,j.voices||[]);page=j.has_more?j.next_page_token||"":""}while(page&&found.length<1000);allVoices=found;renderVoiceOptions();status(found.length+" voices loaded");localStorage.setItem("cj_key",key)}catch(e){status(e.message)}finally{$("loadVoices").disabled=false}}
 function renderVoiceOptions(){let q=$("voiceSearch").value.trim().toLowerCase(),selected=$("voice").value,list=allVoices.filter(v=>(v.name+" "+Object.values(v.labels||{}).join(" ")).toLowerCase().includes(q));if(!allVoices.length)return;let s=$("voice");s.innerHTML="";list.sort((a,b)=>a.name.localeCompare(b.name)).forEach(v=>{let o=document.createElement("option");o.value=v.voice_id;o.textContent=v.name;s.appendChild(o)});if(list.some(v=>v.voice_id===selected))s.value=selected;else if(list.length)s.value=list[0].voice_id;save()}
-async function previewSelectedVoice(){if(run)return status("Stop the journey first");await speak("Take a slow breath. Allow your body to soften.","preview")}
+async function previewSelectedVoice(){
+ if(run)return status("Stop the journey first");
+ fromPreview=true;
+ try{
+   await unlockVoiceAudio();
+   status("Preview: preparing voice…");
+   return await speak("Take a slow breath. Allow your body to soften.","Preview");
+ }catch(e){
+   status("Preview error: "+(e&&e.message?e.message:e));
+   return false;
+ }finally{fromPreview=false}
+}
 async function pw(ms,t){let left=ms,last=performance.now();while(left>0&&run&&t===token){await wait(100);let n=performance.now();if(!paused)left-=n-last;last=n}}
 async function affirm(c,t){let n=cl(+$("count").value,1,5),gap=cl(+$("gap").value,0,30),iC=C.indexOf(c);speakingFor=iC;for(let i=0;i<n;i++){while(paused&&t===token)await wait(100);if(!stillThis(iC,t))return false;let a=next(c);show(c,a);if(!await speak(a[0],c[0]+" "+(i+1)+"/"+n))return false;if(!stillThis(iC,t))return false;if(i<n-1)await pw(gap*1000,t);if(!stillThis(iC,t))return false}return true}
 async function sequence(t,timed){let a=stamps()||ANALYZED;for(let i=0;i<7;i++){if(!run||t!==token)return;let c=C[i],st=performance.now();current(i,timed?"Timed":"Affirmation Driven");startTone(c);if(useYT()&&ytReady){seekVideo(a[i]);yt.play().catch(()=>{})}if(!await affirm(c,t))return;if(timed){let d=cl(+$("dur").value,10,600)*1000-(performance.now()-st);if(d>0)await pw(d,t)}else if(i<6)await pw(cl(+$("between").value,0,60)*1000,t)}finish(t)}
@@ -93,13 +104,13 @@ document.querySelectorAll("input,select").forEach(x=>x.addEventListener("change"
 function bindVoiceControls(){
  const test=$("testVoiceApi"),preview=$("previewVoice"),loadBtn=$("loadVoices"),clear=$("clearVoiceKey");
  if(test)test.onclick=()=>{status("Voice API button pressed…");testElevenKey().catch(e=>status("Voice API error: "+e.message))};
- if(preview)preview.onclick=()=>{status("Preview button pressed…");fromPreview=true;previewSelectedVoice().catch(e=>status("Preview error: "+e.message)).finally(()=>{fromPreview=false})};
+ if(preview)preview.onclick=()=>{status("Preview button pressed…");previewSelectedVoice().catch(e=>status("Preview error: "+e.message))};
  if(loadBtn)loadBtn.onclick=()=>{status("Load voices button pressed…");loadElevenVoices().catch(e=>status("Load voices error: "+e.message))};
  if(clear)clear.onclick=()=>{$("key").value="";localStorage.removeItem("cj_key");status("ElevenLabs key cleared");updateVoiceAccount()};
 }
 bindVoiceControls();
 window.CJVoiceTest=()=>{status("Voice API button pressed…");return testElevenKey().catch(e=>status("Voice API error: "+e.message))};
-window.CJVoicePreview=()=>{status("Preview button pressed…");fromPreview=true;return previewSelectedVoice().catch(e=>status("Preview error: "+e.message)).finally(()=>{fromPreview=false})};
+window.CJVoicePreview=()=>{status("Preview button pressed…");return previewSelectedVoice().catch(e=>status("Preview error: "+e.message))};
 window.CJVoiceLoad=()=>{status("Load voices button pressed…");return loadElevenVoices().catch(e=>status("Load voices error: "+e.message))};$("voiceSearch").oninput=renderVoiceOptions;$("voicePreset").onchange=()=>applyVoicePreset($("voicePreset").value);$("speakerBoost").onchange=save;$("distributeTimestamps").onclick=distributeTimestamps;$("play").onclick=start;$("pause").onclick=togglePause;$("stop").onclick=stop;
 yt.addEventListener("loadedmetadata",()=>{ytReady=true;fadeYT(ytVol());status("Video ready • "+(triedSrc||VIDEO_FILES[0])+" • "+stampText(yt.duration||670))});
 yt.addEventListener("canplay",()=>{ytReady=true});
