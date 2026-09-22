@@ -6,7 +6,7 @@
   const LS_PICKED="cj_govee_picked";
   const LS_DEVICES="cj_govee_devices";
   const LS_CAL="cj_govee_calibration_v2";
-  let devices=[],picked={},names={},busy=false,last=-1,loading=false,powered={};
+  let devices=[],picked={},names={},busy=false,last=-1,loading=false,powered={},editing=false;
 
   const $=id=>document.getElementById(id);
   function running(){const b=$("play");return !!(b&&b.textContent==="Running")}
@@ -38,7 +38,7 @@
     setMaster:function(i,v){let x=calibration();x[i]=x[i]||{};x[i].brightness=+v;saveCalibration(x);paint(i,true)},
     setDevice:function(i,id,v){let x=calibration();x[i]=x[i]||{};x[i].devices=x[i].devices||{};x[i].devices[id]={brightness:+v};saveCalibration(x);paint(i,true)},
     reset:function(i){let x=calibration();delete x[i];saveCalibration(x);paint(i,true)},
-    devices:function(){return devices.map(d=>({id:idOf(d),name:nameOf(d)}))},
+    devices:function(){return devices.filter(d=>picked[idOf(d)]).map(d=>({id:idOf(d),name:nameOf(d)}))},
     color:calibratedColor
   };
   function idOf(d){return d.device||d.sku||d.model}
@@ -89,24 +89,16 @@
   }
 
   function render(){
-    const el=$("goveeList");
-    if(!el)return;
+    const el=$("goveeList"); if(!el)return;
     if(!devices.length){el.textContent="No Govee devices for this key.";return}
-    var html="<div>"+devices.length+" devices. Checked ones follow chakras.</div>";
-    devices.forEach(function(d){
-      const id=idOf(d);
-      html+="<label style='display:flex;gap:8px;align-items:center;margin:6px 0;color:#ddd'>";
-      html+="<input type='checkbox' data-govee='"+id+"' "+(picked[id]?"checked":"")+"> ";
-      html+=nameOf(d)+" <span style='color:#888'>"+(d.sku||"")+"</span></label>";
-    });
+    const selected=devices.filter(d=>picked[idOf(d)]),shown=editing?devices:selected;
+    let html="<div style='display:flex;justify-content:space-between;align-items:center;gap:8px'><span><b>"+selected.length+"</b> selected light"+(selected.length===1?"":"s")+" follow chakras.</span><button type='button' id='goveeEditSelection' class='btn' style='padding:7px 10px'>"+(editing?"Done":"Adjust Selection")+"</button></div>";
+    if(!editing&&selected.length)html+="<div style='color:#888;margin-top:6px'>"+selected.map(d=>nameOf(d)).join(" • ")+"</div>";
+    if(!selected.length&&!editing)html+="<div style='color:#f0c36b;margin-top:6px'>No lights selected. Tap Adjust Selection.</div>";
+    if(editing)shown.forEach(function(d){const id=idOf(d);html+="<label style='display:flex;gap:8px;align-items:center;margin:8px 0;color:#ddd'><input type='checkbox' data-govee='"+id+"' "+(picked[id]?"checked":"")+"> "+nameOf(d)+" <span style='color:#888'>"+(d.sku||"")+"</span></label>"});
     el.innerHTML=html;
-    el.querySelectorAll("[data-govee]").forEach(function(cb){
-      cb.onchange=function(){
-        if(cb.checked)picked[cb.dataset.govee]=true;
-        else delete picked[cb.dataset.govee];
-        savePicked();
-      };
-    });
+    const edit=$("goveeEditSelection");if(edit)edit.onclick=function(){editing=!editing;render();window.dispatchEvent(new CustomEvent("govee-selection-changed"))};
+    el.querySelectorAll("[data-govee]").forEach(function(cb){cb.onchange=function(){if(cb.checked)picked[cb.dataset.govee]=true;else delete picked[cb.dataset.govee];savePicked();window.dispatchEvent(new CustomEvent("govee-selection-changed"))}});
   }
 
   async function loadLights(ev){
