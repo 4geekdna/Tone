@@ -15,7 +15,7 @@ function boot(){
  $("calColor").oninput=()=>{let i=+$("calChakra").value;window.goveeCalibration.setColor(i,$("calColor").value);document.documentElement.style.setProperty("--chakra",$("calColor").value)};
  $("calBright").oninput=()=>{let i=+$("calChakra").value;$("calBrightV").textContent=$("calBright").value+"%";window.goveeCalibration.setMaster(i,$("calBright").value);render()};
  $("calReset").onclick=()=>{window.goveeCalibration.reset(+$("calChakra").value);render()};
- $("goveeLoad")?.addEventListener("click",()=>setTimeout(render,1200)); render();
+ $("goveeLoad")?.addEventListener("click",()=>setTimeout(render,1200)); window.addEventListener("govee-selection-changed",()=>setTimeout(render,50)); render();
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,50));else setTimeout(boot,50);
 })();
