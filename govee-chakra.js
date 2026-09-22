@@ -1,8 +1,6 @@
 (function(){
-  const s=document.createElement('script');
-  s.src='govee-chakra-runtime.js?v=20260921a';
-  document.head.appendChild(s);
-  const i=document.createElement('script');
-  i.src='govee-capability-inspector.js?v=20260921a';
-  document.head.appendChild(i);
+  function load(src){const s=document.createElement('script');s.src=src;document.head.appendChild(s)}
+  load('govee-chakra-runtime.js?v=20260921b');
+  load('govee-capability-inspector.js?v=20260921b');
+  load('govee-starlight-chakra.js?v=20260921c');
 })();
