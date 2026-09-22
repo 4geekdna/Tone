@@ -12,7 +12,7 @@ function boot(){
  if(!$("calChakra"))return;
  $("calChakra").innerHTML=C.map((c,i)=>'<option value="'+i+'">'+c[0]+'</option>').join("");
  $("calChakra").onchange=render;
- $("calColor").oninput=()=>{let i=+$("calChakra").value;window.goveeCalibration.setColor(i,$("calColor").value);document.documentElement.style.setProperty("--chakra",$("calColor").value)};
+ $("calColor").oninput=()=>{let i=+$("calChakra").value;window.goveeCalibration.setColor(i,$("calColor").value);document.documentElement.style.setProperty("--chakra",$("calColor").value);if(window.goveeFollow)window.goveeFollow(i)};
  $("calBright").oninput=()=>{let i=+$("calChakra").value;$("calBrightV").textContent=$("calBright").value+"%";window.goveeCalibration.setMaster(i,$("calBright").value);render()};
  $("calReset").onclick=()=>{window.goveeCalibration.reset(+$("calChakra").value);render()};
  $("goveeLoad")?.addEventListener("click",()=>setTimeout(render,1200)); window.addEventListener("govee-selection-changed",()=>setTimeout(render,50)); render();
