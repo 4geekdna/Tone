@@ -13,7 +13,9 @@ let active=-1,session=null,breathTimer=null;
 const $=id=>document.getElementById(id);
 function cfg(){let x={immersive:true,autoVoice:true,autoBreath:true};try{x={...x,...JSON.parse(localStorage.getItem(LS)||"{}")}}catch(e){}return x}
 function setv(id,v){let e=$(id);if(e){e.value=v;e.dispatchEvent(new Event("input",{bubbles:true}))}}
-function applyVoice(i){if(!cfg().autoVoice||i<0||!defaults[i])return;let v=defaults[i].voice;setv("speed",v.speed);setv("stability",v.stability);setv("similarity",v.similarity);setv("voiceStyle",v.style);setv("warmthFreq",v.warmth);setv("reverbMix",v.reverb)}
+function saveCfg(next){let c=cfg(),merged={immersive:c.immersive!==false,autoVoice:c.autoVoice!==false,autoBreath:c.autoBreath!==false,...(next||{})};try{localStorage.setItem(LS,JSON.stringify(merged))}catch(e){}return merged}
+function applyVoice(i){if(!cfg().autoVoice||i<0||!defaults[i])return;let v=defaults[i].voice;setv("warmthFreq",v.warmth);setv("reverbMix",v.reverb)}
+function setImmersive(on){saveCfg({immersive:!!on});let box=$("immersiveMode");if(box&&box.checked!==!!on)box.checked=!!on;if(document.body.classList.contains("journey-on"))document.body.classList.toggle("immersive",!!on)}
 function breath(i){clearTimeout(breathTimer);let el=$("breathCue");if(!el||i<0)return;let p=defaults[i].breath,inhale=true;function tick(){if(active!==i)return;let sec=inhale?p[0]:p[1];el.textContent=inhale?"INHALE":"EXHALE";document.body.classList.toggle("exhale",!inhale);el.style.setProperty("--breath",sec+"s");inhale=!inhale;breathTimer=setTimeout(tick,sec*1000)}tick()}
 function activate(i){active=i;document.body.dataset.chakra=i;if(i>=0&&C[i]){document.documentElement.style.setProperty("--chakra",C[i][4]);applyVoice(i);if(session&&!session.chakras.some(x=>x.index===i))session.chakras.push({index:i,name:C[i][0],at:new Date().toISOString()});if(cfg().autoBreath)breath(i)}else clearTimeout(breathTimer)}
 function mantra(chakra,index,text){if(session)session.mantras.push({at:new Date().toISOString(),chakra,index:index+1,text})}
@@ -26,6 +28,6 @@ function renderHistory(){let el=$("journeyHistory");if(!el)return;let q=sessions
 function deleteSession(id){let q=sessions(),s=q.find(x=>String(x.id)===String(id));if(!s||!confirm("Delete this completed journey?"))return;write(q.filter(x=>String(x.id)!==String(id)));renderHistory()}
 function clearHistory(){if(!confirm("Clear all completed Chakra Journey history on this device?"))return;localStorage.removeItem(OUT);renderHistory()}
 function exportOutbox(){let data=JSON.stringify(sessions(),null,2),a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"application/json"}));a.download="starfleet-chakra-completed-sessions.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-window.chakraAuto={activate,mantra,sessionStart,sessionEnd,exportOutbox,renderHistory,clearHistory,deleteSession,defaults};
-document.addEventListener("DOMContentLoaded",()=>{let b=$("starfleetExport");if(b)b.onclick=exportOutbox;let c=$("historyClear");if(c)c.onclick=clearHistory;renderHistory()});
+window.chakraAuto={activate,mantra,sessionStart,sessionEnd,exportOutbox,renderHistory,clearHistory,deleteSession,defaults,setImmersive,cfg};
+document.addEventListener("DOMContentLoaded",()=>{let b=$("starfleetExport");if(b)b.onclick=exportOutbox;let c=$("historyClear");if(c)c.onclick=clearHistory;let box=$("immersiveMode");if(box){box.checked=cfg().immersive!==false;box.addEventListener("change",()=>setImmersive(box.checked))}renderHistory()});
 })();
