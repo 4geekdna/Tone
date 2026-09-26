@@ -1,0 +1,26 @@
+/* Muse Athena / Mind Monitor live bridge for Chakra Journey.
+   Browser connects to a WebSocket bridge. Mind Monitor itself sends OSC/UDP, which browsers cannot receive directly.
+   Expected bridge messages: {address:'/muse/eeg',args:[...]}, or {type:'osc',address:'...',args:[...]}
+*/
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const state={ws:null,connected:false,recording:false,started:0,rows:[],latest:{},counts:{},lightEnabled:false,lastLight:0,baseline:[],url:localStorage.getItem('cj_muse_ws')||'ws://127.0.0.1:5001'};
+const bands=['delta','theta','alpha','beta','gamma'];
+function num(v){v=Number(v);return Number.isFinite(v)?v:null}
+function avg(a){const x=a.map(num).filter(v=>v!==null);return x.length?x.reduce((s,v)=>s+v,0)/x.length:null}
+function esc(s){return String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function classify(address){let a=address.toLowerCase();for(const b of bands)if(a.includes(b))return b;if(a.includes('eeg'))return'eeg';if(a.includes('acc'))return'acc';if(a.includes('gyro'))return'gyro';if(a.includes('ppg'))return'ppg';if(a.includes('batt'))return'battery';if(a.includes('horseshoe')||a.includes('contact'))return'contact';if(a.includes('blink'))return'blink';if(a.includes('jaw'))return'jaw';return'other'}
+function ingest(m){const address=m.address||m.path||m.oscAddress||'/unknown',args=Array.isArray(m.args)?m.args:(Array.isArray(m.values)?m.values:[m.value].filter(v=>v!==undefined));const kind=classify(address),t=Date.now();state.latest[kind]={t,address,args};state.counts[address]=(state.counts[address]||0)+1;if(state.recording)state.rows.push({t,ms:t-state.started,address,args});renderLive();if(state.lightEnabled)bioLight(t)}
+function renderLive(){const e=$('museLive');if(!e)return;const cards=['eeg','alpha','theta','beta','gamma','delta','ppg','acc','gyro','contact','battery'].map(k=>{const x=state.latest[k];return `<div class="museMetric"><b>${k.toUpperCase()}</b><span>${x?esc(x.args.slice(0,6).map(v=>typeof v==='number'?v.toFixed(3):v).join(' · ')):'—'}</span></div>`}).join('');e.innerHTML=cards;const n=$('musePackets');if(n)n.textContent=Object.values(state.counts).reduce((a,b)=>a+b,0).toLocaleString()+' packets';}
+function bioLight(t){if(t-state.lastLight<1800)return;let a=state.latest.alpha&&avg(state.latest.alpha.args),th=state.latest.theta&&avg(state.latest.theta.args),be=state.latest.beta&&avg(state.latest.beta.args);if(a===null||a===undefined)return;let score=a-((be??a)*.35)+((th??0)*.15);state.baseline.push(score);if(state.baseline.length>60)state.baseline.shift();let lo=Math.min(...state.baseline),hi=Math.max(...state.baseline),q=hi>lo?(score-lo)/(hi-lo):.5;let idx=q>.8?6:q>.65?5:q>.5?4:q>.35?3:q>.2?2:1;state.lastLight=t;if(window.goveeFollow)window.goveeFollow(idx);const s=$('museLightState');if(s)s.textContent=`Live lights: chakra ${idx+1} • signal ${q.toFixed(2)}`;}
+function connect(){disconnect();state.url=($('museWs')?.value||state.url).trim();localStorage.setItem('cj_muse_ws',state.url);try{let ws=new WebSocket(state.url);state.ws=ws;setStatus('Connecting…');ws.onopen=()=>{state.connected=true;setStatus('🟢 Muse bridge connected')};ws.onclose=()=>{state.connected=false;setStatus('⚪ Muse bridge disconnected')};ws.onerror=()=>setStatus('🔴 Bridge connection error');ws.onmessage=e=>{try{let d=JSON.parse(e.data);if(Array.isArray(d))d.forEach(ingest);else ingest(d)}catch{}}}catch(e){setStatus('🔴 '+e.message)}}
+function disconnect(){if(state.ws){try{state.ws.close()}catch{}state.ws=null}state.connected=false}
+function setStatus(s){if($('museStatus'))$('museStatus').textContent=s}
+function start(){state.rows=[];state.counts={};state.started=Date.now();state.recording=true;setStatus((state.connected?'🟢':'⚠️')+' Recording Muse session');}
+function stop(){state.recording=false;setStatus('Recording stopped • '+state.rows.length.toLocaleString()+' OSC messages saved in memory');saveLocal()}
+function saveLocal(){if(!state.rows.length)return;const summary={id:'muse-'+state.started,start:new Date(state.started).toISOString(),end:new Date().toISOString(),packets:state.rows.length,addresses:Object.fromEntries(Object.entries(state.counts)),data:state.rows};try{localStorage.setItem('cj_muse_last_summary',JSON.stringify({...summary,data:undefined}));}catch{}state.lastSession=summary;}
+function exportData(){saveLocal();const s=state.lastSession;if(!s)return setStatus('No recorded Muse session yet');const blob=new Blob([JSON.stringify(s,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`muse-athena-${new Date(s.start).toISOString().replace(/[:.]/g,'-')}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function init(){if(!$('musePanel'))return;$('museWs').value=state.url;$('museConnect').onclick=connect;$('museRecord').onclick=()=>state.recording?stop():start();$('museExport').onclick=exportData;$('museLights').onchange=e=>{state.lightEnabled=e.target.checked;$('museLightState').textContent=state.lightEnabled?'Live lights armed • waiting for alpha/theta/beta':'Live lights off'};renderLive();}
+window.CJMuse={state,ingest,start,stop,connect,exportData};document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
+})();

@@ -1,53 +1,10 @@
 (function(){
-  function player(){return document.getElementById("player")}
-  function playBtn(){return document.getElementById("play")}
-  function pauseBtn(){return document.getElementById("pause")}
-  function running(){const b=playBtn();return !!(b&&b.textContent==="Running")}
-  function pausedByApp(){const b=pauseBtn();return !!(b&&b.textContent==="Resume")}
-
-  window.unlockMedia=function(){
-    try{if(typeof audio==="function")audio()}catch(e){}
-    try{speechSynthesis.resume()}catch(e){}
-    const yt=player();
-    if(!yt)return;
-    yt.removeAttribute("autoplay");
-    yt.setAttribute("playsinline","");
-    yt.playsInline=true;
-    if(!running()||pausedByApp()){
-      try{yt.pause()}catch(e){}
-    }
-  };
-
-  function holdPause(){
-    const yt=player();
-    if(!yt)return;
-    if(!running()||pausedByApp()){
-      try{yt.pause()}catch(e){}
-    }
-  }
-
-  function boot(){
-    const yt=player();
-    if(!yt)return;
-    yt.removeAttribute("autoplay");
-    yt.addEventListener("loadedmetadata",holdPause);
-    yt.addEventListener("playing",function(){
-      if(!running()||pausedByApp()){
-        try{yt.pause()}catch(e){}
-      }
-    });
-    const pause=pauseBtn();
-    if(pause){
-      pause.addEventListener("click",function(){
-        setTimeout(function(){
-          if(pausedByApp()){
-            const v=player();
-            if(v){try{v.pause()}catch(e){}}
-          }
-        },0);
-      });
-    }
-  }
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);
-  else boot();
+  const VIDEO='Quick Morning Chakra Alignment Sound Bath - 11 Minute Chakra Balancing Meditation Frequencies.mp4';
+  function player(){return document.getElementById('player')}
+  function resumeWebAudio(){try{if(typeof ctx!=='undefined'&&ctx&&ctx.state==='suspended')ctx.resume().catch(function(){})}catch(e){}}
+  function ensureVideo(){const v=player();if(!v)return;v.setAttribute('playsinline','');v.setAttribute('webkit-playsinline','');v.playsInline=true;v.preload='metadata';if(!v.currentSrc&&!v.getAttribute('src')){v.src=encodeURI(VIDEO);try{v.load()}catch(e){}}}
+  window.unlockMedia=function(){resumeWebAudio();ensureVideo()};
+  function loadScript(src,attr){if(document.querySelector('script['+attr+']'))return;const s=document.createElement('script');s.src=src;s.setAttribute(attr,'1');document.head.appendChild(s)}
+  function boot(){ensureVideo();loadScript('journey-presets.js?v=20260923b','data-journey-presets');loadScript('chakra-journey-v029.js?v=20260923a','data-v029');loadScript('chakra-journey-v030.js?v=20260924a','data-v030');document.addEventListener('visibilitychange',function(){if(!document.hidden){resumeWebAudio();ensureVideo()}});window.addEventListener('pageshow',function(){setTimeout(function(){resumeWebAudio();ensureVideo()},80)});window.addEventListener('focus',function(){setTimeout(function(){resumeWebAudio();ensureVideo()},80)})}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

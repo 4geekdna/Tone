@@ -52,9 +52,10 @@
       if(e&&e.name==="NotAllowedError")return note("Audio output picker was dismissed");
     }
     await listOutputs();
-    if(!outputs.length)note(isiPhone()?"iPhone Safari cannot pick Bluetooth from a webpage. Use Share Audio below.":"No extra audio outputs found. Connect AirPods, then tap Refresh devices.");
+    if(!outputs.length)note("No extra audio outputs found. Connect headphones, then tap Refresh devices.");
   }
   async function applyOutputs(){
+    if(isiPhone())return;
     const video=$("player");
     const id1=($("out1")&&$("out1").value)||"";
     const id2=($("out2")&&$("out2").value)||"";
@@ -85,17 +86,23 @@
   function showHelp(){
     const help=$("audioHelp");
     if(!help)return;
-    if(isiPhone())help.textContent="iPhone cannot pick AirPods from a website. Use Control Center, Share Audio, then pick the second pair.";
-    else if(canPick())help.textContent="Pick Headphone 1 and Headphone 2, then tap Apply.";
-    else help.textContent="This browser uses the system output.";
+    if(isiPhone()){
+      help.textContent="Start the journey. Then open Control Center and use Share Audio to add the second pair of AirPods — same control as YouTube.";
+    }else if(canPick()){
+      help.textContent="Pick Headphone 1 and Headphone 2, then tap Apply.";
+    }else{
+      help.textContent="This browser uses the system output.";
+    }
   }
   function boot(){
     showHelp();
+    if(isiPhone()){
+      const box=$("outPickers");
+      if(box)box.style.display="none";
+      return;
+    }
     listOutputs();
     if($("outRefresh"))$("outRefresh").onclick=async function(){
-      if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
-        try{const s=await navigator.mediaDevices.getUserMedia({audio:true});s.getTracks().forEach(t=>t.stop())}catch(e){}
-      }
       const list=await listOutputs();
       note(list.length?list.length+" output devices found":"No named outputs yet.");
     };
