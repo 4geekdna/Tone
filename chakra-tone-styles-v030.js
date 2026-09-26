@@ -29,6 +29,6 @@ window.CJToneProfiles={
  warm:{partials:[[.5,.18],[1,.44],[1.5,.14],[2,.10],[2.5,.05]],attack:2.5,release:4.8,wobble:.028},
  deep:{partials:[[.25,.07],[.5,.22],[1,.42],[1.49,.10],[2,.07]],attack:3.0,release:5.5,wobble:.02}
 };
-function boot(){addStyles();}
+function boot(){addStyles();let saved=localStorage.getItem('cj_style');const s=$('style');if(s&&saved&&[...s.options].some(o=>o.value===saved))s.value=saved;}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
