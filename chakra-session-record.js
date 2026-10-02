@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
-let rec=null,chunks=[],lastFile=null,pending=false,saveBtn=null;
+let rec=null,chunks=[],lastFile=null,saveBtn=null;
 
 function mime(){
   if(!window.MediaRecorder)return '';
@@ -13,7 +13,7 @@ function mime(){
 function ext(m){return m.indexOf('mp4')>=0?'m4a':'webm'}
 
 function download(file){
-  let a=document.createElement('a);
+  let a=document.createElement('a');
   a.href=URL.createObjectURL(file);
   a.download=file.name;
   document.body.appendChild(a);
@@ -29,7 +29,7 @@ function shareFile(file){
 
 function finish(m){
   let blob=new Blob(chunks,{type:m});
-  chunks=[];rec=null;pending=false;
+  chunks=[];rec=null;
   if(saveBtn)saveBtn.remove();saveBtn=null;
   if(!blob.size)return;
   lastFile=new File([blob],'chakra-journey-session.'+ext(m),{type:blob.type});
@@ -38,9 +38,9 @@ function finish(m){
 
 function showSaveButton(){
   if(saveBtn||!lastFile)return;
-  let panel=$('sessionPanel);
+  let panel=$('sessionPanel');
   if(!panel)return;
-  saveBtn=document.createElement('button);
+  saveBtn=document.createElement('button');
   saveBtn.type='button';
   saveBtn.className='btn play';
   saveBtn.textContent='Save audio';
@@ -69,32 +69,33 @@ function begin(){
 function arm(){
   window.__cjRecWanted=true;
   if(window.__cjAudioCtx&&!window.__cjRecBus){
-    try{window.__cjRecBus=window.__cjAudioCtx.createMediaStreamDestination()}catch(e){}}
+    try{window.__cjRecBus=window.__cjAudioCtx.createMediaStreamDestination()}catch(e){}
+  }
   begin();
 }
 
 function discard(){
   if(rec&&rec.state==='recording'){try{rec.stop()}catch(e){}}
-  chunks=[];rec=null;pending=false;lastFile=null;
+  chunks=[];rec=null;lastFile=null;
   if(saveBtn){saveBtn.remove();saveBtn=null}
 }
 
 function install(){
   window.addEventListener('cj-audio-ready',()=>{if(window.__cjRecWanted)begin()});
-  let play=$('play);
+  let play=$('play');
   if(play){
     play.addEventListener('click',()=>{
       discard();
       arm();
     });
   }
-  let st=$('status);
+  let st=$('status');
   if(st&&window.MutationObserver){
     new MutationObserver(()=>{
       if(st.textContent==='Journey complete'&&rec&&rec.state==='recording')rec.stop();
     }).observe(st,{childList:true,characterData:true,subtree:true});
   }
-  let yt=$('player);
+  let yt=$('player');
   if(yt)yt.addEventListener('ended',()=>{if(rec&&rec.state==='recording')rec.stop()});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();
