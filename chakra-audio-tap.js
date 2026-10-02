@@ -19,12 +19,17 @@ function wrap(name){
 }
 wrap("AudioContext");
 wrap("webkitAudioContext");
+if(!window.__cjRecTapped)window.__cjRecTapped=new WeakSet();
 let orig=AudioNode.prototype.connect;
 AudioNode.prototype.connect=function(dest){
   let out=orig.apply(this,arguments);
   try{
     let bus=window.__cjRecBus;
-    if(bus&&sharedRunning(this.context)&&dest&&dest===this.context.destination&&dest!==bus)orig.call(this,bus);
+    let seen=window.__cjRecTapped;
+    if(bus&&seen&&sharedRunning(this.context)&&dest&&dest===this.context.destination&&dest!==bus&&!seen.has(this)){
+      orig.call(this,bus);
+      seen.add(this);
+    }
   }catch(e){}
   return out;
 };

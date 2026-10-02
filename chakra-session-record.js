@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
-let rec=null,chunks=[],lastFile=null,saveBtn=null;
+let rec=null,chunks=[],lastFile=null,saveBtn=null,mimeType="";
 
 function mime(){
   if(!window.MediaRecorder)return "";
@@ -11,7 +11,11 @@ function mime(){
   return "";
 }
 function ext(m){return m.indexOf("mp4")>=0?"m4a":"webm"}
-
+function line(t){let n=$("sessionInfo");if(n)n.textContent=t}
+function shared(){
+  if(window.CJAudio){try{window.CJAudio()}catch(e){}}
+  return window.__cjAudioCtx||null;
+}
 function download(file){
   let a=document.createElement("a");
   a.href=URL.createObjectURL(file);
@@ -20,84 +24,132 @@ function download(file){
   a.click();
   a.remove();
 }
-
-function shareFile(file){
-  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-    navigator.share({files:[file],title:"Chakra Journey session"}).catch(()=>download(file));
-  }else download(file);
+function shareFile(){
+  if(!lastFile)return;
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[lastFile]})){
+    navigator.share({files:[lastFile],title:"Chakra Journey recording"}).catch(()=>download(lastFile));
+  }else download(lastFile);
 }
-
-function finish(m){
-  let blob=new Blob(chunks,{type:m});
-  chunks=[];rec=null;
-  if(saveBtn)saveBtn.remove();saveBtn=null;
-  if(!blob.size)return;
-  lastFile=new File([blob],"chakra-journey-session."+ext(m),{type:blob.type});
-  showSaveButton();
-}
-
-function showSaveButton(){
+function hideButton(){if(saveBtn){saveBtn.remove();saveBtn=null}}
+function showButton(){
   if(saveBtn||!lastFile)return;
   let panel=$("sessionPanel");
   if(!panel)return;
   saveBtn=document.createElement("button");
   saveBtn.type="button";
   saveBtn.className="btn play";
-  saveBtn.textContent="Save audio";
+  saveBtn.id="saveShareRecording";
+  saveBtn.textContent="Save & share recording";
   saveBtn.style.marginTop="8px";
-  saveBtn.onclick=()=>{
-    shareFile(lastFile);
-    if(saveBtn){saveBtn.remove();saveBtn=null}
-    lastFile=null;
-  };
+  saveBtn.onclick=shareFile;
   panel.appendChild(saveBtn);
 }
-
-function begin(){
-  if(rec&&rec.state==="recording")return;
-  let ctx=window.__cjAudioCtx;
-  if(!ctx||ctx.state!=="running"||!window.__cjRecBus)return;
-  let m=mime();
-  if(!window.MediaRecorder||!m)return;
-  chunks=[];
-  try{rec=new MediaRecorder(window.__cjRecBus.stream,{mimeType:m})}catch(e){return}
-  rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
-  rec.onstop=()=>finish(m);
-  rec.start(1000);
+function finish(){
+  let m=mimeType||mime();
+  let blob=new Blob(chunks,{type:m});
+  chunks=[];rec=null;
+  if(!blob.size){line("Nothing was captured.");return}
+  lastFile=new File([blob],"chakra-journey-session."+ext(m),{type:blob.type});
+  line("Recording ready.");
+  showButton();
 }
-
-function arm(){
-  window.__cjRecWanted=true;
-  let ctx=window.__cjAudioCtx;
-  if(ctx&&ctx.state==="running"&&!window.__cjRecBus){
-    try{window.__cjRecBus=ctx.createMediaStreamDestination()}catch(e){}
-  }
-  begin();
-}
-
 function discard(){
-  if(rec&&rec.state==="recording"){try{rec.stop()}catch(e){}}
-  chunks=[];rec=null;lastFile=null;
-  if(saveBtn){saveBtn.remove();saveBtn=null}
+  let old=rec;
+  rec=null;chunks=[];lastFile=null;
+  hideButton();
+  if(old&&old.state==="recording"){old.onstop=null;try{old.stop()}catch(e){}}
 }
-
-function install(){
-  window.addEventListener("cj-audio-ready",()=>{if(window.__cjRecWanted)arm()});
-  let play=$("play");
-  if(play){
-    play.addEventListener("click",()=>{
-      discard();
-      arm();
-    });
+function ensureBus(ctx){
+  window.__cjRecWanted=true;
+  if(!window.__cjRecBus||window.__cjRecBus.context!==ctx){
+    try{window.__cjRecBus=ctx.createMediaStreamDestination()}catch(e){return null}
   }
+  return window.__cjRecBus;
+}
+function tapVideo(ctx){
+  if(window.__cjVideoSrc)return window.__cjVideoSrc;
+  let v=$("player");
+  if(!v)return null;
+  try{ctx.resume()}catch(e){}
+  if(ctx.state!=="running")return null;
+  try{
+    let src=ctx.createMediaElementSource(v);
+    window.__cjVideoSrc=src;
+    let bus=window.__cjRecBus;
+    if(bus){src.connect(bus);if(window.__cjRecTapped)window.__cjRecTapped.add(src)}
+    src.connect(ctx.destination);
+    return src;
+  }catch(e){return window.__cjVideoSrc||null}
+}
+window.__cjTapVideo=function(){
+  let ctx=shared();
+  if(!ctx)return null;
+  try{ctx.resume()}catch(e){}
+  if(ctx.state!=="running")return null;
+  ensureBus(ctx);
+  return tapVideo(ctx);
+};
+function begin(){
+  if(rec&&rec.state==="recording")return true;
+  let ctx=window.__cjAudioCtx;
+  if(!ctx||ctx.state!=="running"||!window.__cjRecBus)return false;
+  let m=mime();
+  if(!window.MediaRecorder||!m){line("This browser cannot write a recording.");return false}
+  mimeType=m;chunks=[];
+  try{rec=new MediaRecorder(window.__cjRecBus.stream,{mimeType:m})}catch(e){line("Could not start recording.");return false}
+  rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  rec.onstop=finish;
+  rec.start(1000);
+  return true;
+}
+function endRecording(){
+  if(rec&&rec.state==="recording"){try{rec.stop()}catch(e){}}
+}
+function startCapture(){
+  discard();
+  let ctx=shared();
+  if(!ctx){line("Recording bowls and voice when audio starts. Video stays on the element.");return}
+  try{ctx.resume()}catch(e){}
+  if(ctx.state!=="running"){line("Audio is not running. Video stays on the element. Recording what it can.");return}
+  ensureBus(ctx);
+  let tapped=tapVideo(ctx);
+  begin();
+  line(tapped?"Recording this journey.":"Recording bowls and voice. Video stays on the element.");
+}
+function iosNote(){
+  let ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  if(!ios||$("silentNote"))return;
+  let play=$("play");
+  if(!play)return;
+  let p=document.createElement("p");
+  p.id="silentNote";
+  p.className="voice-note";
+  p.textContent="Turn off silent mode for sound";
+  play.insertAdjacentElement("afterend",p);
+}
+function install(){
+  iosNote();
+  let play=$("play");
+  if(play)play.addEventListener("click",startCapture,true);
+  let stop=$("stop");
+  if(stop)stop.addEventListener("click",endRecording);
+  let back=$("backMain");
+  if(back)back.addEventListener("click",endRecording);
   let st=$("status");
   if(st&&window.MutationObserver){
     new MutationObserver(()=>{
-      if(st.textContent==="Journey complete"&&rec&&rec.state==="recording")rec.stop();
+      if(st.textContent==="Journey complete")endRecording();
     }).observe(st,{childList:true,characterData:true,subtree:true});
   }
   let yt=$("player");
-  if(yt)yt.addEventListener("ended",()=>{if(rec&&rec.state==="recording")rec.stop()});
+  if(yt)yt.addEventListener("ended",endRecording);
+  window.addEventListener("cj-audio-ready",()=>{
+    if(!window.__cjRecWanted||(rec&&rec.state==="recording"))return;
+    let ctx=window.__cjAudioCtx;
+    if(!ctx||ctx.state!=="running")return;
+    ensureBus(ctx);
+    begin();
+  });
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",install);else install();
 })();

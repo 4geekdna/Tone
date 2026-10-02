@@ -1,8 +1,7 @@
 (function(){
 'use strict';
-/* Chakra Journey v0.38 — audio-reactive lights, off until a gesture.
-   Never creates an AudioContext and never taps the video until the
-   shared core context is already running inside a click. */
+/* Chakra Journey v0.39 — audio-reactive lights, off until a gesture.
+   Never creates an AudioContext. Reuses the one video tap. */
 const LS="cj_audio_lights_v1";
 const REL="038";
 const BANDS=[
@@ -44,8 +43,13 @@ function ensureAnalyser(){
   try{ctx.resume()}catch(e){}
   if(ctx.state!=="running")return false;
   try{
+    src=window.__cjVideoSrc||src;
+    if(!src&&window.__cjTapVideo)src=window.__cjTapVideo();
     if(!src){
+      let v=$("player");
+      if(!v)return false;
       src=ctx.createMediaElementSource(v);
+      window.__cjVideoSrc=src;
       src.connect(ctx.destination);
     }
     analyser=ctx.createAnalyser();
