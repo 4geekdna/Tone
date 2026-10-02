@@ -1,10 +1,10 @@
 (function(){
 'use strict';
-/* Chakra Journey v0.37 — audio-reactive Govee lighting.
-   Hears the video (the bowls), finds the two loudest chakra bands,
-   and paints lights as two channels. Timestamp single-color follow
-   is held off while this is on. */
+/* Chakra Journey v0.38 — audio-reactive lights, off until a gesture.
+   Never creates an AudioContext and never taps the video until the
+   shared core context is already running inside a click. */
 const LS="cj_audio_lights_v1";
+const REL="038";
 const BANDS=[
   {hz:396,lo:360,hi:430,name:"Root"},
   {hz:417,lo:430,hi:470,name:"Sacral"},
@@ -15,7 +15,7 @@ const BANDS=[
   {hz:963,lo:910,hi:1040,name:"Crown"}
 ];
 const ATTACK=.12, RELEASE=.85, SMOOTH=.4, MIN_AMP=.018, PAINT_MS=700;
-let on=false, ctx=null, src=null, analyser=null, data=null, raf=null;
+let on=false, src=null, analyser=null, data=null, raf=null;
 let smooth=new Float32Array(7), lastBlend=null, lastT=0, lastPaint=0, held=false;
 
 function $(id){return document.getElementById(id)}
@@ -23,8 +23,9 @@ function hexToRgb(h){h=String(h||"#fff").replace("#","").padStart(6,"0");return[
 function rgbToHex(r,g,b){return"#"+[r,g,b].map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,"0")).join("")}
 function mix(a,b,t){return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]}
 function load(){try{return JSON.parse(localStorage.getItem(LS)||"{}")}catch(e){return{}}}
-function save(x){localStorage.setItem(LS,JSON.stringify(x))}
+function save(x){try{localStorage.setItem(LS,JSON.stringify(x))}catch(e){}}
 function line(m){let el=$("audioLightsNote");if(el)el.textContent=m}
+function shared(){return window.__cjAudioCtx||null}
 
 function holdFollow(){
   if(held||!window.goveeFollow)return;
@@ -38,10 +39,10 @@ function holdFollow(){
 
 function ensureAnalyser(){
   if(analyser)return true;
-  let v=$("player");
-  if(!v)return false;
-  ctx=ctx||window.__cjAudioCtx||new (window.AudioContext||window.webkitAudioContext)();
-  if(ctx.state==="suspended")ctx.resume().catch(()=>{});
+  let v=$("player"), ctx=shared();
+  if(!v||!ctx)return false;
+  try{ctx.resume()}catch(e){}
+  if(ctx.state!=="running")return false;
   try{
     if(!src){
       src=ctx.createMediaElementSource(v);
@@ -57,6 +58,8 @@ function ensureAnalyser(){
 }
 
 function bandAmp(lo,hi){
+  let ctx=shared();
+  if(!ctx||!analyser)return 0;
   let sr=ctx.sampleRate, n=analyser.fftSize;
   let a=Math.max(0,Math.floor(lo*n/sr)), b=Math.min(data.length-1,Math.ceil(hi*n/sr));
   let peak=0;
@@ -98,18 +101,21 @@ function tick(ts){
 }
 
 function start(){
-  if(on)return;
+  if(on&&analyser)return;
+  if(!ensureAnalyser()){
+    on=false;
+    line("Shared audio is not running. Timestamp colors on. Video playback is untouched.");
+    return;
+  }
   holdFollow();
-  if(!ensureAnalyser()){line("Could not tap the video audio — timestamp colors still on");return}
   on=true; lastT=0; lastPaint=0; smooth.fill(0); lastBlend=null;
-  if(ctx&&ctx.state==="suspended")ctx.resume().catch(()=>{});
   raf=requestAnimationFrame(tick);
   line("Listening to the bowls. Lights follow the two loudest colors.");
 }
 function stop(){
   on=false;
   if(raf){cancelAnimationFrame(raf);raf=null}
-  line("Audio-reactive lights off. Timestamp colors restored.");
+  line("Audio-reactive lights off. Timestamp colors on. Video playback is untouched.");
 }
 
 function ensureUI(){
@@ -123,19 +129,23 @@ function ensureUI(){
   let note=document.createElement("p");
   note.className="voice-note";
   note.id="audioLightsNote";
-  note.textContent="Hears the video bowls and splits your lights into two channels: loudest color, then the next. Timestamp single-color follow stays off while this is on.";
+  note.textContent="Off by default. Turn it on from a tap after the journey audio is running. If that audio is not running, the video stays on the element and timestamp colors stay on.";
   gp.appendChild(row);
   gp.appendChild(note);
   let cb=$("audioLights"), st=load();
-  cb.checked=st.on!==false;
-  cb.onclick=()=>{let x=load();x.on=cb.checked;save(x);cb.checked?start():stop()};
-  if(cb.checked)setTimeout(start,600);
+  cb.checked=st.rel===REL && st.on===true;
+  cb.onclick=()=>{
+    save({on:cb.checked,rel:REL});
+    if(cb.checked)start(); else stop();
+  };
 }
 function boot(){
   ensureUI();
-  setInterval(holdFollow,500);
   let play=$("play");
-  if(play)play.addEventListener("click",()=>{if(load().on!==false)setTimeout(start,400)});
+  if(play)play.addEventListener("click",()=>{
+    let cb=$("audioLights");
+    if(cb&&cb.checked)start();
+  });
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 window.CJAudioLights={start:start,stop:stop,isOn:()=>on};
