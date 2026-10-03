@@ -115,6 +115,14 @@ window.__cjTapVideo=function(){
   ensureBus(ctx);
   return tapVideo(ctx);
 };
+window.__cjEnsureVideoGraph=function(){
+  let ctx=shared();
+  if(!ctx)return null;
+  try{ctx.resume()}catch(e){}
+  if(ctx.state!=="running")return null;
+  if(window.__cjRecWanted)ensureBus(ctx);
+  return tapVideo(ctx);
+};
 function begin(){
   if(rec&&rec.state==="recording")return true;
   let ctx=window.__cjAudioCtx;
