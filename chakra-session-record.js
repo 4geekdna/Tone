@@ -66,18 +66,44 @@ function ensureBus(ctx){
   }
   return window.__cjRecBus;
 }
+function copyThrough(e){
+  let inn=e.inputBuffer, out=e.outputBuffer, n=out.numberOfChannels, m=inn.numberOfChannels;
+  if(!n||!m)return;
+  for(let c=0;c<n;c++){
+    let src=inn.getChannelData(Math.min(c,m-1)), dst=out.getChannelData(c);
+    dst.set(src.subarray(0,dst.length));
+  }
+}
+function attachBus(ctx){
+  let node=window.__cjVideoOut, bus=window.__cjRecBus;
+  if(!node||!bus||bus.context!==ctx||window.__cjVideoBus===bus)return;
+  try{node.connect(bus);window.__cjVideoBus=bus}catch(e){}
+}
 function tapVideo(ctx){
-  if(window.__cjVideoSrc)return window.__cjVideoSrc;
+  if(!ctx||ctx.state!=="running")return null;
+  if(window.__cjVideoSrc){attachBus(ctx);return window.__cjVideoSrc}
   let v=$("player");
   if(!v)return null;
   try{ctx.resume()}catch(e){}
   if(ctx.state!=="running")return null;
   try{
     let src=ctx.createMediaElementSource(v);
+    let gain=ctx.createGain();
+    gain.gain.value=1;
+    src.connect(gain);
+    let out=gain;
+    try{
+      let pull=ctx.createScriptProcessor(4096,2,2);
+      pull.onaudioprocess=copyThrough;
+      gain.connect(pull);
+      out=pull;
+      window.__cjVideoPull=pull;
+    }catch(e){}
+    if(window.__cjRecTapped)window.__cjRecTapped.add(out);
+    out.connect(ctx.destination);
     window.__cjVideoSrc=src;
-    let bus=window.__cjRecBus;
-    if(bus){src.connect(bus);if(window.__cjRecTapped)window.__cjRecTapped.add(src)}
-    src.connect(ctx.destination);
+    window.__cjVideoOut=out;
+    attachBus(ctx);
     return src;
   }catch(e){return window.__cjVideoSrc||null}
 }
@@ -105,16 +131,31 @@ function begin(){
 function endRecording(){
   if(rec&&rec.state==="recording"){try{rec.stop()}catch(e){}}
 }
+function armRecording(ctx){
+  if(!window.__cjRecWanted||!ctx)return;
+  let go=function(){
+    if(!window.__cjRecWanted||ctx.state!=="running")return;
+    ensureBus(ctx);
+    let tapped=tapVideo(ctx);
+    begin();
+    line(tapped?"Recording this journey, including the video.":"Recording bowls and voice. Video stays on the element.");
+  };
+  if(ctx.state==="running"){go();return}
+  try{ctx.resume().then(go).catch(function(){})}catch(e){}
+  let onstate=function(){
+    if(ctx.state!=="running")return;
+    ctx.removeEventListener("statechange",onstate);
+    go();
+  };
+  ctx.addEventListener("statechange",onstate);
+}
 function startCapture(){
   discard();
+  window.__cjRecWanted=true;
   let ctx=shared();
   if(!ctx){line("Recording bowls and voice when audio starts. Video stays on the element.");return}
   try{ctx.resume()}catch(e){}
-  if(ctx.state!=="running"){line("Audio is not running. Video stays on the element. Recording what it can.");return}
-  ensureBus(ctx);
-  let tapped=tapVideo(ctx);
-  begin();
-  line(tapped?"Recording this journey.":"Recording bowls and voice. Video stays on the element.");
+  armRecording(ctx);
 }
 function iosNote(){
   let ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
@@ -146,9 +187,8 @@ function install(){
   window.addEventListener("cj-audio-ready",()=>{
     if(!window.__cjRecWanted||(rec&&rec.state==="recording"))return;
     let ctx=window.__cjAudioCtx;
-    if(!ctx||ctx.state!=="running")return;
-    ensureBus(ctx);
-    begin();
+    if(!ctx)return;
+    armRecording(ctx);
   });
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",install);else install();
