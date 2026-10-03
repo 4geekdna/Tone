@@ -20,6 +20,7 @@
      Third Eye 796.5–907.5    center 852  #283593
      Crown     907.5–2200     center 963  #6A1B9A
 */
+const LS="cj_audio_lights_v1";
 const BANDS=[
   {name:"Root",hz:396,lo:80,hi:406.5,color:"#8B0000"},
   {name:"Sacral",hz:417,lo:406.5,hi:472.5,color:"#E65100"},
@@ -34,6 +35,8 @@ let stream=null, starting=null, analyser=null, floatData=null, mute=null, src=nu
 let raf=null, shown=-1, pending=-1, pendingAt=0, quietAt=0, lastPaint=0, held=false, origFollow=null;
 
 function $(id){return document.getElementById(id)}
+function loadLights(){try{return JSON.parse(localStorage.getItem(LS)||"{}")}catch(e){return{}}}
+function saveLights(on){try{let x=loadLights();x.on=!!on;x.rel="040";localStorage.setItem(LS,JSON.stringify(x))}catch(e){}}
 function readout(){return $("freqReadout")}
 function say(t){let el=readout();if(el)el.textContent=t}
 function shared(){
@@ -148,6 +151,7 @@ function connectGraph(ctx,live){
     analyser.connect(mute);
     mute.connect(ctx.destination);
     if(!raf)raf=requestAnimationFrame(tick);
+    saveLights(true);
     say("Listening…");
     return true;
   }catch(e){
@@ -222,6 +226,7 @@ function gestureStart(){
   beginMic();
 }
 function tryGranted(){
+  if(loadLights().rel==="040"&&loadLights().on===false)return;
   if(!navigator.permissions||!navigator.permissions.query)return;
   navigator.permissions.query({name:"microphone"}).then(function(p){
     if(p.state==="granted")gestureStart();
@@ -233,6 +238,7 @@ function stop(){
   if(raf){cancelAnimationFrame(raf);raf=null}
   if(stream){try{stream.getTracks().forEach(function(t){t.stop()})}catch(e){}}
   stream=null;starting=null;analyser=null;
+  saveLights(false);
   say("Microphone color is off.");
 }
 function boot(){
