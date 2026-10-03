@@ -87,12 +87,22 @@ function dominantHz(db, sampleRate, fftSize){
 }
 function paintScreen(i){
   let hex=colorFor(i);
-  document.documentElement.style.setProperty("--chakra",hex);
   document.body.classList.add("freq-color");
+  let now=getComputedStyle(document.body).backgroundColor;
+  document.body.style.transition="none";
+  document.body.style.backgroundColor=now;
+  void document.body.offsetWidth;
+  document.body.style.transition="background-color .5s ease";
+  document.body.style.backgroundColor=hex;
+  document.documentElement.style.setProperty("--chakra",hex);
   document.body.dataset.freqBand=BANDS[i].name;
   document.body.dataset.freqIndex=String(i);
   let meta=document.querySelector('meta[name="theme-color"]');
   if(meta)meta.setAttribute("content",hex);
+}
+function releaseScreen(){
+  document.body.style.backgroundColor="";
+  document.body.style.transition="";
 }
 function paintLights(i){
   let now=performance.now();
@@ -111,6 +121,12 @@ function holdFollow(){
     return origFollow.apply(this,arguments);
   };
   held=true;
+}
+function watchFollow(n){
+  n=n||0;
+  if(held||n>25)return;
+  if(typeof window.goveeFollow==="function"){holdFollow();return}
+  setTimeout(function(){watchFollow(n+1)},400);
 }
 function ownScreen(){
   let auto=window.chakraAuto;
@@ -171,6 +187,7 @@ function tick(ts){
     if(ts-quietAt>QUIET_MS&&shown>=0){
       shown=-1;
       delete document.body.dataset.freqHz;
+      releaseScreen();
       say("Listening…");
     }
     return;
@@ -220,7 +237,7 @@ function beginMic(){
   return starting;
 }
 function gestureStart(){
-  holdFollow();
+  watchFollow();
   ownScreen();
   ensureReadout();
   beginMic();
@@ -243,7 +260,7 @@ function stop(){
 }
 function boot(){
   ensureReadout();
-  holdFollow();
+  watchFollow();
   ownScreen();
   ["pointerup","touchend","click"].forEach(function(ev){
     document.addEventListener(ev,gestureStart,true);
