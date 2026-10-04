@@ -40,6 +40,15 @@ GitHub is code only. Do not use issues, PR comments, review comments, or commit 
 - No keys, tokens, or logs. No new media. No `.github/**`.
 - Never-touch list below holds. Stop, Pause, and Back stay reachable and resumable. History stays completed-only. No `speechSynthesis`.
 
+## Tests (since v0.44)
+
+- `node --test tests/` from the repo root. Node 18+, no npm. The ffmpeg-based tests skip when ffmpeg is missing.
+- The primary-chakra logic (`chakra-dominant.js`) is pure and covered there: hold, margin, cooldown, timeline marks.
+
+## Adding videos (since v0.44)
+
+- See `ADDING-VIDEOS.md`. On the phone: Journey Source, Add video. In the repo: drop the file in `videos/incoming/`, run `node tools/add-video.js`, ship `videos/` and `videos/manifest.json` in a DEPLOY PR. Media still needs Anthony's OK.
+
 ## UX invariants
 
 1. No system voice. The chakra path never calls `speechSynthesis`. Voice is the on-device cache, then ElevenLabs if a key exists, else the visible "add a key or Build All Voices" message.
