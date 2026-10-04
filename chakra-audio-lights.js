@@ -1,6 +1,12 @@
 (function(){
 'use strict';
 /* Chakra Journey v0.43 — the video file's audio colors the screen.
+   v0.44: the chakra comes from CJDominant (chakra-dominant.js), the same
+   detection Auto mode uses: exact solfeggio tones by Hz, other pitches by
+   their note (C Root ... B Crown, as in window.C), A-weighted so a low hum
+   does not outvote the bowl. The band table below is the fallback only.
+   Each analyser frame is also handed to window.__cjSpectrumHook
+   (chakra-auto-mantra.js) for primary-chakra detection.
    There is no microphone path. The media element is attached once,
    and only while the shared AudioContext is running, by
    chakra-session-record.js (__cjEnsureVideoGraph). That same node
@@ -192,6 +198,17 @@ function blendParts(parts){
   return rgbHex(rgb[0],rgb[1],rgb[2]);
 }
 function targetFrom(db, sampleRate, fftSize){
+  let D=window.CJDominant;
+  if(D&&typeof D.topBands==="function"){
+    let top=D.topBands(db, sampleRate, fftSize, topN);
+    if(!top.length)return null;
+    if(topN<=1||top.length===1){
+      let p=top[0];
+      return {hex:colorFor(p.band), label:Math.round(p.hz)+" Hz · "+BANDS[p.band].name, peaks:[{hz:p.hz, band:p.band, mag:1}]};
+    }
+    let parts=top.map(function(p){return {hz:p.hz, band:p.band, mag:p.level}});
+    return {hex:blendParts(parts), label:parts.map(function(p){return BANDS[p.band].name}).join(" · "), peaks:parts};
+  }
   if(topN<=1){
     let hz=dominantHz(db, sampleRate, fftSize);
     let band=hz==null?-1:bandForHz(hz);
@@ -422,6 +439,7 @@ function tick(ts){
   let ctx=window.__cjAudioCtx;
   if(!analyser||!ctx||ctx.state!=="running"||!floatData)return;
   analyser.getFloatFrequencyData(floatData);
+  if(typeof window.__cjSpectrumHook==="function"){try{window.__cjSpectrumHook(floatData, ctx.sampleRate, analyser.fftSize, ts)}catch(e){}}
   let target=targetFrom(floatData, ctx.sampleRate, analyser.fftSize);
   if(!target){
     pendingHex="";
