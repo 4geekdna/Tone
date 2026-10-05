@@ -49,7 +49,7 @@ let held=false, origFollow=null, topN=1, fileUrl="";
 
 function $(id){return document.getElementById(id)}
 function readout(){return $("freqReadout")}
-function say(t){let el=readout();if(el)el.textContent=t}
+function say(t){let el=readout();if(el&&el.textContent!==t)el.textContent=t}
 function shared(){
   try{if(window.CJAudio)return window.CJAudio()}catch(e){}
   return window.__cjAudioCtx||null;
@@ -261,8 +261,7 @@ function applySurfaces(hex){
   document.body.dataset.freqHex=hex;
 }
 function paintColor(hex){
-  if(!hex)return;
-  if(hex===paintedHex){applySurfaces(hex);return}
+  if(!hex||hex===paintedHex)return;
   if(document.body.classList.contains("freq-color")){applySurfaces(hex);paintedHex=hex;paintLights(hex);return}
   document.body.classList.add("freq-color");
   let now=getComputedStyle(document.body).backgroundColor;
