@@ -31,6 +31,7 @@
      Crown     907.5–2200     center 963  #6A1B9A
 */
 const LS_TOP="cj_color_top_v1";
+const LS_LIGHTS="cj_audio_lights_v1";
 const BANDS=[
   {name:"Root",hz:396,lo:80,hi:406.5,color:"#8B0000"},
   {name:"Sacral",hz:417,lo:406.5,hi:472.5,color:"#E65100"},
@@ -53,7 +54,34 @@ function shared(){
   try{if(window.CJAudio)return window.CJAudio()}catch(e){}
   return window.__cjAudioCtx||null;
 }
+function migrateColorTop(store){
+  let top=null;
+  try{top=store.getItem(LS_TOP)}catch(e){return null}
+  if(top!=null&&top!=="")return top;
+  let raw=null;
+  try{raw=store.getItem(LS_LIGHTS)}catch(e){return null}
+  if(raw==null)return null;
+  let n=1;
+  try{
+    let parsed=JSON.parse(raw);
+    if(parsed&&(parsed.top===2||parsed.top===3))n=parsed.top;
+  }catch(e){}
+  let asNum=parseInt(raw,10);
+  if(asNum===2||asNum===3)n=asNum;
+  try{store.setItem(LS_TOP,String(n))}catch(e){}
+  return String(n);
+}
+function writeColorTop(store,n){
+  try{store.setItem(LS_TOP,String(n))}catch(e){}
+  let prev={};
+  try{prev=JSON.parse(store.getItem(LS_LIGHTS)||"{}")||{}}catch(e){prev={}}
+  if(!prev||typeof prev!=="object")prev={};
+  prev.top=n;
+  prev.rel="045";
+  try{store.setItem(LS_LIGHTS,JSON.stringify(prev))}catch(e){}
+}
 function loadTop(){
+  try{migrateColorTop(localStorage)}catch(e){}
   try{
     let n=parseInt(localStorage.getItem(LS_TOP)||"1",10);
     if(n===2||n===3)return n;
@@ -316,7 +344,7 @@ function markTop(){
 function setTop(n){
   n=n===2||n===3?n:1;
   topN=n;
-  try{localStorage.setItem(LS_TOP,String(n))}catch(e){}
+  try{writeColorTop(localStorage,n)}catch(e){}
   pendingHex="";
   shownHex="";
   shownLabel="";
@@ -524,6 +552,7 @@ window.CJFreqColor={
   blendParts:blendParts,
   targetFrom:targetFrom,
   setTop:setTop,
+  migrateColorTop:migrateColorTop,
   top:function(){return topN},
   start:beginFile,
   isLive:function(){return !!analyser},
