@@ -39,7 +39,7 @@ function startTone(c){if(typeof window.__cjStartTone==="function")return window.
 function ytVol(){return +$("yv").value}
 function fadeYT(v){if(!yt)return;try{yt.volume=cl(v,0,100)/100}catch{}}
 function duck(on){ducked=!!on;if(typeof window.__cjDuck==="function")return window.__cjDuck(on);if(tone&&ctx)try{tone.g.gain.setTargetAtTime(Math.max(.0001,+$("tv").value*(ducked?.18:1)),ctx.currentTime,.2)}catch{}if(useYT())fadeYT(on?+$("dv").value:ytVol())}
-function settleVoice(ok){let done=voiceDone;voiceDone=null;if(voiceNode){try{voiceNode.onended=null}catch{}try{voiceNode.stop()}catch{}voiceNode=null}voiceGainNode=voiceWarm=voiceDry=voiceWet=null;duck(false);if(done)done(!!ok)}
+function settleVoice(ok){let done=voiceDone;voiceDone=null;if(voiceNode){try{voiceNode.onended=null}catch{}try{let t=ctx&&ctx.currentTime||0;if(voiceGainNode&&ctx){voiceGainNode.gain.cancelScheduledValues(t);let cur=voiceGainNode.gain.value;if(!(cur>0))cur=.0001;voiceGainNode.gain.setValueAtTime(cur,t);voiceGainNode.gain.linearRampToValueAtTime(.0001,t+.02)}voiceNode.stop(t+.025)}catch{}voiceNode=null}voiceGainNode=voiceWarm=voiceDry=voiceWet=null;duck(false);if(done)done(!!ok)}
 function stopVoice(){if(aborter){try{aborter.abort()}catch{}aborter=null}settleVoice(false)}
 function unlockVoiceAudio(){let ac=audio();try{let b=ac.createBuffer(1,1,ac.sampleRate),s=ac.createBufferSource(),g=ac.createGain();g.gain.value=.00001;s.buffer=b;s.connect(g);g.connect(ctx.destination);s.start()}catch{}return ac.resume?.().catch(()=>{})}
 const VOICE_CACHE="cj_voice_audio_v2";
@@ -99,7 +99,7 @@ async function playVoiceBlob(blob,label){
   if(!run&&!fromPreview)return false;
   await unlockVoiceAudio();
   let b=await ctx.decodeAudioData(bytes.slice(0)),s=ctx.createBufferSource(),g=ctx.createGain(),warm=ctx.createBiquadFilter(),dry=ctx.createGain(),wet=ctx.createGain(),conv=ctx.createConvolver(),mix=+$("reverbMix").value;
-  s.buffer=b;g.gain.value=+$("vv").value;warm.type="lowshelf";warm.frequency.value=+$("warmthFreq").value;warm.gain.value=3;dry.gain.value=1-mix;wet.gain.value=mix;conv.buffer=hallImpulse();
+  let vNow=ctx.currentTime,vVol=Math.max(.0001,+$("vv").value);s.buffer=b;g.gain.setValueAtTime(.0001,vNow);g.gain.linearRampToValueAtTime(vVol,vNow+.02);warm.type="lowshelf";warm.frequency.value=+$("warmthFreq").value;warm.gain.value=3;dry.gain.value=1-mix;wet.gain.value=mix;conv.buffer=hallImpulse();
   s.connect(g);g.connect(warm);warm.connect(dry);dry.connect(ctx.destination);warm.connect(conv);conv.connect(wet);wet.connect(ctx.destination);
   voiceNode=s;voiceGainNode=g;voiceWarm=warm;voiceDry=dry;voiceWet=wet;duck(true);status(label+" • speaking");hideVoiceGap();
   return await new Promise(ok=>{let settled=false;let timer=0;let done=v=>{if(settled)return;settled=true;if(timer)clearTimeout(timer);if(voiceNode===s)voiceNode=null;voiceGainNode=voiceWarm=voiceDry=voiceWet=null;if(voiceDone===fin)voiceDone=null;setTimeout(()=>{duck(false);ok(!!v)},v?350:0)};let fin=v=>done(v);voiceDone=fin;s.onended=()=>done(true);let ms=Math.min(120000,Math.max(1500,((b&&b.duration)||8)*1000+1200));timer=setTimeout(()=>done(true),ms);try{s.start()}catch(e){done(false)}});

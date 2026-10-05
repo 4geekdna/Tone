@@ -75,13 +75,51 @@ function copyThrough(e){
   }
 }
 function attachBus(ctx){
-  let node=window.__cjVideoOut, bus=window.__cjRecBus;
+  let node=window.__cjVideoPull, bus=window.__cjRecBus;
   if(!node||!bus||bus.context!==ctx||window.__cjVideoBus===bus)return;
   try{node.connect(bus);window.__cjVideoBus=bus}catch(e){}
 }
+function scriptPull(ctx){
+  let pull=ctx.createScriptProcessor(4096,2,2);
+  pull.onaudioprocess=copyThrough;
+  return pull;
+}
+/* Speakers hear the video gain directly. A ScriptProcessor on that path
+   clicks every buffer (4096 samples, about 93 ms at 44.1 kHz) whenever the
+   main thread is late, and the same node used to feed the recording.
+   The pull stays off the speakers: an AudioWorklet copy into the record bus,
+   with a silent leg so iOS keeps the media element running. */
+function armPull(ctx,gain,pull){
+  if(window.__cjVideoPull||!pull)return;
+  window.__cjVideoPull=pull;
+  try{gain.connect(pull)}catch(e){window.__cjVideoPull=null;return}
+  if(window.__cjRecTapped)window.__cjRecTapped.add(pull);
+  let silent=ctx.createGain();
+  silent.gain.value=0;
+  if(window.__cjRecTapped)window.__cjRecTapped.add(silent);
+  try{pull.connect(silent);silent.connect(ctx.destination)}catch(e){}
+  attachBus(ctx);
+}
+function installPull(ctx,gain){
+  if(!gain)return;
+  if(window.__cjVideoPull){attachBus(ctx);return}
+  if(ctx.__cjPullPending)return;
+  ctx.__cjPullPending=true;
+  if(ctx.audioWorklet&&ctx.audioWorklet.addModule){
+    try{
+      ctx.audioWorklet.addModule("chakra-audio-copy.js?v=20261005b").then(function(){
+        if(window.__cjVideoPull)return;
+        try{armPull(ctx,gain,new AudioWorkletNode(ctx,"cj-copy",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2],channelCount:2,channelCountMode:"explicit"}))}
+        catch(err){armPull(ctx,gain,scriptPull(ctx))}
+      }).catch(function(){armPull(ctx,gain,scriptPull(ctx))});
+      return;
+    }catch(e){}
+  }
+  armPull(ctx,gain,scriptPull(ctx));
+}
 function tapVideo(ctx){
   if(!ctx||ctx.state!=="running")return null;
-  if(window.__cjVideoSrc){attachBus(ctx);return window.__cjVideoSrc}
+  if(window.__cjVideoSrc){installPull(ctx,window.__cjVideoGain||window.__cjVideoOut);return window.__cjVideoSrc}
   let v=$("player");
   if(!v)return null;
   try{ctx.resume()}catch(e){}
@@ -91,19 +129,12 @@ function tapVideo(ctx){
     let gain=ctx.createGain();
     gain.gain.value=1;
     src.connect(gain);
-    let out=gain;
-    try{
-      let pull=ctx.createScriptProcessor(4096,2,2);
-      pull.onaudioprocess=copyThrough;
-      gain.connect(pull);
-      out=pull;
-      window.__cjVideoPull=pull;
-    }catch(e){}
-    if(window.__cjRecTapped)window.__cjRecTapped.add(out);
-    out.connect(ctx.destination);
+    if(window.__cjRecTapped)window.__cjRecTapped.add(gain);
+    gain.connect(ctx.destination);
     window.__cjVideoSrc=src;
-    window.__cjVideoOut=out;
-    attachBus(ctx);
+    window.__cjVideoGain=gain;
+    window.__cjVideoOut=gain;
+    installPull(ctx,gain);
     return src;
   }catch(e){return window.__cjVideoSrc||null}
 }

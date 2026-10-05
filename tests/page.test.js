@@ -6,7 +6,7 @@ const fs=require('fs'),path=require('path'),os=require('os'),cp=require('child_p
 const ROOT=path.resolve(__dirname,'..');
 const html=fs.readFileSync(path.join(ROOT,'chakra-deploy.html'),'utf8');
 const scripts=[...html.matchAll(/<script src="([^"?]+)\?v=([^"]+)"><\/script>/g)].map(m=>({file:m[1],v:m[2]}));
-const VERSION='v0.46';
+const VERSION='v0.47';
 const hasFfmpeg=!cp.spawnSync('ffmpeg',['-version']).error;
 
 test('version '+VERSION+' in the title, the .sub line, and the Master Index card',()=>{
@@ -38,9 +38,9 @@ test('new v0.44 modules are loaded in order',()=>{
   assert.ok(at('chakra-auto-mantra.js')>at('chakra-audio-lights.js'));
   for(let f of ['chakra-dominant.js','chakra-video-library.js','chakra-auto-mantra.js','chakra-video-selector.js'])
     assert.equal(scripts.find(s=>s.file===f).v,'20261004a',f+' cache-bust');
-  assert.equal(scripts.find(s=>s.file==='chakra-journey-core.js').v,'20261005a','chakra-journey-core.js cache-bust');
+  assert.equal(scripts.find(s=>s.file==='chakra-journey-core.js').v,'20261005b','chakra-journey-core.js cache-bust');
   assert.equal(scripts.find(s=>s.file==='chakra-journey-v030.js').v,'20261005a','chakra-journey-v030.js cache-bust');
-  assert.equal(scripts.find(s=>s.file==='chakra-audio-lights.js').v,'20261005a','chakra-audio-lights.js cache-bust');
+  assert.equal(scripts.find(s=>s.file==='chakra-audio-lights.js').v,'20261005b','chakra-audio-lights.js cache-bust');
   assert.equal(scripts.find(s=>s.file==='chakra-color-blend.js').v,'20261005a','chakra-color-blend.js cache-bust');
   assert.ok(at('chakra-color-blend.js')>=0&&at('chakra-color-blend.js')<at('chakra-audio-lights.js'));
 });
@@ -71,6 +71,14 @@ test('journey no longer aborts the run on one missing voice line',()=>{
   let rec=fs.readFileSync(path.join(ROOT,'chakra-session-record.js'),'utf8');
   assert.ok(rec.includes('createMediaElementSource'),'video still taps into the record bus');
   assert.ok(rec.includes('__cjRecBus'));
+  assert.ok(rec.includes('gain.connect(ctx.destination)'),'speakers hear the video gain, not the pull node');
+  assert.ok(rec.includes('__cjRecTapped.add(gain)'),'video gain is not copied onto the record bus a second time');
+  assert.ok(rec.includes('chakra-audio-copy.js?v=20261005b'));
+  assert.ok(rec.includes('silent.gain.value=0'));
+  assert.equal(scripts.find(s=>s.file==='chakra-session-record.js').v,'20261005b');
+  let copy=fs.readFileSync(path.join(ROOT,'chakra-audio-copy.js'),'utf8');
+  assert.doesNotThrow(()=>new vm.Script(copy,{filename:'chakra-audio-copy.js'}));
+  assert.ok(copy.includes('registerProcessor("cj-copy"'));
 });
 test('videos/manifest.json is valid',()=>{
   let r=require('../tools/add-video.js').check(ROOT);
