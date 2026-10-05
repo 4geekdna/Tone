@@ -6,7 +6,7 @@ const fs=require('fs'),path=require('path'),os=require('os'),cp=require('child_p
 const ROOT=path.resolve(__dirname,'..');
 const html=fs.readFileSync(path.join(ROOT,'chakra-deploy.html'),'utf8');
 const scripts=[...html.matchAll(/<script src="([^"?]+)\?v=([^"]+)"><\/script>/g)].map(m=>({file:m[1],v:m[2]}));
-const VERSION='v0.44';
+const VERSION='v0.45';
 const hasFfmpeg=!cp.spawnSync('ffmpeg',['-version']).error;
 
 test('version '+VERSION+' in the title, the .sub line, and the Master Index card',()=>{
@@ -36,8 +36,9 @@ test('new v0.44 modules are loaded in order',()=>{
   assert.ok(at('chakra-dominant.js')>=0&&at('chakra-dominant.js')<at('chakra-journey-core.js'));
   assert.ok(at('chakra-video-library.js')>at('chakra-video-selector.js'));
   assert.ok(at('chakra-auto-mantra.js')>at('chakra-audio-lights.js'));
-  for(let f of ['chakra-dominant.js','chakra-video-library.js','chakra-auto-mantra.js','chakra-journey-core.js','chakra-video-selector.js','chakra-audio-lights.js'])
+  for(let f of ['chakra-dominant.js','chakra-video-library.js','chakra-auto-mantra.js','chakra-journey-core.js','chakra-video-selector.js'])
     assert.equal(scripts.find(s=>s.file===f).v,'20261004a',f+' cache-bust');
+  assert.equal(scripts.find(s=>s.file==='chakra-audio-lights.js').v,'20261004b','chakra-audio-lights.js cache-bust');
 });
 test('Auto sits next to the other progression modes in the markup',()=>{
   let sel=html.match(/<select id="mode">([\s\S]*?)<\/select>/)[1];
