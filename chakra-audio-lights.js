@@ -263,6 +263,7 @@ function applySurfaces(hex){
 function paintColor(hex){
   if(!hex)return;
   if(hex===paintedHex){applySurfaces(hex);return}
+  if(document.body.classList.contains("freq-color")){applySurfaces(hex);paintedHex=hex;paintLights(hex);return}
   document.body.classList.add("freq-color");
   let now=getComputedStyle(document.body).backgroundColor;
   document.body.style.transition="none";
@@ -272,9 +273,9 @@ function paintColor(hex){
   let w=mainBox();
   if(w){w.style.transition="none";w.style.backgroundColor=now}
   void document.body.offsetWidth;
-  document.body.style.transition="background-color .5s ease";
-  document.documentElement.style.transition="background-color .5s ease";
-  if(w)w.style.transition="background-color .5s ease";
+  document.body.style.transition="none";
+  document.documentElement.style.transition="none";
+  if(w)w.style.transition="none";
   applySurfaces(hex);
   paintedHex=hex;
   paintLights(hex);
@@ -462,36 +463,114 @@ function connectFile(ctx){
     return false;
   }
 }
+let lastDb=null,lastSr=0,lastFft=0;
+let colorRaf=0,colorTracker=null,blendJob=null,committed=-1,manualChakra=-1,cycleIndex=-1,cycleAt=0;
+let CHAKRA_NAMES=["Root","Sacral","Solar Plexus","Heart","Throat","Third Eye","Crown"];
+function colorApi(){return window.CJColorBlend||null}
+function colorUi(){let A=colorApi();return A?A.read(localStorage):{picks:false,mode:"audio",smooth:4,threshold:6,cycle:45}}
+function saveColorUi(next){let A=colorApi();if(!A)return colorUi();return A.write(localStorage,Object.assign(colorUi(),next))}
+function journeyStamps(){
+  let out=[];
+  for(let i=0;i<7;i++){
+    let el=document.querySelector('[data-ts="'+i+'"]');
+    let p=String(el&&el.value||"").split(":").map(Number);
+    let sec=p.some(function(x){return !Number.isFinite(x)})?NaN:p.length===3?p[0]*3600+p[1]*60+p[2]:p.length===2?p[0]*60+p[1]:p[0];
+    out.push(sec);
+  }
+  if(out.some(function(x){return !Number.isFinite(x)}))return [0,102,194,277,366,450,536];
+  for(let i=1;i<7;i++)if(!(out[i]>out[i-1]))return [0,102,194,277,366,450,536];
+  return out;
+}
+function videoTime(){let v=$("player");return v&&Number.isFinite(v.currentTime)?v.currentTime:0}
+function ensureColorTracker(ui){
+  let D=window.CJDominant;
+  if(!D)return null;
+  let margin=ui.threshold,hold=800+margin*120;
+  if(!colorTracker)colorTracker=D.createTracker({holdMs:hold,marginDb:margin,cooldownMs:0,smoothMs:700,graceMs:900});
+  else colorTracker.setOptions({holdMs:hold,marginDb:margin,cooldownMs:0});
+  return colorTracker;
+}
+function classicJourney(){
+  let m=$("mode");
+  if(m&&m.value==="auto"){m.value="timestamps";try{m.dispatchEvent(new Event("change",{bubbles:true}))}catch(e){}}
+}
+function startBlend(chakra){
+  if(!(chakra>=0&&chakra<7)||chakra===committed)return;
+  let from=blendJob?blendJob.hex:((shownHex&&paintedHex)?paintedHex:colorFor(chakra));
+  if(blendJob){
+    let now=performance.now();
+    let u=blendJob.dur>0?Math.min(1,(now-blendJob.start)/blendJob.dur):1;
+    let A=colorApi();
+    if(A)from=A.blendHex(blendJob.from,blendJob.to,u);
+  }
+  committed=chakra;
+  let ui=colorUi();
+  blendJob={from:from,to:colorFor(chakra),start:performance.now(),dur:Math.max(200,ui.smooth*1000),hex:from};
+}
+function sampleBlend(now){
+  if(!blendJob)return shownHex||"";
+  let A=colorApi();
+  let u=blendJob.dur>0?Math.min(1,(now-blendJob.start)/blendJob.dur):1;
+  let hex=A?A.blendHex(blendJob.from,blendJob.to,u):blendJob.to;
+  blendJob.hex=hex;
+  if(u>=1){shownHex=blendJob.to;shownLabel=CHAKRA_NAMES[committed]||"";blendJob=null;return shownHex}
+  shownHex=hex;
+  return hex;
+}
+function desiredChakra(now){
+  let ui=colorUi();
+  let A=colorApi();
+  let useAudio=ui.picks&&ui.mode==="audio";
+  let useCycle=ui.picks&&ui.mode==="cycle";
+  let useManual=ui.picks&&ui.mode==="manual";
+  if(useManual)return manualChakra;
+  if(useCycle){
+    if(!A)return cycleIndex<0?0:cycleIndex;
+    if(cycleIndex<0){cycleIndex=0;cycleAt=now;return 0}
+    let step=Math.max(10,ui.cycle)*1000;
+    if(now-cycleAt>=step){cycleIndex=A.nextCycle(cycleIndex);cycleAt=now}
+    return cycleIndex;
+  }
+  if(useAudio){
+    let tr=ensureColorTracker(ui);
+    if(!tr||!lastDb)return committed;
+    let D=window.CJDominant;
+    let r=tr.update(D.bandLevels(lastDb,lastSr,lastFft),now);
+    if(r.change&&A&&A.passesThreshold(r.marginDb,ui.threshold))return r.change.chakra;
+    if(r.change&&!A)return r.change.chakra;
+    return committed;
+  }
+  let confirm=A?A.confirmSec(ui.threshold):0;
+  let idx=A?A.timestampIndex(videoTime(),journeyStamps(),confirm):-1;
+  return idx;
+}
+function colorLabel(){
+  let ui=colorUi();
+  let name=committed>=0?(CHAKRA_NAMES[committed]||""):"";
+  if(!ui.picks)return name?name+" · classic journey":"Color picks off · classic journey";
+  if(ui.mode==="manual")return name?name+" · manual":"Tap a chakra color";
+  if(ui.mode==="cycle")return (name||"Auto-pick")+" · every "+Math.round(ui.cycle)+" s";
+  if(ui.mode==="timestamps")return name?name+" · bowl times":"Color follows the bowl times";
+  return name?name+" · follows the sound":"Color follows the sound";
+}
+function colorFrame(now){
+  let chakra=desiredChakra(now);
+  if(chakra>=0)startBlend(chakra);
+  let hex=sampleBlend(now);
+  if(hex)paintColor(hex);
+  say(colorLabel());
+}
+function colorLoop(now){
+  colorRaf=requestAnimationFrame(colorLoop);
+  try{colorFrame(now)}catch(e){}
+}
 function tick(ts){
   raf=requestAnimationFrame(tick);
   let ctx=window.__cjAudioCtx;
   if(!analyser||!ctx||ctx.state!=="running"||!floatData)return;
   analyser.getFloatFrequencyData(floatData);
+  lastDb=floatData;lastSr=ctx.sampleRate;lastFft=analyser.fftSize;
   if(typeof window.__cjSpectrumHook==="function"){try{window.__cjSpectrumHook(floatData, ctx.sampleRate, analyser.fftSize, ts)}catch(e){}}
-  let target=targetFrom(floatData, ctx.sampleRate, analyser.fftSize);
-  if(!target){
-    pendingHex="";
-    if(!quietAt)quietAt=ts;
-    if(ts-quietAt>QUIET_MS&&shownHex){
-      shownHex="";
-      shownLabel="";
-      releaseScreen();
-      say("Color follows the video.");
-    }
-    return;
-  }
-  quietAt=0;
-  if(target.hex!==pendingHex){pendingHex=target.hex;pendingAt=ts}
-  if(target.hex!==shownHex&&ts-pendingAt<HOLD_MS){
-    say(shownLabel||target.label);
-    return;
-  }
-  if(target.hex!==shownHex){
-    shownHex=target.hex;
-    shownLabel=target.label;
-    paintColor(shownHex);
-  }
-  say(shownLabel||target.label);
 }
 function beginFile(){
   watchFollow();
@@ -515,13 +594,98 @@ function beginFile(){
   };
   ctx.addEventListener("statechange",on);
 }
+function paintColorUi(){
+  let ui=colorUi();
+  let box=$("colorPicks");
+  if(box){box.setAttribute("aria-pressed",ui.picks?"true":"false");box.textContent=ui.picks?"Use color picks: On":"Use color picks: Off"}
+  let modes=$("colorModes");
+  if(modes)modes.style.display=ui.picks?"":"none";
+  modes&&modes.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.mode===ui.mode)});
+  let man=$("colorManual");
+  if(man)man.style.display=ui.picks&&ui.mode==="manual"?"":"none";
+  let cyc=$("colorCycleRow");
+  if(cyc)cyc.style.display=ui.picks&&ui.mode==="cycle"?"":"none";
+  let th=$("colorThresholdRow");
+  if(th)th.style.display=!ui.picks||ui.mode==="audio"||ui.mode==="timestamps"?"":"none";
+  let sm=$("colorSmooth"),sv=$("colorSmoothv");
+  if(sm)sm.value=ui.smooth;
+  if(sv)sv.textContent=ui.smooth.toFixed(1)+" s";
+  let td=$("colorThreshold"),tv=$("colorThresholdv"),tl=$("colorThresholdLabel");
+  if(td)td.value=ui.threshold;
+  if(tv){
+    if(ui.picks&&ui.mode==="timestamps")tv.textContent=colorApi().confirmSec(ui.threshold).toFixed(1)+" s";
+    else if(!ui.picks)tv.textContent=colorApi().confirmSec(ui.threshold).toFixed(1)+" s";
+    else tv.textContent=Math.round(ui.threshold)+" dB";
+  }
+  if(tl)tl.textContent=(ui.picks&&ui.mode==="audio")?"Threshold":"Settle";
+  let cy=$("colorCycle"),cv=$("colorCyclev");
+  if(cy)cy.value=ui.cycle;
+  if(cv)cv.textContent=Math.round(ui.cycle)+" s";
+  let note=$("colorPicksNote");
+  if(note){
+    note.textContent=ui.picks
+      ?"On. Manual: tap a color. Audio: follow the video sound. Timestamps: follow the bowl marks. Auto-pick: cycle on its own timer. A color moves only after a real chakra change, then blends for the smoothing time."
+      :"Off — standard journey. One bowl video, affirmations at the bowl times. Screen color follows those bowl times and blends. Turn on to pick colors.";
+  }
+}
+function installColorUi(){
+  if($("colorPicksBox")||!colorApi())return;
+  ensureReadout();
+  let host=readout();
+  if(!host||!host.parentNode)return;
+  let st=document.createElement("style");
+  st.id="colorPicksStyle";
+  st.textContent="#colorPicksBox{margin-top:10px;text-align:left}#colorPicksBox .voice-note{margin:6px 0;font-size:13px;line-height:1.35}#colorPicks,#colorModes button,#colorManual button{min-height:48px;border:1px solid #3a3a44;background:#22222a;color:#eee;border-radius:12px;font:600 16px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}#colorPicks{width:100%;margin:0 0 6px}#colorPicks[aria-pressed=true],#colorModes button.on{background:#fff;color:#111;border-color:#fff}#colorModes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}#colorManual{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}#colorManual button{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45)}#colorPicksBox .row{margin:8px 0}";
+  document.head.appendChild(st);
+  let box=document.createElement("div");
+  box.id="colorPicksBox";
+  let names=CHAKRA_NAMES;
+  let manual=names.map(function(n,i){return '<button type="button" data-chakra="'+i+'" style="background:'+colorFor(i)+'">'+n+'</button>'}).join("");
+  box.innerHTML='<button type="button" id="colorPicks" aria-pressed="false">Use color picks: Off</button><div id="colorPicksNote" class="voice-note"></div><div id="colorModes"><button type="button" data-mode="manual">Manual</button><button type="button" data-mode="audio">Follow audio</button><button type="button" data-mode="timestamps">Follow timestamps</button><button type="button" data-mode="cycle">Auto-pick</button></div><div id="colorManual">'+manual+'</div><div class="row" id="colorSmoothRow"><label>Smoothing</label><input id="colorSmooth" type="range" min="0.4" max="12" step="0.2"><span class="v" id="colorSmoothv"></span></div><div class="row" id="colorThresholdRow"><label id="colorThresholdLabel">Threshold</label><input id="colorThreshold" type="range" min="2" max="18" step="1"><span class="v" id="colorThresholdv"></span></div><div class="row" id="colorCycleRow"><label>Auto-pick every</label><input id="colorCycle" type="range" min="10" max="180" step="5"><span class="v" id="colorCyclev"></span></div>';
+  host.insertAdjacentElement("afterend",box);
+  box.addEventListener("input",function(e){
+    let t=e.target;
+    if(t.id==="colorSmooth")saveColorUi({smooth:+t.value});
+    if(t.id==="colorThreshold"){saveColorUi({threshold:+t.value});if(colorTracker)colorTracker.setOptions({marginDb:+t.value,cooldownMs:0})}
+    if(t.id==="colorCycle")saveColorUi({cycle:+t.value});
+    paintColorUi();
+  });
+  box.addEventListener("click",function(e){
+    if(e.target.id==="colorPicks"){
+      let ui=saveColorUi({picks:!colorUi().picks});
+      if(!ui.picks)classicJourney();
+      if(colorTracker)colorTracker.reset();
+      cycleAt=0;cycleIndex=-1;
+      paintColorUi();
+      return;
+    }
+    let b=e.target.closest("button");
+    if(!b)return;
+    if(b.dataset.mode){
+      saveColorUi({picks:true,mode:b.dataset.mode});
+      if(colorTracker)colorTracker.reset();
+      cycleAt=0;cycleIndex=-1;
+      if(b.dataset.mode!=="manual")manualChakra=-1;
+      paintColorUi();
+    }
+    if(b.dataset.chakra!=null){
+      manualChakra=+b.dataset.chakra;
+      saveColorUi({picks:true,mode:"manual"});
+      startBlend(manualChakra);
+      paintColorUi();
+    }
+  });
+  if(!colorUi().picks)classicJourney();
+  paintColorUi();
+}
 function boot(){
   topN=loadTop();
   ensureStyle();
   ensureReadout();
-  ensureTop();
   ensurePicker();
-  say("Color follows the video.");
+  installColorUi();
+  say(colorLabel());
+  if(!colorRaf)colorRaf=requestAnimationFrame(colorLoop);
   watchFollow();
   ownScreen();
   ["pointerup","touchend","click"].forEach(function(ev){
