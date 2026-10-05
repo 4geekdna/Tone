@@ -11,15 +11,15 @@ const defaults=[
 ];
 let active=-1,session=null,breathTimer=null;
 const $=id=>document.getElementById(id);
-function cfg(){let x={immersive:true,autoVoice:true,autoBreath:true};try{x={...x,...JSON.parse(localStorage.getItem(LS)||"{}")}}catch(e){}return x}
+function cfg(){let x={immersive:true,autoVoice:true,autoBreath:false};try{let saved=JSON.parse(localStorage.getItem(LS)||"{}");x={...x,...saved,autoBreath:saved.breathCue===true}}catch(e){}return x}
 function setv(id,v){let e=$(id);if(e){e.value=v;e.dispatchEvent(new Event("input",{bubbles:true}))}}
-function saveCfg(next){let c=cfg(),merged={immersive:c.immersive!==false,autoVoice:c.autoVoice!==false,autoBreath:c.autoBreath!==false,...(next||{})};try{localStorage.setItem(LS,JSON.stringify(merged))}catch(e){}return merged}
+function saveCfg(next){let c=cfg(),merged={immersive:c.immersive!==false,autoVoice:c.autoVoice!==false,autoBreath:false,breathCue:false,...(next||{})};try{localStorage.setItem(LS,JSON.stringify(merged))}catch(e){}return merged}
 function applyVoice(i){if(!cfg().autoVoice||i<0||!defaults[i])return;let v=defaults[i].voice;setv("warmthFreq",v.warmth);setv("reverbMix",v.reverb)}
 function setImmersive(on){saveCfg({immersive:!!on});let box=$("immersiveMode");if(box&&box.checked!==!!on)box.checked=!!on;if(document.body.classList.contains("journey-on"))document.body.classList.toggle("immersive",!!on)}
-function breath(i){clearTimeout(breathTimer);let el=$("breathCue");if(!el||i<0)return;let p=defaults[i].breath,inhale=true;function tick(){if(active!==i)return;let sec=inhale?p[0]:p[1];el.textContent=inhale?"INHALE":"EXHALE";document.body.classList.toggle("exhale",!inhale);el.style.setProperty("--breath",sec+"s");inhale=!inhale;breathTimer=setTimeout(tick,sec*1000)}tick()}
+function breath(i){clearTimeout(breathTimer);let el=$("breathCue");if(!el||i<0)return;el.textContent="BREATHE";document.body.classList.remove("exhale")}
 function activate(i){active=i;document.body.dataset.chakra=i;if(i>=0&&C[i]){document.documentElement.style.setProperty("--chakra",C[i][4]);applyVoice(i);if(session&&!session.chakras.some(x=>x.index===i))session.chakras.push({index:i,name:C[i][0],at:new Date().toISOString()});if(cfg().autoBreath)breath(i)}else clearTimeout(breathTimer)}
 function mantra(chakra,index,text){if(session)session.mantras.push({at:new Date().toISOString(),chakra,index:index+1,text})}
-function sessionStart(){session={schema:"starfleet.chakra-journey.v1",id:(crypto.randomUUID?crypto.randomUUID():Date.now()+""),startedAt:new Date().toISOString(),app:"Tone/Chakra Journey",mantras:[],chakras:[],settings:{mode:$("mode")?.value,count:+($("count")?.value||0),source:localStorage.getItem("cj_src")||"both",adaptiveVoice:true,adaptiveBreathing:true}};document.body.classList.toggle("immersive",cfg().immersive)}
+function sessionStart(){session={schema:"starfleet.chakra-journey.v1",id:(crypto.randomUUID?crypto.randomUUID():Date.now()+""),startedAt:new Date().toISOString(),app:"Tone/Chakra Journey",mantras:[],chakras:[],settings:{mode:$("mode")?.value,count:+($("count")?.value||0),source:localStorage.getItem("cj_src")||"both",adaptiveVoice:true,adaptiveBreathing:false}};document.body.classList.toggle("immersive",cfg().immersive)}
 function sessions(){try{return JSON.parse(localStorage.getItem(OUT)||"[]").filter(s=>s&&s.status==="completed")}catch(e){return[]}}
 function write(q){localStorage.setItem(OUT,JSON.stringify(q.slice(-100)))}
 function sessionEnd(status){if(!session)return;session.endedAt=new Date().toISOString();session.status=status;session.durationSeconds=Math.round((Date.parse(session.endedAt)-Date.parse(session.startedAt))/1000);if(status==="completed"){let q=sessions();q.push(session);write(q);window.dispatchEvent(new CustomEvent("starfleet-session-ready",{detail:session}))}session=null;renderHistory();document.body.classList.remove("immersive","exhale");clearTimeout(breathTimer)}

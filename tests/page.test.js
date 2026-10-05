@@ -6,7 +6,7 @@ const fs=require('fs'),path=require('path'),os=require('os'),cp=require('child_p
 const ROOT=path.resolve(__dirname,'..');
 const html=fs.readFileSync(path.join(ROOT,'chakra-deploy.html'),'utf8');
 const scripts=[...html.matchAll(/<script src="([^"?]+)\?v=([^"]+)"><\/script>/g)].map(m=>({file:m[1],v:m[2]}));
-const VERSION='v0.47';
+const VERSION='v0.48';
 const hasFfmpeg=!cp.spawnSync('ffmpeg',['-version']).error;
 
 test('version '+VERSION+' in the title, the .sub line, and the Master Index card',()=>{
@@ -43,6 +43,15 @@ test('new v0.44 modules are loaded in order',()=>{
   assert.equal(scripts.find(s=>s.file==='chakra-audio-lights.js').v,'20261005b','chakra-audio-lights.js cache-bust');
   assert.equal(scripts.find(s=>s.file==='chakra-color-blend.js').v,'20261005a','chakra-color-blend.js cache-bust');
   assert.ok(at('chakra-color-blend.js')>=0&&at('chakra-color-blend.js')<at('chakra-audio-lights.js'));
+});
+test('breath cue does not scale the screen',()=>{
+  assert.ok(!html.includes('scale(1.12)')&&!html.includes('scale(.88)'));
+  assert.ok(!/#breathCue\{[^}]*transform/.test(html));
+  let auto=fs.readFileSync(path.join(ROOT,'chakra-automation.js'),'utf8');
+  assert.ok(auto.includes('autoBreath:false'));
+  assert.ok(auto.includes('saved.breathCue===true'));
+  assert.ok(!auto.includes('setTimeout(tick'));
+  assert.equal(scripts.find(s=>s.file==='chakra-automation.js').v,'20261005c');
 });
 test('Auto sits next to the other progression modes in the markup',()=>{
   let sel=html.match(/<select id="mode">([\s\S]*?)<\/select>/)[1];
