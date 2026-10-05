@@ -6,7 +6,7 @@ const fs=require('fs'),path=require('path'),os=require('os'),cp=require('child_p
 const ROOT=path.resolve(__dirname,'..');
 const html=fs.readFileSync(path.join(ROOT,'chakra-deploy.html'),'utf8');
 const scripts=[...html.matchAll(/<script src="([^"?]+)\?v=([^"]+)"><\/script>/g)].map(m=>({file:m[1],v:m[2]}));
-const VERSION='v0.45';
+const VERSION='v0.46';
 const hasFfmpeg=!cp.spawnSync('ffmpeg',['-version']).error;
 
 test('version '+VERSION+' in the title, the .sub line, and the Master Index card',()=>{
@@ -36,9 +36,13 @@ test('new v0.44 modules are loaded in order',()=>{
   assert.ok(at('chakra-dominant.js')>=0&&at('chakra-dominant.js')<at('chakra-journey-core.js'));
   assert.ok(at('chakra-video-library.js')>at('chakra-video-selector.js'));
   assert.ok(at('chakra-auto-mantra.js')>at('chakra-audio-lights.js'));
-  for(let f of ['chakra-dominant.js','chakra-video-library.js','chakra-auto-mantra.js','chakra-journey-core.js','chakra-video-selector.js'])
+  for(let f of ['chakra-dominant.js','chakra-video-library.js','chakra-auto-mantra.js','chakra-video-selector.js'])
     assert.equal(scripts.find(s=>s.file===f).v,'20261004a',f+' cache-bust');
-  assert.equal(scripts.find(s=>s.file==='chakra-audio-lights.js').v,'20261004b','chakra-audio-lights.js cache-bust');
+  assert.equal(scripts.find(s=>s.file==='chakra-journey-core.js').v,'20261005a','chakra-journey-core.js cache-bust');
+  assert.equal(scripts.find(s=>s.file==='chakra-journey-v030.js').v,'20261005a','chakra-journey-v030.js cache-bust');
+  assert.equal(scripts.find(s=>s.file==='chakra-audio-lights.js').v,'20261005a','chakra-audio-lights.js cache-bust');
+  assert.equal(scripts.find(s=>s.file==='chakra-color-blend.js').v,'20261005a','chakra-color-blend.js cache-bust');
+  assert.ok(at('chakra-color-blend.js')>=0&&at('chakra-color-blend.js')<at('chakra-audio-lights.js'));
 });
 test('Auto sits next to the other progression modes in the markup',()=>{
   let sel=html.match(/<select id="mode">([\s\S]*?)<\/select>/)[1];
@@ -55,6 +59,18 @@ test('no emoji in the new v0.44 files',()=>{
     let s=fs.readFileSync(path.join(ROOT,f),'utf8');
     assert.ok(!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(s),f);
   }
+});
+test('journey no longer aborts the run on one missing voice line',()=>{
+  let core=fs.readFileSync(path.join(ROOT,'chakra-journey-core.js'),'utf8');
+  assert.match(core,/function stopForMissingVoice\(msg\)\{showVoiceGap\(msg\);return false\}/);
+  assert.ok(core.includes('setTimeout(()=>done(true),ms)'),'voice playback resolves if onended never fires');
+  let bowl=fs.readFileSync(path.join(ROOT,'chakra-journey-v030.js'),'utf8');
+  assert.ok(!bowl.includes('lg.connect(master.gain)'),'wobble must not drive the ramped gain');
+  assert.ok(bowl.includes('linearRampToValueAtTime(vol'));
+  assert.ok(bowl.includes('lg.connect(wob.gain)'));
+  let rec=fs.readFileSync(path.join(ROOT,'chakra-session-record.js'),'utf8');
+  assert.ok(rec.includes('createMediaElementSource'),'video still taps into the record bus');
+  assert.ok(rec.includes('__cjRecBus'));
 });
 test('videos/manifest.json is valid',()=>{
   let r=require('../tools/add-video.js').check(ROOT);

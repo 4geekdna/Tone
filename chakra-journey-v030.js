@@ -8,7 +8,7 @@ function style(){return $('style')?.value||'crystal'}
 function bowlWet(){let el=$('bowlReverb'),wet=el?+el.value:.32;if(!Number.isFinite(wet))wet=.32;return Math.max(0,Math.min(.7,wet))}
 function bowlDry(wet){return Math.max(.15,1-wet)}
 function makeIR(a,seconds=5.2,decay=3.2){let len=Math.floor(a.sampleRate*seconds),b=a.createBuffer(2,len,a.sampleRate);for(let ch=0;ch<2;ch++){let d=b.getChannelData(ch);for(let i=0;i<len;i++){let x=1-i/len;d[i]=(Math.random()*2-1)*Math.pow(x,decay)*(0.75+0.25*Math.sin(i/a.sampleRate*6.28*.31))}}return b}
-function fadeOut(engine,seconds=2.6){if(!engine)return;let a=engine.a,n=a.currentTime;try{engine.master.gain.cancelScheduledValues(n);engine.master.gain.setValueAtTime(Math.max(.0001,engine.master.gain.value),n);engine.master.gain.exponentialRampToValueAtTime(.0001,n+seconds)}catch(e){}setTimeout(()=>{engine.nodes.forEach(x=>{try{x.stop()}catch(e){}});try{engine.lfo.stop()}catch(e){}},(seconds+.2)*1000)}
+function fadeOut(engine,seconds=2.6){if(!engine)return;let a=engine.a,n=a.currentTime;try{if(engine.lfo)engine.lfo.disconnect()}catch(e){}try{let g=engine.master.gain;g.cancelScheduledValues(n);let cur=g.value;if(!(cur>0))cur=.0001;g.setValueAtTime(cur,n);g.linearRampToValueAtTime(.0001,n+seconds)}catch(e){}setTimeout(()=>{engine.nodes.forEach(x=>{try{x.stop()}catch(e){}});try{engine.lfo.stop()}catch(e){}},(seconds+.2)*1000)}
 function partialsFor(name){
  let profile=window.CJToneProfiles&&window.CJToneProfiles[name];
  if(profile&&profile.partials)return {partials:profile.partials.map(p=>[p[0],p[1],p[2]||'sine',p[3]||0]),attack:profile.attack||2.8,wobble:profile.wobble||0};
@@ -17,12 +17,21 @@ function partialsFor(name){
  if(name==='warm')return {partials:[[.5,.10,'sine',0],[1,.72,'sine',-2],[1.5,.12,'sine',3],[2.01,.13,'triangle',-4],[3.02,.055,'sine',7]],attack:2.6,wobble:.028};
  return {partials:[[1,.68,'sine',-3],[1.0027,.34,'sine',4],[2.006,.19,'sine',-6],[2.71,.11,'sine',8],[3.93,.065,'sine',-10],[5.18,.028,'sine',11]],attack:2.8,wobble:name==='crystal'?0.045:0.025};
 }
-function buildBowl(c){let a=ac();if(!a)return null;if(a.state==='suspended')a.resume().catch(()=>{});let now=a.currentTime,master=a.createGain(),body=a.createBiquadFilter(),dry=a.createGain(),wet=a.createGain(),conv=a.createConvolver(),pan=a.createStereoPanner?a.createStereoPanner():null;
-let shape=partialsFor(style()),wetGain=bowlWet();
-master.gain.setValueAtTime(.0001,now);master.gain.exponentialRampToValueAtTime(volume(),now+Math.max(.4,shape.attack));body.type='lowpass';body.frequency.value=Math.min(6200,c[2]*7.5);body.Q.value=.32;dry.gain.value=bowlDry(wetGain);wet.gain.value=wetGain;conv.buffer=makeIR(a);master.connect(body);body.connect(dry);dry.connect(a.destination);body.connect(conv);conv.connect(wet);if(pan){wet.connect(pan);pan.pan.value=.08;pan.connect(a.destination)}else wet.connect(a.destination);
+function buildBowl(c){let a=ac();if(!a)return null;if(a.state==='suspended')a.resume().catch(()=>{});let now=a.currentTime,master=a.createGain(),wob=a.createGain(),body=a.createBiquadFilter(),dry=a.createGain(),wet=a.createGain(),conv=a.createConvolver(),pan=a.createStereoPanner?a.createStereoPanner():null;
+let shape=partialsFor(style()),wetGain=bowlWet(),vol=volume();
+/* Linear ramp only. An exponential ramp on this gain, plus the wobble
+   LFO summed into the same AudioParam, crosses zero and halts the shared
+   AudioContext. The video is pulled through that context, so the journey
+   froze at the first bowl change. Wobble rides a separate gain biased at 1. */
+master.gain.setValueAtTime(.0001,now);master.gain.linearRampToValueAtTime(vol,now+Math.max(.4,shape.attack));
+let depth=Math.min(.2,Math.abs(shape.wobble||0));
+wob.gain.setValueAtTime(1,now);
+body.type='lowpass';body.frequency.value=Math.min(6200,c[2]*7.5);body.Q.value=.32;dry.gain.value=bowlDry(wetGain);wet.gain.value=wetGain;conv.buffer=makeIR(a);
+master.connect(wob);wob.connect(body);body.connect(dry);dry.connect(a.destination);body.connect(conv);conv.connect(wet);if(pan){wet.connect(pan);pan.pan.value=.08;pan.connect(a.destination)}else wet.connect(a.destination);
 let nodes=[];shape.partials.forEach(([m,v,type,det],i)=>{let o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=c[2]*m;o.detune.value=det;g.gain.value=v*(i?1:.95);o.connect(g);g.connect(master);o.start(now);nodes.push(o)});
-let lfo=a.createOscillator(),lg=a.createGain();lfo.frequency.value=style()==='crystal'?0.115:0.085;lg.gain.value=shape.wobble;lfo.connect(lg);lg.connect(master.gain);lfo.start(now);
-return {a,master,dry,wet,nodes,lfo,freq:c[2]}}
+let lfo=a.createOscillator(),lg=a.createGain();lfo.frequency.value=style()==='crystal'?0.115:0.085;lg.gain.value=depth;
+if(depth>0){lfo.connect(lg);lg.connect(wob.gain);lfo.start(now)}
+return {a,master,wob,dry,wet,nodes,lfo,freq:c[2]}}
 function applyHallLive(){if(!bowl)return;let a=ac();if(!a)return;let wet=bowlWet();try{bowl.wet.gain.setTargetAtTime(wet,a.currentTime,.08);bowl.dry.gain.setTargetAtTime(bowlDry(wet),a.currentTime,.08)}catch(e){}}
 function placeJourneyMix(on){let home=$('colorMixHome'),slot=$('journeyMix'),anchor=$('colorMixAnchor');if(!home)return;if(on&&slot)slot.appendChild(home);else if(anchor)anchor.appendChild(home)}
 window.stopTone=function(seconds=2.6){if(!bowl)return;let old=bowl;bowl=null;fadeOut(old,seconds)};
