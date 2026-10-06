@@ -123,6 +123,24 @@ function blendHex(from,to,t){
   let rgb=oklabToRgb(a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,a[2]+(b[2]-a[2])*u);
   return rgbHex(rgb[0],rgb[1],rgb[2]);
 }
+function chroma(lab){return Math.hypot(lab[1],lab[2])}
+function mix(parts,topN,prevRanks){
+  let rows=(parts||[]).map(function(p,i){return {band:p.band,hex:p.hex,level:+p.level||0,rank:prevRanks&&prevRanks.indexOf(p.band)>=0?prevRanks.indexOf(p.band):i}});
+  rows.sort(function(a,b){let d=b.level-a.level;if(Math.abs(d)<0.01)return a.rank-b.rank;return d});
+  let n=topN===2||topN===3?topN:1;
+  let chosen=rows.filter(function(r){return r.level>0}).slice(0,n);
+  if(!chosen.length)return {hex:"",slots:[],ranks:prevRanks||[]};
+  if(n===1)return {hex:canonical(chosen[0].hex),slots:[chosen[0]],ranks:chosen.map(function(r){return r.band})};
+  let sum=chosen.reduce(function(s,r){return s+r.level},0)||1;
+  let labs=chosen.map(function(r){let rgb=hexRgb(r.hex);return {lab:rgbToOklab(rgb[0],rgb[1],rgb[2]),w:r.level/sum}});
+  let L=0,a=0,b=0,cMean=0;
+  labs.forEach(function(x){L+=x.lab[0]*x.w;a+=x.lab[1]*x.w;b+=x.lab[2]*x.w;cMean+=chroma(x.lab)*x.w});
+  if(chroma([L,a,b])<0.02){let loud=labs[0].lab;a=loud[1];b=loud[2]}
+  let c=chroma([L,a,b]);
+  if(c>0&&c<cMean){let s=cMean/c;a*=s;b*=s}
+  let rgb=oklabToRgb(L,a,b);
+  return {hex:rgbHex(rgb[0],rgb[1],rgb[2]),slots:chosen,ranks:chosen.map(function(r){return r.band})};
+}
 return {
   KEY:KEY,
   DEFAULTS:DEFAULTS,
@@ -133,6 +151,7 @@ return {
   confirmSec:confirmSec,
   timestampIndex:timestampIndex,
   nextCycle:nextCycle,
-  blendHex:blendHex
+  blendHex:blendHex,
+  mix:mix
 };
 });
