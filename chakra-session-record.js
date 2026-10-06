@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
-let rec=null,chunks=[],lastFile=null,saveBtn=null,mimeType="";
+let rec=null,chunks=[],lastFile=null,saveBtn=null,mimeType="",recStart=0;
 
 function mime(){
   if(!window.MediaRecorder)return "";
@@ -52,6 +52,7 @@ function finish(){
   lastFile=new File([blob],"chakra-journey-session."+ext(m),{type:blob.type});
   line("Recording ready.");
   showButton();
+  try{window.dispatchEvent(new CustomEvent("cj-recording-ready",{detail:{file:lastFile,type:blob.type,startedAt:recStart,endedAt:Date.now()}}))}catch(e){}
 }
 function discard(){
   let old=rec;
@@ -165,6 +166,7 @@ function begin(){
   rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
   rec.onstop=finish;
   rec.start(1000);
+  recStart=Date.now();
   return true;
 }
 function endRecording(){
@@ -218,7 +220,7 @@ function install(){
   let st=$("status");
   if(st&&window.MutationObserver){
     new MutationObserver(()=>{
-      if(st.textContent==="Journey complete")endRecording();
+      if(st.textContent==="Journey complete"||st.textContent==="Back on the main screen")endRecording();
     }).observe(st,{childList:true,characterData:true,subtree:true});
   }
   let yt=$("player");

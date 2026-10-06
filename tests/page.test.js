@@ -6,7 +6,7 @@ const fs=require('fs'),path=require('path'),os=require('os'),cp=require('child_p
 const ROOT=path.resolve(__dirname,'..');
 const html=fs.readFileSync(path.join(ROOT,'chakra-deploy.html'),'utf8');
 const scripts=[...html.matchAll(/<script src="([^"?]+)\?v=([^"]+)"><\/script>/g)].map(m=>({file:m[1],v:m[2]}));
-const VERSION='v0.49';
+const VERSION='v0.50';
 const hasFfmpeg=!cp.spawnSync('ffmpeg',['-version']).error;
 
 test('version '+VERSION+' in the title, the .sub line, and the Master Index card',()=>{
@@ -84,7 +84,7 @@ test('journey no longer aborts the run on one missing voice line',()=>{
   assert.ok(rec.includes('__cjRecTapped.add(gain)'),'video gain is not copied onto the record bus a second time');
   assert.ok(rec.includes('chakra-audio-copy.js?v=20261005b'));
   assert.ok(rec.includes('silent.gain.value=0'));
-  assert.equal(scripts.find(s=>s.file==='chakra-session-record.js').v,'20261005b');
+  assert.equal(scripts.find(s=>s.file==='chakra-session-record.js').v,'20261005c');
   let copy=fs.readFileSync(path.join(ROOT,'chakra-audio-copy.js'),'utf8');
   assert.doesNotThrow(()=>new vm.Script(copy,{filename:'chakra-audio-copy.js'}));
   assert.ok(copy.includes('registerProcessor("cj-copy"'));
@@ -107,6 +107,18 @@ test('starter voices: 35 bundled clips keyed exactly like speak()',()=>{
   });
   assert.ok(core.includes('STARTER_FLAG="cj_starter_seed_v1"'));
   assert.ok(core.includes('if(q.result)return;au.put(blob,k)'),'seeding never overwrites');
+});
+test('play last recording: new store, loaded after the recorder, hidden during a journey',()=>{
+  let order=scripts.map(s=>s.file);
+  assert.ok(order.indexOf('chakra-last-recording.js')>order.indexOf('chakra-session-record.js'));
+  assert.equal(scripts.find(s=>s.file==='chakra-last-recording.js').v,'20261005a');
+  let rec=fs.readFileSync(path.join(ROOT,'chakra-session-record.js'),'utf8');
+  assert.ok(rec.includes('new CustomEvent("cj-recording-ready"'));
+  let last=fs.readFileSync(path.join(ROOT,'chakra-last-recording.js'),'utf8');
+  assert.ok(last.includes('DB="cj_recordings_v1",STORE="recordings",KEEP=3'));
+  assert.ok(!/cj_voice_audio_v2/.test(last),'does not touch the voice cache');
+  assert.ok(last.includes('Play last recording'));
+  assert.ok(html.includes('body.journey-on #lastRec{display:none}'));
 });
 test('videos/manifest.json is valid',()=>{
   let r=require('../tools/add-video.js').check(ROOT);
