@@ -54,6 +54,16 @@ async function paintBlend(aHex,aBright,bHex,bBright){
     }
   }finally{busy=false}
 }
-window.goveePaintBlend=paintBlend;
-window.goveePaintSlots=function(plan){if(!followOn()||!plan)return;return paintBlend(plan.hex,plan.bright==null?74:plan.bright,plan.hex,58)};
+function readSeparate(){try{let x=JSON.parse(localStorage.getItem("cj_color_separate_v1")||"null");if(!x||typeof x!=="object")return {v:1,on:false,extra:"primary"};return {v:1,on:!!x.on,extra:x.extra==="hold"?"hold":"primary"}}catch(e){return {v:1,on:false,extra:"primary"}}}
+function assignSlots(lights,tones,extra){
+  extra=extra==="hold"?"hold":"primary";
+  return lights.map(function(light,i){
+    let tone=tones[i]||null;
+    if(!tone)return {id:light.id||light.device,hex:extra==="hold"?null:(tones[0]&&tones[0].hex)||null,slot:i<tones.length?i:0};
+    return {id:light.id||light.device,hex:tone.hex,slot:i};
+  });
+}
+window.goveeAssignSlots=assignSlots;
+window.goveeReadSeparate=readSeparate;
+window.goveePaintSlots=function(plan){if(!followOn()||!plan)return;let hex=plan.hex||(plan[0]&&plan[0].hex);return paintBlend(hex,74,hex,58)};
 })();
