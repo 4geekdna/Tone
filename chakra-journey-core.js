@@ -59,6 +59,27 @@ async function cachePut(k,v){try{let db=await openVoiceDB();let tx=db.transactio
 async function cacheEvict(){try{let db=await openVoiceDB();let tx=db.transaction(["audio","meta"],"readwrite");let meta=tx.objectStore("meta"),audio=tx.objectStore("audio");let req=meta.openCursor();let entries=[];req.onsuccess=e=>{let c=e.target.result;if(c){entries.push({k:c.key,t:c.value&&c.value.t||0});c.continue()}};req.onerror=()=>{};await new Promise(res=>{tx.oncomplete=res;tx.onerror=()=>res()});let now=Date.now();for(let e of entries){if(now-(e.t||0)>VOICE_CACHE_TTL_MS){meta.delete(e.k);audio.delete(e.k.slice(2))}}entries=entries.filter(e=>now-(e.t||0)<=VOICE_CACHE_TTL_MS);if(entries.length>VOICE_CACHE_MAX){entries.sort((a,b)=>(a.t||0)-(b.t||0));let drop=entries.slice(0,entries.length-VOICE_CACHE_MAX);for(let e of drop){meta.delete(e.k);audio.delete(e.k.slice(2))}}await new Promise(res=>{let t2=db.transaction(["audio","meta"],"readwrite");t2.oncomplete=res;t2.onerror=()=>res()})}catch(e){}}
 async function clearVoiceCache(){try{let db=await openVoiceDB();let tx=db.transaction(["audio","meta"],"readwrite");tx.objectStore("audio").clear();tx.objectStore("meta").clear();await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});if($("voiceCacheState"))$("voiceCacheState").textContent="Cache: cleared";status("Voice cache cleared")}catch(e){status("Cache clear failed")}}
 window.CJClearVoiceCache=clearVoiceCache;
+/* v0.49 starter voices: on load, copy the bundled clips in voices/starter/ into cj_voice_audio_v2 under the same key and record speak() writes (Blob audio/mpeg + meta {t}). Only missing keys, never overwrites, silent on any failure. */
+const STARTER_MANIFEST="voices/starter/manifest.json",STARTER_FLAG="cj_starter_seed_v1";
+let starterSeed=null,starterKeys=null,starterDone=false;
+function starterEntryOk(e){try{return !!(e&&typeof e.key==="string"&&typeof e.file==="string"&&/^voices\/starter\/[a-z0-9-]+\.mp3$/.test(e.file)&&e.settings&&clipKey(e.text,{voiceId:e.voiceId,model:e.model,auto:false,speed:e.settings.speed,stability:e.settings.stability,similarity:e.settings.similarity,style:e.settings.style,boost:e.settings.boost})===e.key)}catch(x){return false}}
+function starterHave(db,list){return new Promise(ok=>{try{let got={},tx=db.transaction("audio"),st=tx.objectStore("audio");list.forEach(e=>{let q=st.count(e.key);q.onsuccess=()=>{if(q.result)got[e.key]=1}});tx.oncomplete=()=>ok(got);tx.onerror=tx.onabort=()=>ok(null)}catch(x){ok(null)}})}
+function starterPut(db,k,blob){return new Promise(ok=>{try{let wrote=false,tx=db.transaction(["audio","meta"],"readwrite"),au=tx.objectStore("audio"),me=tx.objectStore("meta"),q=au.count(k);q.onsuccess=()=>{if(q.result)return;au.put(blob,k);me.put({t:Date.now()},metaKey(k));wrote=true};tx.oncomplete=()=>ok(wrote);tx.onerror=tx.onabort=()=>ok(false)}catch(x){ok(false)}})}
+async function seedStarterVoices(){
+  if(!window.indexedDB||!window.fetch)return 0;
+  let r=await fetch(STARTER_MANIFEST,{cache:"no-cache"});if(!r.ok)return 0;
+  let m=await r.json(),list=(m&&Array.isArray(m.entries)?m.entries:[]).filter(starterEntryOk);
+  starterKeys=new Set(list.map(e=>e.key));if(!list.length)return 0;
+  let db=await openVoiceDB(),have=await starterHave(db,list);if(!have)return 0;
+  let added=0;
+  for(let e of list){if(have[e.key])continue;try{let a=await fetch(e.file);if(!a.ok)continue;let blob=new Blob([await a.arrayBuffer()],{type:"audio/mpeg"});if(blob.size&&await starterPut(db,e.key,blob))added++}catch(x){}}
+  try{localStorage.setItem(STARTER_FLAG,JSON.stringify({v:m.version||1,n:list.length,added:added,at:Date.now()}))}catch(x){}
+  if(added&&$("voiceCacheState"))$("voiceCacheState").textContent="Cache: "+added+" starter voice clips saved";
+  return added;
+}
+starterSeed=seedStarterVoices().catch(()=>0).then(n=>{starterDone=true;return n});
+window.CJStarterSeed=()=>starterSeed;
+async function starterWait(ck,sig){let until=Date.now()+8000;while(!starterDone&&Date.now()<until&&!(sig&&sig.aborted)){if(starterKeys&&!starterKeys.has(ck))return null;let hit=await cacheGet(ck);if(hit)return hit;await wait(250)}return sig&&sig.aborted?null:await cacheGet(ck)}
 function chosenModel(t){return modelFrom(t,currentVoiceSnap())}
 async function updateVoiceAccount(){
  let key=$("key").value.trim();if(!key){if($("voiceAccount"))$("voiceAccount").textContent="API: no key • add a key or run Build All Voices. System voices are not used.";return}
@@ -109,6 +130,7 @@ async function speak(t,label){
   stopVoice();
   await unlockVoiceAudio();
   let snap=currentVoiceSnap(),ck=clipKey(t,snap),cached=await cacheGet(ck);
+  if(!cached&&!starterDone){aborter=new AbortController();let sig=aborter.signal;cached=await starterWait(ck,sig);if(sig.aborted)return false;aborter=null}
   if(cached){status(label+" • cached voice");try{return await playVoiceBlob(cached,label)}catch(e){if(!run&&!fromPreview)return false;return stopForMissingVoice("Saved voice could not play ("+(e&&e.message?e.message:"decode failed")+"). Run Build All Voices again. System voices are not used.")}}
   if(!snap.key)return stopForMissingVoice(VOICE_GAP_MSG);
   aborter=new AbortController();
@@ -135,6 +157,7 @@ async function buildAllVoices(){
   voiceBuild={abort:false,ctrl:new AbortController()};
   let btn=$("buildAllVoices");if(btn)btn.textContent="Abort Build";
   try{
+    if(!starterDone){setBuildProgress("Loading starter voices");await Promise.race([starterSeed,wait(15000)])}
     for(let n=0;n<clips.length;n++){
       if(!voiceBuild||voiceBuild.abort)break;
       let clip=clips[n],ck=clipKey(clip.text,snap);

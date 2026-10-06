@@ -6,7 +6,7 @@ const fs=require('fs'),path=require('path'),os=require('os'),cp=require('child_p
 const ROOT=path.resolve(__dirname,'..');
 const html=fs.readFileSync(path.join(ROOT,'chakra-deploy.html'),'utf8');
 const scripts=[...html.matchAll(/<script src="([^"?]+)\?v=([^"]+)"><\/script>/g)].map(m=>({file:m[1],v:m[2]}));
-const VERSION='v0.48';
+const VERSION='v0.49';
 const hasFfmpeg=!cp.spawnSync('ffmpeg',['-version']).error;
 
 test('version '+VERSION+' in the title, the .sub line, and the Master Index card',()=>{
@@ -38,7 +38,7 @@ test('new v0.44 modules are loaded in order',()=>{
   assert.ok(at('chakra-auto-mantra.js')>at('chakra-audio-lights.js'));
   for(let f of ['chakra-dominant.js','chakra-video-library.js','chakra-auto-mantra.js','chakra-video-selector.js'])
     assert.equal(scripts.find(s=>s.file===f).v,'20261004a',f+' cache-bust');
-  assert.equal(scripts.find(s=>s.file==='chakra-journey-core.js').v,'20261005b','chakra-journey-core.js cache-bust');
+  assert.equal(scripts.find(s=>s.file==='chakra-journey-core.js').v,'20261005c','chakra-journey-core.js cache-bust');
   assert.equal(scripts.find(s=>s.file==='chakra-journey-v030.js').v,'20261005a','chakra-journey-v030.js cache-bust');
   assert.equal(scripts.find(s=>s.file==='chakra-audio-lights.js').v,'20261005b','chakra-audio-lights.js cache-bust');
   assert.equal(scripts.find(s=>s.file==='chakra-color-blend.js').v,'20261005a','chakra-color-blend.js cache-bust');
@@ -88,6 +88,25 @@ test('journey no longer aborts the run on one missing voice line',()=>{
   let copy=fs.readFileSync(path.join(ROOT,'chakra-audio-copy.js'),'utf8');
   assert.doesNotThrow(()=>new vm.Script(copy,{filename:'chakra-audio-copy.js'}));
   assert.ok(copy.includes('registerProcessor("cj-copy"'));
+});
+test('starter voices: 35 bundled clips keyed exactly like speak()',()=>{
+  let core=fs.readFileSync(path.join(ROOT,'chakra-journey-core.js'),'utf8');
+  let C=vm.runInNewContext(core.split('\n')[0]+';C',{window:{}});
+  let fns=['roundParam','voiceSettingsKeyFrom','modelFrom','clipKey'].map(n=>core.match(new RegExp('^function '+n+'\\(.*$','m'))[0]).join('\n');
+  let clipKey=vm.runInNewContext(fns+';clipKey',{});
+  let m=JSON.parse(fs.readFileSync(path.join(ROOT,'voices','starter','manifest.json'),'utf8'));
+  let texts=C.flatMap(c=>c[5]);
+  assert.equal(texts.length,35);
+  assert.equal(m.entries.length,35);
+  let snap={voiceId:'JBFqnCBsd6RMkjVDRZzb',model:'eleven_multilingual_v2',auto:true,speed:.82,stability:.68,similarity:.83,style:.05,boost:true};
+  m.entries.forEach((e,i)=>{
+    assert.equal(e.text,texts[i]);
+    assert.equal(e.key,clipKey(e.text,snap),'default-settings key '+e.file);
+    let f=path.join(ROOT,e.file);
+    assert.ok(fs.statSync(f).size===e.bytes&&e.bytes>1000&&e.bytes<300000,e.file);
+  });
+  assert.ok(core.includes('STARTER_FLAG="cj_starter_seed_v1"'));
+  assert.ok(core.includes('if(q.result)return;au.put(blob,k)'),'seeding never overwrites');
 });
 test('videos/manifest.json is valid',()=>{
   let r=require('../tools/add-video.js').check(ROOT);

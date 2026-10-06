@@ -1,0 +1,713 @@
+{
+ "version": 1,
+ "app": "Chakra Journey",
+ "db": "cj_voice_audio_v2",
+ "store": "audio",
+ "metaStore": "meta",
+ "mime": "audio/mpeg",
+ "outputFormat": "mp3_44100_128 (ElevenLabs default, no output_format param, same as the app)",
+ "keyFormat": "voiceId|model|speed|stability|similarity|style|boost|text",
+ "count": 35,
+ "entries": [
+  {
+   "file": "voices/starter/root-1.mp3",
+   "chakra": "Root",
+   "chakraIndex": 0,
+   "line": 0,
+   "text": "I am safe, grounded, and secure in my body.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I am safe, grounded, and secure in my body.",
+   "bytes": 53960,
+   "sha256": "144a4f74266f97ff313a01a900938ccc3da672889dfe2c823486f8aae7d73b62"
+  },
+  {
+   "file": "voices/starter/root-2.mp3",
+   "chakra": "Root",
+   "chakraIndex": 0,
+   "line": 1,
+   "text": "I trust the process of life and feel deeply rooted.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I trust the process of life and feel deeply rooted.",
+   "bytes": 59812,
+   "sha256": "c33f507a8740e80337263b20561ee8ee35713a6f409f2985264a60967b710cb6"
+  },
+  {
+   "file": "voices/starter/root-3.mp3",
+   "chakra": "Root",
+   "chakraIndex": 0,
+   "line": 2,
+   "text": "My foundation is strong; I belong here.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|My foundation is strong; I belong here.",
+   "bytes": 51453,
+   "sha256": "af868d015d2f0e5f66faed3dd1b685a9863170fdf0354280913d53f8c00ea096"
+  },
+  {
+   "file": "voices/starter/root-4.mp3",
+   "chakra": "Root",
+   "chakraIndex": 0,
+   "line": 3,
+   "text": "I release fear and stand firmly in the present moment.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I release fear and stand firmly in the present moment.",
+   "bytes": 58976,
+   "sha256": "94dbbc46bcc9f06873a1eb502d782fe2cbb728acc53cf3e92375fb41e83003c5"
+  },
+  {
+   "file": "voices/starter/root-5.mp3",
+   "chakra": "Root",
+   "chakraIndex": 0,
+   "line": 4,
+   "text": "Abundance flows to me as I remain stable and centered.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|Abundance flows to me as I remain stable and centered.",
+   "bytes": 64827,
+   "sha256": "a50a97a98a7a3124d4e412360bafac3e12b0c6d9b9b5e95cca589a8aabe58514"
+  },
+  {
+   "file": "voices/starter/sacral-1.mp3",
+   "chakra": "Sacral",
+   "chakraIndex": 1,
+   "line": 0,
+   "text": "I embrace pleasure and creativity with ease.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I embrace pleasure and creativity with ease.",
+   "bytes": 54378,
+   "sha256": "0adf19e633222807a13f7bedc406a6d3ab9e82aec19a0442bb9d45386ce5b032"
+  },
+  {
+   "file": "voices/starter/sacral-2.mp3",
+   "chakra": "Sacral",
+   "chakraIndex": 1,
+   "line": 1,
+   "text": "My emotions flow freely and healthily.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|My emotions flow freely and healthily.",
+   "bytes": 48527,
+   "sha256": "819957d445f16cbb5d30a328721e88ac197bc0d6d84d47c11141e96ae673b6fd"
+  },
+  {
+   "file": "voices/starter/sacral-3.mp3",
+   "chakra": "Sacral",
+   "chakraIndex": 1,
+   "line": 2,
+   "text": "I honor my desires and allow joy into my life.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I honor my desires and allow joy into my life.",
+   "bytes": 56050,
+   "sha256": "4febf3e92d33adcbf577d77f737c0348c6c1b87a88ed99f0c2449571775dc8ad"
+  },
+  {
+   "file": "voices/starter/sacral-4.mp3",
+   "chakra": "Sacral",
+   "chakraIndex": 1,
+   "line": 3,
+   "text": "I am open to change and the beauty of transformation.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I am open to change and the beauty of transformation.",
+   "bytes": 61066,
+   "sha256": "eb506200f1f7462509c022afac6b9b12a018b6e65f51dcf6869f48705d1a65de"
+  },
+  {
+   "file": "voices/starter/sacral-5.mp3",
+   "chakra": "Sacral",
+   "chakraIndex": 1,
+   "line": 4,
+   "text": "Creativity moves through me effortlessly.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|Creativity moves through me effortlessly.",
+   "bytes": 52288,
+   "sha256": "c4b8848528d01c3ac4b4ca68be3ea021b2ea7733dad64d414415d5df0f2a5153"
+  },
+  {
+   "file": "voices/starter/solar-plexus-1.mp3",
+   "chakra": "Solar Plexus",
+   "chakraIndex": 2,
+   "line": 0,
+   "text": "I am confident, powerful, and in control of my life.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I am confident, powerful, and in control of my life.",
+   "bytes": 67335,
+   "sha256": "68ffbf31c0da0474655b692d33458971616722c01e6a0f690c57fd1fd8921e02"
+  },
+  {
+   "file": "voices/starter/solar-plexus-2.mp3",
+   "chakra": "Solar Plexus",
+   "chakraIndex": 2,
+   "line": 1,
+   "text": "I trust my inner wisdom and take decisive action.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I trust my inner wisdom and take decisive action.",
+   "bytes": 61902,
+   "sha256": "3f19e44b7d107cab98aa82cfe198e0bd56455d1c85ee37d8cb13146055be6ae3"
+  },
+  {
+   "file": "voices/starter/solar-plexus-3.mp3",
+   "chakra": "Solar Plexus",
+   "chakraIndex": 2,
+   "line": 2,
+   "text": "My personal power shines brightly.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|My personal power shines brightly.",
+   "bytes": 44765,
+   "sha256": "06661646049398f1584c1b2940f291efa4c0a2660dd7f056de4ce528f66ade6b"
+  },
+  {
+   "file": "voices/starter/solar-plexus-4.mp3",
+   "chakra": "Solar Plexus",
+   "chakraIndex": 2,
+   "line": 3,
+   "text": "I release self-doubt and step into my strength.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I release self-doubt and step into my strength.",
+   "bytes": 51453,
+   "sha256": "b2a9d82cdd49257b7305a0977c22c3bcbc84d81cc9fde5755fe7866e95954cf5"
+  },
+  {
+   "file": "voices/starter/solar-plexus-5.mp3",
+   "chakra": "Solar Plexus",
+   "chakraIndex": 2,
+   "line": 4,
+   "text": "I am worthy of success and respect.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I am worthy of success and respect.",
+   "bytes": 45601,
+   "sha256": "1384cdfec4ce4ed9cb26bef01ca5bfc53c2423c67e4ce68b9801cbe7a81ec904"
+  },
+  {
+   "file": "voices/starter/heart-1.mp3",
+   "chakra": "Heart",
+   "chakraIndex": 3,
+   "line": 0,
+   "text": "I give and receive love freely and unconditionally.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I give and receive love freely and unconditionally.",
+   "bytes": 57722,
+   "sha256": "ffdecd5cf18ba4e1180aa1ae9bb8994beabbefb9a4af863b75d5eac070a16972"
+  },
+  {
+   "file": "voices/starter/heart-2.mp3",
+   "chakra": "Heart",
+   "chakraIndex": 3,
+   "line": 1,
+   "text": "My heart is open, compassionate, and full of gratitude.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|My heart is open, compassionate, and full of gratitude.",
+   "bytes": 64409,
+   "sha256": "4d6a7cca92fe260b3c3e1c8b9aea333fbfbdaa088721479ccba2f6e9abe56849"
+  },
+  {
+   "file": "voices/starter/heart-3.mp3",
+   "chakra": "Heart",
+   "chakraIndex": 3,
+   "line": 2,
+   "text": "I forgive myself and others with ease.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I forgive myself and others with ease.",
+   "bytes": 44765,
+   "sha256": "755d11c1ff0b2b937814a8bc993ed16562febcb59f3feb38abfa18022da6e2b3"
+  },
+  {
+   "file": "voices/starter/heart-4.mp3",
+   "chakra": "Heart",
+   "chakraIndex": 3,
+   "line": 3,
+   "text": "Love is my true nature and guides every action.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|Love is my true nature and guides every action.",
+   "bytes": 61902,
+   "sha256": "1d5e61c5a4c9d5eb89ea5e80cfa33b14b8ecdbfe166f457cc52be1a62fe47c57"
+  },
+  {
+   "file": "voices/starter/heart-5.mp3",
+   "chakra": "Heart",
+   "chakraIndex": 3,
+   "line": 4,
+   "text": "I am deeply connected to all living beings.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I am deeply connected to all living beings.",
+   "bytes": 51035,
+   "sha256": "1ed16b03fff7fa36606b9a9b1c3d86eb6d342dc7d2be11ceb4169c609c2b2b19"
+  },
+  {
+   "file": "voices/starter/throat-1.mp3",
+   "chakra": "Throat",
+   "chakraIndex": 4,
+   "line": 0,
+   "text": "I speak my truth with clarity and confidence.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I speak my truth with clarity and confidence.",
+   "bytes": 52288,
+   "sha256": "8f24b96d14833bb468cc8279dc021a67fa49b73642d5af04cfc70d9c7eb8d60d"
+  },
+  {
+   "file": "voices/starter/throat-2.mp3",
+   "chakra": "Throat",
+   "chakraIndex": 4,
+   "line": 1,
+   "text": "My voice is powerful and my words create positive change.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|My voice is powerful and my words create positive change.",
+   "bytes": 70261,
+   "sha256": "c4ea2614f1bf13e3744316cad548cbd42aa918f66ec9fb791b00099a07b43e55"
+  },
+  {
+   "file": "voices/starter/throat-3.mp3",
+   "chakra": "Throat",
+   "chakraIndex": 4,
+   "line": 2,
+   "text": "I express myself authentically and listen deeply.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I express myself authentically and listen deeply.",
+   "bytes": 58976,
+   "sha256": "87a45f06c0c199febb07ece6efb07fa19d2486e5be7553ecbe00ed7082dc8fb6"
+  },
+  {
+   "file": "voices/starter/throat-4.mp3",
+   "chakra": "Throat",
+   "chakraIndex": 4,
+   "line": 3,
+   "text": "Communication flows easily between me and others.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|Communication flows easily between me and others.",
+   "bytes": 57722,
+   "sha256": "37219f385e149ad8b64eaaa67daf1029f210137608db75184e289e003b81ecae"
+  },
+  {
+   "file": "voices/starter/throat-5.mp3",
+   "chakra": "Throat",
+   "chakraIndex": 4,
+   "line": 4,
+   "text": "I am heard, understood, and respected.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I am heard, understood, and respected.",
+   "bytes": 49363,
+   "sha256": "365f49d5c3a3d9af3007ac68d066be1dbff562ff0bc1b4aee65a6d1189ec544b"
+  },
+  {
+   "file": "voices/starter/third-eye-1.mp3",
+   "chakra": "Third Eye",
+   "chakraIndex": 5,
+   "line": 0,
+   "text": "I trust my intuition and inner vision.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I trust my intuition and inner vision.",
+   "bytes": 51035,
+   "sha256": "097f3ccd6b8565dde7c8faef9e8628222dc6717d6a97dceadc5d0630e9f94547"
+  },
+  {
+   "file": "voices/starter/third-eye-2.mp3",
+   "chakra": "Third Eye",
+   "chakraIndex": 5,
+   "line": 1,
+   "text": "Clarity and insight guide my path.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|Clarity and insight guide my path.",
+   "bytes": 44347,
+   "sha256": "e89890bab24b891b4a988f26a9176f97f947d87e96e49e8d5830822dc4d883a6"
+  },
+  {
+   "file": "voices/starter/third-eye-3.mp3",
+   "chakra": "Third Eye",
+   "chakraIndex": 5,
+   "line": 2,
+   "text": "I see beyond illusion and perceive the truth.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I see beyond illusion and perceive the truth.",
+   "bytes": 54378,
+   "sha256": "09caa1ce93cdd664e47c8fff0ba2c28ee74ab6e85c2f665f0824cac09088a36b"
+  },
+  {
+   "file": "voices/starter/third-eye-4.mp3",
+   "chakra": "Third Eye",
+   "chakraIndex": 5,
+   "line": 3,
+   "text": "My mind is clear, focused, and open to wisdom.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|My mind is clear, focused, and open to wisdom.",
+   "bytes": 58140,
+   "sha256": "ed9ef6d2c0b5baa81fb9cc2dc3d6b571afceea4d6fe2617f41d75c39118c1e42"
+  },
+  {
+   "file": "voices/starter/third-eye-5.mp3",
+   "chakra": "Third Eye",
+   "chakraIndex": 5,
+   "line": 4,
+   "text": "I am connected to my higher guidance.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I am connected to my higher guidance.",
+   "bytes": 42675,
+   "sha256": "1a800e8cbe0f8f2ef042f23b64103bccb4b4d9167bbea13778fa29b5368ecc2f"
+  },
+  {
+   "file": "voices/starter/crown-1.mp3",
+   "chakra": "Crown",
+   "chakraIndex": 6,
+   "line": 0,
+   "text": "I am one with the divine and infinite consciousness.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I am one with the divine and infinite consciousness.",
+   "bytes": 55214,
+   "sha256": "284a355bfa26705ad0d16bf8432300eccf35fc86f31fc25ddf0400caa2b43a1c"
+  },
+  {
+   "file": "voices/starter/crown-2.mp3",
+   "chakra": "Crown",
+   "chakraIndex": 6,
+   "line": 1,
+   "text": "Divine wisdom flows through me effortlessly.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|Divine wisdom flows through me effortlessly.",
+   "bytes": 54378,
+   "sha256": "254869d34c9935a7f2e1da71e5fd731a607cbd2c4fe079a792d7a0a65e521f6a"
+  },
+  {
+   "file": "voices/starter/crown-3.mp3",
+   "chakra": "Crown",
+   "chakraIndex": 6,
+   "line": 2,
+   "text": "I am connected to pure awareness and universal love.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I am connected to pure awareness and universal love.",
+   "bytes": 65663,
+   "sha256": "f4824d220ff07dbea61062846f0b268cd29dd70b5412d4acf6d6a572721cd05b"
+  },
+  {
+   "file": "voices/starter/crown-4.mp3",
+   "chakra": "Crown",
+   "chakraIndex": 6,
+   "line": 3,
+   "text": "My spirit is free, expansive, and luminous.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|My spirit is free, expansive, and luminous.",
+   "bytes": 56886,
+   "sha256": "d96ee67c8a3214eae9aa93f0591ffaf390d08ddfa20ef4301db847fa3d63334e"
+  },
+  {
+   "file": "voices/starter/crown-5.mp3",
+   "chakra": "Crown",
+   "chakraIndex": 6,
+   "line": 4,
+   "text": "I surrender to the highest good and trust the universe.",
+   "voiceId": "JBFqnCBsd6RMkjVDRZzb",
+   "model": "eleven_flash_v2_5",
+   "settings": {
+    "speed": 0.82,
+    "stability": 0.68,
+    "similarity": 0.83,
+    "style": 0.05,
+    "boost": true
+   },
+   "settingsKey": "0.82|0.68|0.83|0.05|1",
+   "key": "JBFqnCBsd6RMkjVDRZzb|eleven_flash_v2_5|0.82|0.68|0.83|0.05|1|I surrender to the highest good and trust the universe.",
+   "bytes": 61902,
+   "sha256": "852767212012b72cc67b630a007ac226e1c272e734f2c3c07e12af8594da518d"
+  }
+ ]
+}
