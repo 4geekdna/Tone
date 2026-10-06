@@ -1,7 +1,7 @@
 (function(){
  const API="https://openapi.api.govee.com/router/api/v1",$=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  function key(){return (($("goveeKey")?.value)||localStorage.getItem("govee-api-key")||"").trim()} function uuid(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random()}
- async function req(path,method="GET",payload){let r=await fetch(API+path,{method,headers:{"Content-Type":"application/json","Govee-API-Key":key()},body:payload?JSON.stringify({requestId:uuid(),payload}):undefined}),t=await r.text(),j={};try{j=JSON.parse(t)}catch(e){}if(!r.ok||j.code&&j.code!==200)throw Error(j.message||j.msg||("HTTP "+r.status));return j}
+ async function req(path,method="GET",payload){if(!window.CJGovee)throw Error("Govee client missing");return window.CJGovee.request(path,{method:method,body:payload?JSON.stringify({requestId:uuid(),payload:payload}):undefined})}
  const options=j=>{let o=[];(j?.payload?.capabilities||[]).forEach(c=>(c.parameters?.options||[]).forEach(x=>o.push({name:x.name||String(x.value),value:x.value,type:c.type,instance:c.instance})));return o},states=j=>{let m={};(j?.payload?.capabilities||[]).forEach(c=>m[c.instance]=c.state?.value);return m};
  function candidate(d){let s=((d.deviceName||"")+" "+(d.sku||"")).toLowerCase();return /projector|star|nebula|galaxy/.test(s)||(d.capabilities||[]).some(c=>/segment|scene|music|diy/i.test((c.type||"")+c.instance))}
  async function post(path,d){try{return await req(path,"POST",{sku:d.sku,device:d.device})}catch(e){return{error:e.message}}}

@@ -30,6 +30,7 @@ function harness(bag,list){
       if(String(url).indexOf('/user/devices')>=0)return{ok:true,status:200,text:async()=>JSON.stringify({code:200,data:list||FIX})};
       return{ok:true,status:200,text:async()=>'{"code":200}'};
     }};
+  win.CJGovee={request:async path=>{calls.push({url:path,body:null});return {code:200,data:list||FIX}},control:async(d,c)=>{calls.push({url:'/device/control',body:{payload:{device:d.device,sku:d.sku,capability:c}}});return {code:200}}};
   win.window=win;Object.assign(win,{localStorage:store,document:ctx.document});
   vm.createContext(ctx);
   ctx.window=new Proxy(win,{set(t,k,v){t[k]=v;ctx[k]=v;return true}});

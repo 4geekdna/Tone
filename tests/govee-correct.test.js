@@ -14,7 +14,7 @@ test('C1 Load Lights keeps type on cj_govee_devices',async()=>{
   const list=[{device:'AA:BB:CC:DD:EE:FF:00:01',sku:'H6008',deviceName:'Lamp',type:'devices.types.light',capabilities:[]}];
   const els={goveeKey:{value:''},goveeList:{textContent:'',innerHTML:'',closest:()=>null,querySelectorAll:()=>[]},status:{textContent:''}};
   const store={getItem:k=>Object.prototype.hasOwnProperty.call(bag,k)?bag[k]:null,setItem:(k,v)=>{bag[k]=String(v)}};
-  const win={addEventListener(){},dispatchEvent(){}};
+  const win={addEventListener(){},dispatchEvent(){},CJGovee:{request:async()=>({code:200,data:list}),control:async()=>({code:200})}};
   const ctx={window:win,localStorage:store,console,JSON,Promise,Array,Object,String,Number,Math,Error,Date,CustomEvent:function(t){this.type=t},crypto:{randomUUID:()=>'u'},setTimeout:fn=>{fn();return 0},
     document:{readyState:'complete',getElementById:id=>els[id]||null,querySelectorAll:()=>[],addEventListener(){},createElement:()=>({})},
     fetch:async()=>({ok:true,status:200,text:async()=>JSON.stringify({code:200,data:list})})};
@@ -29,7 +29,7 @@ test('C1 Load Lights keeps type on cj_govee_devices',async()=>{
 
 function starEnv(send){
   const calls=[];
-  const win={addEventListener(){},dispatchEvent(){}};
+  const win={addEventListener(){},dispatchEvent(){},CJGovee:{control:async(d,c)=>{let body={payload:{sku:d.sku,device:d.device,capability:c}};calls.push(body);let r=send?send(body,calls):{code:200};if(r&&r.status===404)throw Error('HTTP 404');return r}}};
   const ctx={window:win,localStorage:{getItem:()=>null,setItem(){}},console,JSON,Promise,Array,Object,String,Number,Math,Error,Date,CustomEvent:function(t){this.type=t},crypto:{randomUUID:()=>'u'},setTimeout:fn=>{fn();return 0},
     document:{readyState:'complete',getElementById:()=>null,querySelectorAll:()=>[],addEventListener(){}},
     fetch:async(url,o)=>{let body=JSON.parse(o.body);calls.push(body);return send?send(body,calls):{ok:true,status:200,json:async()=>({code:200})}}};

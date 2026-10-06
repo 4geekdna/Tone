@@ -40,7 +40,7 @@ function segmentCount(field,sku){
 }
 function segments(c,sku){if(!c)return[];let f=(c.parameters?.fields||[]).find(x=>x.fieldName==='segment');return segmentCount(f,sku).values}
 function advertised(d,instance){return (d.capabilities||[]).find(c=>c.instance===instance)||null}
-async function send(d,c){let r=await fetch('https://openapi.api.govee.com/router/api/v1/device/control',{method:'POST',headers:{'Content-Type':'application/json','Govee-API-Key':key()},body:JSON.stringify({requestId:uuid(),payload:{sku:d.sku,device:d.device,capability:c}})}),j=await r.json().catch(()=>({}));if(!r.ok||j.code&&j.code!==200)throw Error(j.message||j.msg||('HTTP '+r.status));return j}
+async function send(d,c){if(window.CJGovee)return window.CJGovee.control(d,c,{lane:c&&c.instance==='powerSwitch'&&c.value===0?'off':'color',slotKey:c&&c.instance});throw Error('Govee client missing')}
 function sceneScore(name,i){let s=String(name||'').toLowerCase(),words=SCENE_WORDS[i]||SCENE_WORDS[0],score=0;words.forEach((w,n)=>{if(s.includes(w))score+=100-n*7});if(/star|galaxy|milky|space|universe/.test(s))score+=150;return score}
 function normalizeScene(x){return typeof x==='string'?{name:x,value:null,type:'devices.capabilities.dynamic_scene',instance:'lightScene'}:x}
 function bestScene(d,i){let all=[...(d.dynamicScenes||[]),...(d.diyScenes||[])].map(normalizeScene).filter(x=>x&&x.name);all.sort((a,b)=>sceneScore(b.name,i)-sceneScore(a.name,i));return all.length&&sceneScore(all[0].name,i)>0?all[0]:null}

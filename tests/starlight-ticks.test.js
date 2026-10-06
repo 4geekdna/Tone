@@ -25,6 +25,7 @@ function env(bag,{runtime=true}={}){
     setTimeout:fn=>{fn();return 0},clearTimeout(){},
     document:{readyState:'complete',getElementById:id=>els[id]||null,querySelectorAll:()=>[],addEventListener(){},createElement:()=>({})},
     fetch:async(url,o)=>{calls.push({url,body:JSON.parse(o.body),headers:o.headers});return{ok:true,status:200,json:async()=>({code:200}),text:async()=>'{"code":200}'}}};
+  win.CJGovee={control:async(d,c)=>{calls.push({url:'https://openapi.api.govee.com/router/api/v1/device/control',body:{payload:{sku:d.sku,device:d.device,capability:c}}});return {code:200}}};
   win.window=win;Object.assign(win,{localStorage:store,document:ctx.document});
   vm.createContext(ctx);
   // scripts set globals on `window`; mirror window props onto the context's global

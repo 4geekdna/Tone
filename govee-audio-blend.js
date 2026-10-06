@@ -3,7 +3,7 @@
 /* govee-audio-blend.js — v0.37
    Two-channel paint: first half of selected lights get the loudest bowl,
    second half get the next. Throttled so Govee is not spammed. */
-const API="https://openapi.api.govee.com/router/api/v1";
+const API="cj-govee";
 const LS_KEY="govee-api-key", LS_PICKED="cj_govee_picked", LS_DEVICES="cj_govee_devices";
 let busy=false, queued=null, powered={}, lastSent="";
 const $=id=>document.getElementById(id);
@@ -17,17 +17,9 @@ function picked(){try{return JSON.parse(localStorage.getItem(LS_PICKED)||"{}")}c
 function followOn(){let el=$("goveeOn");return !el||!!el.checked}
 function isPaintable(d){return window.goveeIsLight?window.goveeIsLight(d):true}
 function targets(){if(window.goveeLightTargets)return window.goveeLightTargets();let p=picked();return devices().filter(d=>p[idOf(d)]&&isPaintable(d))}
-async function api(path,o){
-  let k=key();
-  if(!k)throw Error("Enter your Govee API key first");
-  let r=await fetch(API+path,{method:o&&o.method||"GET",headers:{"Content-Type":"application/json","Govee-API-Key":k},body:o&&o.body});
-  let t=await r.text(), b={};
-  try{b=JSON.parse(t)}catch(e){}
-  if(!r.ok||(b.code&&b.code!==200))throw Error(b.message||b.msg||("Govee HTTP "+r.status));
-  return b;
-}
+async function api(path,o){if(window.CJGovee)return window.CJGovee.request(path,o);throw Error("Govee client missing")}
 async function sendControl(d,c){
-  return api("/device/control",{method:"POST",body:JSON.stringify({requestId:uuid(),payload:{sku:d.sku,device:d.device,capability:c}})});
+  if(window.CJGovee)return window.CJGovee.control(d,c,{lane:c&&c.instance==="powerSwitch"&&c.value===0?"off":"color",slotKey:c&&c.instance});
 }
 async function paintOne(d,hex,br){
   let id=idOf(d);
