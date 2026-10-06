@@ -14,7 +14,9 @@ function key(){return ((($("goveeKey")||{}).value)||localStorage.getItem(LS_KEY)
 function uuid(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random()}
 function devices(){try{return JSON.parse(localStorage.getItem(LS_DEVICES)||"[]")}catch(e){return[]}}
 function picked(){try{return JSON.parse(localStorage.getItem(LS_PICKED)||"{}")}catch(e){return{}}}
-function targets(){let p=picked();return devices().filter(d=>p[idOf(d)])}
+function followOn(){let el=$("goveeOn");return !el||!!el.checked}
+function isPaintable(d){return window.goveeIsLight?window.goveeIsLight(d):true}
+function targets(){if(window.goveeLightTargets)return window.goveeLightTargets();let p=picked();return devices().filter(d=>p[idOf(d)]&&isPaintable(d))}
 async function api(path,o){
   let k=key();
   if(!k)throw Error("Enter your Govee API key first");
@@ -38,6 +40,7 @@ async function paintOne(d,hex,br){
   if(hex)await sendControl(d,{type:"devices.capabilities.color_setting",instance:"colorRgb",value:hexInt(hex)});
 }
 async function paintBlend(aHex,aBright,bHex,bBright){
+  if(!followOn())return;
   queued={aHex:aHex,aBright:aBright,bHex:bHex||aHex,bBright:bBright==null?aBright:bBright};
   if(busy)return;
   busy=true;
@@ -60,4 +63,5 @@ async function paintBlend(aHex,aBright,bHex,bBright){
   }finally{busy=false}
 }
 window.goveePaintBlend=paintBlend;
+window.goveePaintSlots=function(plan){if(!followOn()||!plan)return;return paintBlend(plan.hex,plan.bright==null?74:plan.bright,plan.hex,58)};
 })();

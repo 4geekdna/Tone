@@ -88,6 +88,7 @@ test('follow() still paints only ticked lights and then runs the (tick-filtered)
   await win.goveeFollow(0);
   await new Promise(r=>setImmediate(r));for(let k=0;k<50;k++)await Promise.resolve();
   const devs=new Set(calls.map(c=>c.body.payload.device));
-  assert.ok(devs.has(LAMP.device)&&devs.has(P1.device));
+  assert.ok(devs.has(P1.device));
+  assert.ok(!devs.has(LAMP.device),'a ticked device with no light type and no color is not painted');
   assert.ok(!devs.has(P2.device),'unticked projector untouched by both paths');
 });
