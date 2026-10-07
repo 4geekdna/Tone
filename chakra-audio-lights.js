@@ -553,6 +553,19 @@ function colorLabel(){
   return name?name+" · follows the sound":"Color follows the sound";
 }
 function colorFrame(now){
+  let ui=colorUi();
+  if(ui.picks&&ui.mode==="audio"&&lastDb&&topN>1){
+    let mix=targetFrom(lastDb,lastSr||48000,lastFft||8192);
+    if(mix&&mix.hex){
+      paintColor(mix.hex);
+      if(mix.hex!==window.__cjCommitHex){
+        window.__cjCommitHex=mix.hex;
+        try{window.dispatchEvent(new CustomEvent("cj-color-commit",{detail:{hex:mix.hex,topN:topN,at:now}}))}catch(e){}
+      }
+      say(mix.label||colorLabel());
+      return;
+    }
+  }
   let chakra=desiredChakra(now);
   if(chakra>=0)startBlend(chakra);
   let hex=sampleBlend(now);

@@ -14,7 +14,7 @@ function key(){return ((($("goveeKey")||{}).value)||localStorage.getItem(LS_KEY)
 function uuid(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random()}
 function devices(){try{return JSON.parse(localStorage.getItem(LS_DEVICES)||"[]")}catch(e){return[]}}
 function picked(){try{return JSON.parse(localStorage.getItem(LS_PICKED)||"{}")}catch(e){return{}}}
-function targets(){let p=picked();return devices().filter(d=>p[idOf(d)])}
+function targets(){if(window.goveeLightTargets)return window.goveeLightTargets();let p=picked();return devices().filter(d=>p[idOf(d)])}
 async function api(path,o){
   let k=key();
   if(!k)throw Error("Enter your Govee API key first");
