@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#120814">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Chakra Art v0.54</title>
+<style>
+html,body{margin:0;height:100%;background:#120814;color:#fff;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+#thumb{position:fixed;right:16px;bottom:16px;width:148px;height:84px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.35);background:#000;z-index:3}
+#thumb.hide{width:46px;height:46px;border-radius:23px}
+#thumb video,#thumb audio{width:100%;height:100%;object-fit:cover}
+#thumb.hide video{opacity:0}
+#play{position:fixed;left:16px;bottom:16px;z-index:4;min-height:48px;padding:12px 18px;border:0;border-radius:999px;background:#fff;color:#111;font:700 16px inherit}
+#gear{position:fixed;top:16px;right:16px;z-index:4;width:48px;height:48px;border-radius:14px;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.35);color:#fff;font-size:22px}
+#peaks{position:fixed;top:16px;left:16px;z-index:4;color:#fff;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:10px 12px;font:600 13px inherit}
+#pop{position:fixed;inset:0;z-index:6;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center}
+#pop.on{display:flex}
+#card{width:min(440px,100%);background:#17121c;border-radius:18px 18px 0 0;padding:16px 16px 28px}
+#card h2{margin:0 0 10px;font-size:18px}
+label{display:block;margin:10px 0 4px;color:#ccc;font-size:13px}
+input[type=range]{width:100%}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row button,.row select{min-height:44px;border-radius:12px;border:1px solid #3a3a44;background:#222;color:#fff;padding:8px 10px}
+.row button.on{background:#fff;color:#111}
+#note{color:#aaa;font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+<canvas id="art"></canvas>
+<button id="peaks" type="button">Peaks mode: Off</button>
+<button id="gear" type="button" aria-label="Settings">⚙</button>
+<div id="thumb"><video id="player" playsinline webkit-playsinline></video></div>
+<button id="play" type="button">Play</button>
+<div id="pop"><div id="card">
+<h2>Art settings</h2>
+<label>Speed <span id="speedv"></span></label><input id="speed" type="range" min="0.2" max="2" step="0.1">
+<label>Blend <span id="blendv"></span></label><input id="blend" type="range" min="0" max="1" step="0.05">
+<label>Strength <span id="strengthv"></span></label><input id="strength" type="range" min="0.2" max="1.6" step="0.05">
+<label>Darkness <span id="darkv"></span></label><input id="dark" type="range" min="0" max="0.8" step="0.05">
+<label>Bands <span id="bandsv"></span></label><input id="bands" type="range" min="1" max="7" step="1">
+<div class="row">
+<button type="button" id="lock">Chakra lock: On</button>
+<button type="button" data-look="wash">Wash</button>
+<button type="button" data-look="blobs">Blobs</button>
+<button type="button" data-look="rings">Rings</button>
+</div>
+<label>Source</label>
+<div class="row">
+<select id="source"></select>
+<button type="button" id="pickVideo">Video file</button>
+<button type="button" id="pickAudio">Audio file</button>
+</div>
+<input id="file" type="file" accept="video/*,audio/*" hidden>
+<div id="note">Wash is the default. Lights follow this page while it is open.</div>
+<button type="button" id="close" style="width:100%;margin-top:12px;min-height:48px;border:0;border-radius:12px;background:#fff;color:#111;font:700 16px inherit">Done</button>
+</div></div>
+<script src="chakra-art.js?v=20261006a"></script>
+</body>
+</html>
