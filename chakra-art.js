@@ -6,41 +6,52 @@ const NAMES=['Root','Sacral','Solar Plexus','Heart','Throat','Third Eye','Crown'
 const MARKS=[0,102,194,277,366,450,536];
 const VIDEOS=['Quick Morning Chakra Alignment Sound Bath - 11 Minute Chakra Balancing Meditation Frequencies.mp4'];
 const $=id=>document.getElementById(id);
-function load(){try{return Object.assign({speed:1,blend:0.65,strength:1,dark:0.25,bands:7,lock:true,look:'wash',peaks:false,source:VIDEOS[0]},JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return {speed:1,blend:0.65,strength:1,dark:0.25,bands:7,lock:true,look:'wash',peaks:false,source:VIDEOS[0]}}}
+function load(){try{return Object.assign({speed:1,blend:0.85,strength:1,dark:0.25,bands:7,lock:false,look:'wash',peaks:false,source:VIDEOS[0],react:1.4,adapt:0.35,variance:0.7},JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return {speed:1,blend:0.85,strength:1,dark:0.25,bands:7,lock:false,look:'wash',peaks:false,source:VIDEOS[0],react:1.4,adapt:0.35,variance:0.7}}}
 function save(s){try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
 let st=load();
 const canvas=$('art'),ctx=canvas.getContext('2d');
 const video=$('player');
-let audio,analyser,data,raf=0,wake=null,fileUrl='';
+const HZ=[396,417,528,639,741,852,963];
+let audio,analyser,data,raf=0,wake=null,fileUrl='',smooth=[],picked=-1;
 function hex(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]}
 function mix(a,b,t){return a.map((v,i)=>Math.round(v+(b[i]-v)*t))}
 function resize(){canvas.width=innerWidth;canvas.height=innerHeight}
 addEventListener('resize',resize);resize();
 function chakraNow(){let t=video.currentTime||0,i=0;for(let n=0;n<MARKS.length;n++)if(t>=MARKS[n])i=n;return i}
 function bands(){
-  if(!analyser||!data)return COLORS.slice(0,st.bands).map(()=>0.2);
-  analyser.getByteFrequencyData(data);
-  let out=[],n=st.bands;
-  for(let i=0;i<n;i++){
-    let a=Math.floor(data.length*(i/n)*0.5),b=Math.floor(data.length*((i+1)/n)*0.5),s=0;
-    for(let k=a;k<b;k++)s+=data[k];
-    out.push(b>a?s/(b-a)/255:0);
+  if(!analyser||!data)return COLORS.slice(0,st.bands).map(()=>0.15);
+  analyser.getFloatFrequencyData(data);
+  let sr=audio.sampleRate||48000,n=data.length,bin=sr/(analyser.fftSize||2048);
+  let out=[];
+  for(let i=0;i<st.bands;i++){
+    let hz=HZ[i%7],half=18+i*4,a=Math.max(0,Math.floor((hz-half)/bin)),b=Math.min(n-1,Math.ceil((hz+half)/bin)),peak=-120;
+    for(let k=a;k<=b;k++)if(data[k]>peak)peak=data[k];
+    let mag=Math.max(0,Math.min(1,(peak+78)/48));
+    mag=Math.pow(mag,1/st.react);
+    if(!smooth[i])smooth[i]=mag;
+    let aRate=mag>smooth[i]?st.adapt:st.adapt*0.45;
+    smooth[i]=smooth[i]+(mag-smooth[i])*aRate;
+    out.push(smooth[i]);
   }
   return out;
 }
 function colorOf(levels){
-  let lock=st.lock?chakraNow():0;
-  let base=hex(COLORS[lock]);
+  let loud=0,sum=0;
+  for(let i=0;i<levels.length;i++){sum+=levels[i];if(levels[i]>levels[loud])loud=i}
+  picked=loud;
+  let mean=sum/Math.max(1,levels.length);
+  let spread=levels[loud]-mean;
+  let take=Math.max(st.blend,st.variance*Math.min(1,spread*3));
+  let base=hex(st.lock?COLORS[chakraNow()]:COLORS[loud]);
   let acc=[0,0,0],w=0;
   for(let i=0;i<levels.length;i++){
     let m=levels[i];
-    if(m<0.08)continue;
+    if(m<0.12)continue;
     let c=hex(COLORS[i%7]);
     acc[0]+=c[0]*m;acc[1]+=c[1]*m;acc[2]+=c[2]*m;w+=m;
   }
   if(!w)return base;
-  let live=acc.map(v=>v/w);
-  return mix(base,live,st.blend);
+  return mix(base,acc.map(v=>v/w),1-take);
 }
 function paint(col,levels,t){
   let w=canvas.width,h=canvas.height,g=ctx.createLinearGradient(0,0,w,h);
@@ -72,6 +83,9 @@ function frame(ts){
 }
 function show(){
   $('speed').value=st.speed;$('speedv').textContent=st.speed;
+  $('react').value=st.react;$('reactv').textContent=st.react;
+  $('adapt').value=st.adapt;$('adaptv').textContent=st.adapt;
+  $('variance').value=st.variance;$('varv').textContent=st.variance;
   $('blend').value=st.blend;$('blendv').textContent=st.blend;
   $('strength').value=st.strength;$('strengthv').textContent=st.strength;
   $('dark').value=st.dark;$('darkv').textContent=st.dark;
@@ -90,11 +104,11 @@ async function play(){
   if(!video.src)video.src=encodeURI(st.source||VIDEOS[0]);
   try{await video.play()}catch(e){}
   let AC=window.AudioContext||window.webkitAudioContext;
-  if(AC&&!audio){audio=new AC();analyser=audio.createAnalyser();analyser.fftSize=1024;data=new Uint8Array(analyser.frequencyBinCount);let src=audio.createMediaElementSource(video);src.connect(analyser);analyser.connect(audio.destination)}
+  if(AC&&!audio){audio=new AC();analyser=audio.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=0.35;analyser.minDecibels=-90;analyser.maxDecibels=-20;data=new Float32Array(analyser.frequencyBinCount);let src=audio.createMediaElementSource(video);src.connect(analyser);analyser.connect(audio.destination)}
   if(audio&&audio.state!=='running')await audio.resume();
   try{wake=await navigator.wakeLock.request('screen')}catch(e){}
   if(!raf)raf=requestAnimationFrame(frame);
-  $('play').textContent='Playing';
+  $('play').textContent=picked<0?'Playing':NAMES[picked]+' · '+HZ[picked]+' Hz';
 }
 $('play').onclick=play;
 $('thumb').onclick=()=>$('thumb').classList.toggle('hide');
@@ -103,7 +117,7 @@ $('close').onclick=()=>$('pop').classList.remove('on');
 $('peaks').onclick=()=>{st.peaks=!st.peaks;save(st);show()};
 $('lock').onclick=()=>{st.lock=!st.lock;save(st);show()};
 document.querySelectorAll('[data-look]').forEach(b=>b.onclick=()=>{st.look=b.dataset.look;save(st);show()});
-['speed','blend','strength','dark','bands'].forEach(id=>$(id).oninput=()=>{st[id]=+$(id).value;save(st);show()});
+['speed','blend','strength','dark','bands','react','adapt','variance'].forEach(id=>$(id).oninput=()=>{st[id]=+$(id).value;save(st);show()});
 $('source').onchange=()=>{st.source=$('source').value;save(st);video.src=encodeURI(st.source)};
 $('pickVideo').onclick=()=>{$('file').accept='video/*';$('file').click()};
 $('pickAudio').onclick=()=>{$('file').accept='audio/*';$('file').click()};
