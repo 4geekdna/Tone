@@ -14,6 +14,7 @@ function key(){return ((($("goveeKey")||{}).value)||localStorage.getItem(LS_KEY)
 function uuid(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random()}
 function devices(){try{return JSON.parse(localStorage.getItem(LS_DEVICES)||"[]")}catch(e){return[]}}
 function picked(){try{return JSON.parse(localStorage.getItem(LS_PICKED)||"{}")}catch(e){return{}}}
+function separateOn(){try{let x=JSON.parse(localStorage.getItem("cj_color_separate_v1")||"null");return !!(x&&x.on)}catch(e){return false}}
 function targets(){if(window.goveeLightTargets)return window.goveeLightTargets();let p=picked();return devices().filter(d=>p[idOf(d)])}
 async function api(path,o){
   let k=key();
@@ -50,7 +51,7 @@ async function paintBlend(aHex,aBright,bHex,bBright){
       if(sig===lastSent)break;
       let mid=Math.ceil(list.length/2);
       for(let i=0;i<list.length;i++){
-        let hex=i<mid?job.aHex:job.bHex;
+        let hex=separateOn()?(i===0?job.aHex:job.bHex):(i<mid?job.aHex:job.bHex);
         let br=i<mid?job.aBright:job.bBright;
         try{await paintOne(list[i],hex,br)}catch(e){}
         await sleep(140);
