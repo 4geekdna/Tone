@@ -375,15 +375,20 @@ function ensureTop(){
   let box=document.createElement("div");
   box.id="colorFrom";
   box.className="color-from";
-  box.innerHTML='<span>Colors from</span><button type="button" data-top="1">Top 1</button><button type="button" data-top="2">Top 2</button><button type="button" data-top="3">Top 3</button>';
+  box.innerHTML='<span>Colors from</span><button type="button" data-top="1">Top 1</button><button type="button" data-top="2">Top 2</button><button type="button" data-top="3">Top 3</button><button type="button" id="colorSeparate">One color</button>';
   host.insertAdjacentElement("afterend",box);
   box.addEventListener("click",function(e){
     let b=e.target.closest("button");
     if(!b)return;
+    if(b.id==="colorSeparate"){toggleSeparate();return}
     setTop(parseInt(b.dataset.top,10));
   });
   markTop();
+  markSeparate();
 }
+function readSeparate(){try{let x=JSON.parse(localStorage.getItem("cj_color_separate_v1")||"null");return !!(x&&x.on)}catch(e){return false}}
+function markSeparate(){let b=$("colorSeparate");if(!b)return;let on=readSeparate();b.classList.toggle("on",on);b.textContent=on?"Separate colors":"One color"}
+function toggleSeparate(){let on=!readSeparate();try{localStorage.setItem("cj_color_separate_v1",JSON.stringify({v:1,on:on,extra:"primary"}))}catch(e){}markSeparate()}
 function loadUserVideo(file){
   if(!file)return;
   let v=$("player");

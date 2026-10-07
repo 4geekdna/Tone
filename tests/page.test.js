@@ -40,7 +40,7 @@ test('new v0.44 modules are loaded in order',()=>{
     assert.equal(scripts.find(s=>s.file===f).v,'20261004a',f+' cache-bust');
   assert.equal(scripts.find(s=>s.file==='chakra-journey-core.js').v,'20261005c','chakra-journey-core.js cache-bust');
   assert.equal(scripts.find(s=>s.file==='chakra-journey-v030.js').v,'20261005a','chakra-journey-v030.js cache-bust');
-  assert.equal(scripts.find(s=>s.file==='chakra-audio-lights.js').v,'20261006b','chakra-audio-lights.js cache-bust');
+  assert.equal(scripts.find(s=>s.file==='chakra-audio-lights.js').v,'20261006c','chakra-audio-lights.js cache-bust');
   assert.equal(scripts.find(s=>s.file==='chakra-color-blend.js').v,'20261005a','chakra-color-blend.js cache-bust');
   assert.ok(at('chakra-color-blend.js')>=0&&at('chakra-color-blend.js')<at('chakra-audio-lights.js'));
 });

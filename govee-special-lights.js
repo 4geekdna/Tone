@@ -28,8 +28,10 @@ async function apply(detail){
     let sku=String(d.sku||'').toUpperCase();
     if(/^H609/.test(sku)){if(window.CJStarlight)await window.CJStarlight.apply(chakra).catch(()=>{});continue}
     let g=groups(sku==='H607C'?16:15,sku==='H607C'?'buddha':'strip');
+    let palette=(window.CJStarlight&&window.CJStarlight.profiles&&window.CJStarlight.profiles()[chakra])||{};
+    let colors={main:hex,accent:palette.accent||hex,sparkle:palette.stars||hex};
     for(let [name,seg] of [['main',g.main],['accent',g.accent],['sparkle',g.sparkle]]){
-      if(seg.length)await send(d,{type:'devices.capabilities.segment_color_setting',instance:'segmentedColorRgb',value:{segment:seg,rgb:parseInt(hex.slice(1),16)}}).catch(()=>{});
+      if(seg.length)await send(d,{type:'devices.capabilities.segment_color_setting',instance:'segmentedColorRgb',value:{segment:seg,rgb:parseInt(String(colors[name]).slice(1),16)}}).catch(()=>{});
     }
   }
 }
