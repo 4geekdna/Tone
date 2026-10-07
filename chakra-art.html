@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#120814">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Chakra Art v0.57</title>
+<title>Chakra Art v0.58</title>
 <style>
 html,body{margin:0;height:100%;background:#120814;color:#fff;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 canvas{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;pointer-events:none}
@@ -55,11 +55,13 @@ input[type=range]{width:100%}
 <select id="source"></select>
 <button type="button" id="pickVideo">Video file</button>
 <button type="button" id="pickAudio">Audio file</button>
+<button type="button" id="saveLib">Save to library</button>
+<button type="button" id="useHere">Use in place</button>
 </div>
 <input id="file" type="file" accept="video/*,audio/*" hidden>
-<div id="note">React sets how small a tone still counts. Adapt is how fast the color follows a change. Variance lets a louder tone take the screen.</div>
+<div id="note">Save to library keeps the file with the other added videos on this phone. Use in place plays it without copying. Both stay in this list.</div>
 <button type="button" id="close" style="width:100%;margin-top:12px;min-height:48px;border:0;border-radius:12px;background:#fff;color:#111;font:700 16px inherit">Done</button>
 </div></div>
-<script src="chakra-art.js?v=20261006d"></script>
+<script src="chakra-art.js?v=20261007a"></script>
 </body>
 </html>
