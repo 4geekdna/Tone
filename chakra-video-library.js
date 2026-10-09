@@ -192,15 +192,15 @@ function paintSheet(){
 function openSheet(){let s=$('addVideoSheet');if(s){s.style.display='block';sheetStatus('')}}
 function closeSheet(){let s=$('addVideoSheet');if(s)s.style.display='none';pickedFile=null;let n=$('addFileName');if(n)n.textContent='No video chosen';let u=$('addUrl');if(u)u.value='';let nm=$('addName');if(nm)nm.value=''}
 function install(){
-  let note=$('videoChoiceNote');
-  if(!note||$('addVideoSheet')||!D)return;
+  let slot=$('videoLibrarySlot'), note=$('videoChoiceNote');
+  if((!slot&&!note)||$('addVideoSheet')||!D)return;
   let st=document.createElement('style');
   st.textContent='#chooseVideoFile{display:none!important}.lib-actions{display:flex;gap:8px;margin:8px 0 2px}.lib-actions .btn{flex:1;padding:9px}#addVideoSheet{display:none;margin-top:10px;padding:12px;border-radius:14px;background:#15151b;border:1px solid #35353f}.add-tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}.add-tabs button{border:0;border-radius:10px;padding:10px;color:#fff;background:#2a2a32;font-weight:600}.add-tabs button.on{background:#fff;color:#111}#addVideoSheet .btn{width:100%;margin-top:6px}#addStatus{min-height:18px;margin-top:8px}';
   document.head.appendChild(st);
   let bar=document.createElement('div');
   bar.className='lib-actions';
   bar.innerHTML='<button class="btn" id="addVideo" type="button">Add video</button><button class="btn" id="removeVideo" type="button" style="display:none">Remove</button>';
-  note.insertAdjacentElement('afterend',bar);
+  if(slot)slot.appendChild(bar); else note.insertAdjacentElement('afterend',bar);
   let sheet=document.createElement('div');
   sheet.id='addVideoSheet';
   sheet.innerHTML='<div class="add-tabs"><button type="button" data-k="file" class="on">From this device</button><button type="button" data-k="url">From a link</button></div>'+
@@ -209,7 +209,7 @@ function install(){
     '<div class="row"><label>Name</label><input id="addName" placeholder="Optional" autocomplete="off"></div>'+
     '<button class="btn play" id="addGo" type="button">Analyze and save</button><button class="btn" id="addCancel" type="button">Cancel</button>'+
     '<div class="voice-note" id="addStatus"></div>';
-  bar.insertAdjacentElement('afterend',sheet);
+  if(slot)slot.appendChild(sheet); else bar.insertAdjacentElement('afterend',sheet);
   let input=document.createElement('input');
   input.type='file';input.accept='video/*,audio/*';input.id='addVideoFile';input.hidden=true;
   input.addEventListener('change',()=>{let f=input.files&&input.files[0];input.value='';if(!f)return;pickedFile=f;$('addFileName').textContent=f.name+' · '+Math.round(f.size/1048576)+' MB'});
