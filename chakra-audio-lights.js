@@ -648,7 +648,7 @@ function paintColorUi(){
 function installColorUi(){
   if($("colorPicksBox")||!colorApi())return;
   ensureReadout();
-  let host=readout();
+  let slot=$("colorPicksSlot"), host=slot||readout();
   if(!host||!host.parentNode)return;
   let st=document.createElement("style");
   st.id="colorPicksStyle";
@@ -659,7 +659,7 @@ function installColorUi(){
   let names=CHAKRA_NAMES;
   let manual=names.map(function(n,i){return '<button type="button" data-chakra="'+i+'" style="background:'+colorFor(i)+'">'+n+'</button>'}).join("");
   box.innerHTML='<button type="button" id="colorPicks" aria-pressed="false">Use color picks: Off</button><div id="colorPicksNote" class="voice-note"></div><div id="colorModes"><button type="button" data-mode="manual">Manual</button><button type="button" data-mode="audio">Follow audio</button><button type="button" data-mode="timestamps">Follow timestamps</button><button type="button" data-mode="cycle">Auto-pick</button></div><div id="colorManual">'+manual+'</div><div class="row" id="colorSmoothRow"><label>Smoothing</label><input id="colorSmooth" type="range" min="0.4" max="12" step="0.2"><span class="v" id="colorSmoothv"></span></div><div class="row" id="colorThresholdRow"><label id="colorThresholdLabel">Threshold</label><input id="colorThreshold" type="range" min="2" max="18" step="1"><span class="v" id="colorThresholdv"></span></div><div class="row" id="colorCycleRow"><label>Auto-pick every</label><input id="colorCycle" type="range" min="10" max="180" step="5"><span class="v" id="colorCyclev"></span></div>';
-  host.insertAdjacentElement("afterend",box);
+  if(slot)slot.appendChild(box); else host.insertAdjacentElement("afterend",box);
   box.addEventListener("input",function(e){
     let t=e.target;
     if(t.id==="colorSmooth")saveColorUi({smooth:+t.value});
