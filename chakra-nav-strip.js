@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-/* v0.59 session strip. Parks last recording in the strip and closes the four drawers when immersive turns on. */
+/* v0.61 Parks last recording in the History drawer and closes the four drawers when immersive turns on. */
 function $(id){return document.getElementById(id)}
 function park(){
   var card=$('lastRec'), slot=$('lastRecSlot');
