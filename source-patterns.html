@@ -330,23 +330,25 @@ function playCue(phaseName, duration) {
   gain.gain.setValueAtTime(0, now);
   gain.gain.linearRampToValueAtTime(0.07, now + 0.04);
 
+  let stopAt = now + 0.25;
   if (phaseName === 'Inhale') {
     osc.frequency.setValueAtTime(170, now);
     osc.frequency.linearRampToValueAtTime(310, now + Math.min(duration * 0.9, 2.2));
     gain.gain.linearRampToValueAtTime(0, now + Math.min(duration * 0.9, 2.2));
-    osc.stop(now + Math.min(duration * 0.9, 2.2));
+    stopAt = now + Math.min(duration * 0.9, 2.2);
   } else if (phaseName === 'Exhale') {
     osc.frequency.setValueAtTime(290, now);
     osc.frequency.linearRampToValueAtTime(130, now + Math.min(duration * 0.85, 2.8));
     gain.gain.linearRampToValueAtTime(0, now + Math.min(duration * 0.85, 2.8));
-    osc.stop(now + Math.min(duration * 0.85, 2.8));
+    stopAt = now + Math.min(duration * 0.85, 2.8);
   } else {
     osc.frequency.setValueAtTime(210, now);
     gain.gain.linearRampToValueAtTime(0.035, now + 0.04);
     gain.gain.linearRampToValueAtTime(0, now + 0.22);
-    osc.stop(now + 0.22);
+    stopAt = now + 0.22;
   }
   osc.start(now);
+  osc.stop(stopAt);
 }
 
 const cardsEl = document.getElementById('cards');
