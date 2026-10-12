@@ -67,7 +67,7 @@ GitHub is code only. Do not use issues, PR comments, review comments, or commit 
 - Persisted keys: every `cj_*` localStorage key, `govee-api-key`, `starfleet_chakra_outbox`, and IndexedDB `cj_voice_audio_v2`. Add keys; never rename.
 - Session schema `starfleet.chakra-journey.v1` and its field names.
 - Chakra table `window.C` (names, Hz, notes, colors, affirmations).
-- `index.html` beyond the CURRENT card, top line, and footer. Other hub tools. Legacy pages `chakra01.html`, `chakra-flow-lab.html`, `chakra-deploy-v030.html`.
+- `index.html` beyond the CURRENT card, top line, footer, and the 'Last 3 Chakra Journey versions' block (between `<h2>Last 3 Chakra Journey versions</h2>` and `<h2>Other Tools</h2>`; allowed per Anthony, Oct 12, 2026). Other hub tools. Legacy pages `chakra01.html`, `chakra-flow-lab.html`, `chakra-deploy-v030.html`.
 - `ChakraBridge/` and the Muse page.
 - GitHub Pages settings, branch protection, repo visibility. No `.github/workflows` without Anthony.
 - Secrets in code, comments, PR text, or chat.
