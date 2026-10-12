@@ -136,6 +136,10 @@ async function openSaved(id){
   fileUrl=URL.createObjectURL(row.blob);
   video.src=fileUrl;
 }
+function label(){
+  if(video.paused){$('play').textContent='Play';return}
+  $('play').textContent=picked<0?'Pause':NAMES[picked]+' · '+HZ[picked]+' Hz';
+}
 async function play(){
   if(!video.src)video.src=encodeURI(st.source||VIDEOS[0]);
   try{await video.play()}catch(e){}
@@ -144,9 +148,14 @@ async function play(){
   if(audio&&audio.state!=='running')await audio.resume();
   try{wake=await navigator.wakeLock.request('screen')}catch(e){}
   if(!raf)raf=requestAnimationFrame(frame);
-  $('play').textContent=picked<0?'Playing':NAMES[picked]+' · '+HZ[picked]+' Hz';
+  label();
 }
-$('play').onclick=play;
+function pause(){
+  video.pause();
+  if(wake){try{wake.release()}catch(e){}wake=null}
+  label();
+}
+$('play').onclick=()=>{if(video.paused)play();else pause()};
 $('thumb').onclick=()=>$('thumb').classList.toggle('hide');
 $('gear').onclick=()=>{$('pop').classList.add('on');show()};
 $('close').onclick=()=>$('pop').classList.remove('on');
@@ -167,4 +176,33 @@ $('useHere').onclick=()=>useHere();
 $('file').onchange=()=>{pendingFile=$('file').files&&$('file').files[0];if(!pendingFile)return;$('note').textContent=pendingFile.name+' — Save to library, or Use in place.';};
 sources();show();
 let s=document.createElement('script');s.src='govee-chakra.js?v=20261006a';document.body.appendChild(s);
+
+function seekAndPlay(t){
+  function go(){
+    if(Number.isFinite(t)&&t>0)video.currentTime=Math.min(t,Math.max(0,(video.duration||t)-0.2));
+    play();
+  }
+  if(video.readyState>=1)go();
+  else video.addEventListener('loadedmetadata',go,{once:true});
+}
+async function handoff(){
+  try{
+    let raw=sessionStorage.getItem('artHandoff');
+    if(!raw)return;
+    sessionStorage.removeItem('artHandoff');
+    let h=JSON.parse(raw);
+    if(h.id&&h.id.indexOf('lib:')===0){
+      await openSaved(h.id.slice(4));
+      seekAndPlay(h.t);
+      return;
+    }
+    if(h.src&&h.src.indexOf('blob:')!==0){
+      video.src=h.src;
+      seekAndPlay(h.t);
+      return;
+    }
+    seekAndPlay(h.t||0);
+  }catch(e){}
+}
+setTimeout(handoff,50);
 })();
