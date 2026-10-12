@@ -136,6 +136,10 @@ async function openSaved(id){
   fileUrl=URL.createObjectURL(row.blob);
   video.src=fileUrl;
 }
+function label(){
+  if(video.paused){$('play').textContent='Play';return}
+  $('play').textContent=picked<0?'Pause':NAMES[picked]+' · '+HZ[picked]+' Hz';
+}
 async function play(){
   if(!video.src)video.src=encodeURI(st.source||VIDEOS[0]);
   try{await video.play()}catch(e){}
@@ -144,9 +148,14 @@ async function play(){
   if(audio&&audio.state!=='running')await audio.resume();
   try{wake=await navigator.wakeLock.request('screen')}catch(e){}
   if(!raf)raf=requestAnimationFrame(frame);
-  $('play').textContent=picked<0?'Playing':NAMES[picked]+' · '+HZ[picked]+' Hz';
+  label();
 }
-$('play').onclick=play;
+function pause(){
+  video.pause();
+  if(wake){try{wake.release()}catch(e){}wake=null}
+  label();
+}
+$('play').onclick=()=>{if(video.paused)play();else pause()};
 $('thumb').onclick=()=>$('thumb').classList.toggle('hide');
 $('gear').onclick=()=>{$('pop').classList.add('on');show()};
 $('close').onclick=()=>$('pop').classList.remove('on');
