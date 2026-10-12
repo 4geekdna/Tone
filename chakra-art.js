@@ -167,4 +167,33 @@ $('useHere').onclick=()=>useHere();
 $('file').onchange=()=>{pendingFile=$('file').files&&$('file').files[0];if(!pendingFile)return;$('note').textContent=pendingFile.name+' — Save to library, or Use in place.';};
 sources();show();
 let s=document.createElement('script');s.src='govee-chakra.js?v=20261006a';document.body.appendChild(s);
+
+function seekAndPlay(t){
+  function go(){
+    if(Number.isFinite(t)&&t>0)video.currentTime=Math.min(t,Math.max(0,(video.duration||t)-0.2));
+    play();
+  }
+  if(video.readyState>=1)go();
+  else video.addEventListener('loadedmetadata',go,{once:true});
+}
+async function handoff(){
+  try{
+    let raw=sessionStorage.getItem('artHandoff');
+    if(!raw)return;
+    sessionStorage.removeItem('artHandoff');
+    let h=JSON.parse(raw);
+    if(h.id&&h.id.indexOf('lib:')===0){
+      await openSaved(h.id.slice(4));
+      seekAndPlay(h.t);
+      return;
+    }
+    if(h.src&&h.src.indexOf('blob:')!==0){
+      video.src=h.src;
+      seekAndPlay(h.t);
+      return;
+    }
+    seekAndPlay(h.t||0);
+  }catch(e){}
+}
+setTimeout(handoff,50);
 })();
