@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#120814">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Chakra Art v0.61</title>
+<title>Chakra Art v0.63</title>
 <style>
 html,body{margin:0;height:100%;background:#120814;color:#fff;font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 canvas{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;pointer-events:none}
@@ -18,7 +18,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;poi
 #peaks{position:fixed;top:16px;left:16px;z-index:4;color:#fff;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:10px 12px;font:600 13px inherit}
 #pop{position:fixed;inset:0;z-index:6;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center}
 #pop.on{display:flex}
-#card{width:min(440px,100%);background:#17121c;border-radius:18px 18px 0 0;padding:16px 16px 28px}
+#card{width:min(440px,100%);background:#17121c;border-radius:18px 18px 0 0;padding:16px 16px 28px;max-height:85vh;overflow:auto}
 #card h2{margin:0 0 10px;font-size:18px}
 label{display:block;margin:10px 0 4px;color:#ccc;font-size:13px}
 input[type=range]{width:100%}
@@ -26,6 +26,12 @@ input[type=range]{width:100%}
 .row button,.row select{min-height:44px;border-radius:12px;border:1px solid #3a3a44;background:#222;color:#fff;padding:8px 10px}
 .row button.on{background:#fff;color:#111}
 #note{color:#aaa;font-size:13px;margin-top:8px}
+details.help{margin:14px 0;border:1px solid #3a3a44;border-radius:12px;padding:0 12px}
+details.help summary{cursor:pointer;padding:12px 0;font-weight:700;min-height:44px}
+details.help[open] summary{margin-bottom:8px}
+.help-body{font-size:13px;line-height:1.45;color:#ccc;padding-bottom:12px}
+.help-body dt{font-weight:700;color:#fff;margin-top:8px}
+.help-body dd{margin:2px 0 0 0}
 </style>
 </head>
 <body>
@@ -60,8 +66,29 @@ input[type=range]{width:100%}
 </div>
 <input id="file" type="file" accept="video/*,audio/*" hidden>
 <div id="note">Save to library keeps the file with the other added videos on this phone. Use in place plays it without copying. Both stay in this list.</div>
+<details class="help">
+<summary>Settings help</summary>
+<div class="help-body">
+<dl>
+<dt>Speed</dt><dd>How fast blobs and rings move. 0.5–1.2 feels calm; higher is more energetic.</dd>
+<dt>React</dt><dd>How strongly the loudest frequencies punch through. Lower = more even; higher = more dramatic peaks.</dd>
+<dt>Adapt</dt><dd>How quickly the visual follows changes in the sound. Lower = smoother; higher = snappier.</dd>
+<dt>Variance</dt><dd>How much the loudest band pulls the color mix. Higher = more color contrast.</dd>
+<dt>Blend</dt><dd>Base amount of mixing between the dominant color and the others. Higher = more blended; lower = purer single color.</dd>
+<dt>Strength</dt><dd>Size of blobs and rings. Higher = bigger shapes.</dd>
+<dt>Darkness</dt><dd>How dark the bottom of the gradient is. Higher = deeper background.</dd>
+<dt>Bands</dt><dd>Number of frequency bands analyzed (1–7). 7 uses all chakras.</dd>
+<dt>Chakra lock</dt><dd>Forces the color to the current chakra based on video time instead of the loudest band.</dd>
+<dt>Look</dt><dd>Wash = full-screen gradient only. Blobs = floating colored circles. Rings = concentric rings from the center.</dd>
+<dt>Peaks mode</dt><dd>Keeps the visualization running even when the video is paused.</dd>
+<dt>Source</dt><dd>Built-in bowl video, a library file, or an in-place file. Same library as the main journey.</dd>
+</dl>
+<p style="margin-top:10px"><b>Quick starts</b><br>Calm wash: Look = Wash, Chakra lock = On, Blend 0.7–0.9, React 1.0–1.4.<br>Active blobs: Look = Blobs, Strength 1.2+, Variance 0.6+, Adapt 0.4+.<br>Rings: Look = Rings, Bands = 7, Strength 1.0–1.3.</p>
+<p>Settings save automatically on this device. The big button toggles Play/Pause. Tap the thumbnail to hide it.</p>
+</div>
+</details>
 <button type="button" id="close" style="width:100%;margin-top:12px;min-height:48px;border:0;border-radius:12px;background:#fff;color:#111;font:700 16px inherit">Done</button>
 </div></div>
-<script src="chakra-art.js?v=20261012b"></script>
+<script src="chakra-art.js?v=20261012c"></script>
 </body>
 </html>
