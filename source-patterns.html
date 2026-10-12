@@ -246,7 +246,7 @@
   </div>
 
   <div class="actions">
-    <button class="btn" id="pauseBtn">Pause</button>
+    <button class="btn" id="pauseBtn">Start</button>
     <button class="btn primary" id="endBtn">End Session</button>
   </div>
 </div>
@@ -401,6 +401,10 @@ function update(now) {
     return;
   }
   const pat = PATTERNS[current];
+  if (!pat) {
+    animId = requestAnimationFrame(update);
+    return;
+  }
   const elapsed = (now - phaseStart) / 1000;
   if (elapsed >= pat.phases[phaseIndex].dur) {
     phaseIndex = (phaseIndex + 1) % pat.phases.length;
@@ -435,11 +439,15 @@ function update(now) {
 pauseBtn.onclick = () => {
   unlockAudio();
   running = !running;
-  pauseBtn.textContent = running ? 'Pause' : 'Resume';
-  if (running && startTime === 0) {
-    startTime = performance.now();
-    phaseStart = startTime;
+  if (running) {
+    pauseBtn.textContent = 'Pause';
+    const now = performance.now();
+    if (startTime === 0) startTime = now;
+    phaseStart = now;
     lastCuedPhase = null;
+    update(now);
+  } else {
+    pauseBtn.textContent = 'Resume';
   }
 };
 
@@ -453,7 +461,7 @@ endBtn.onclick = () => {
   cueEl.textContent = 'Select a pattern to begin';
   timerEl.textContent = '00:00';
   breathsEl.textContent = '0';
-  pauseBtn.textContent = 'Pause';
+  pauseBtn.textContent = 'Start';
   orb.style.transform = 'scale(1)';
 };
 
