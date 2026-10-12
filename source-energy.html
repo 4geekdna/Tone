@@ -243,6 +243,43 @@ let phaseIndex = 0;
 let phaseStart = 0;
 let particles = [];
 let animationId;
+let audioCtx = null;
+let lastCuedPhase = null;
+
+function unlockAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playCue(phaseName, duration) {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.07, now + 0.04);
+
+  if (phaseName === 'Inhale') {
+    osc.frequency.setValueAtTime(170, now);
+    osc.frequency.linearRampToValueAtTime(310, now + Math.min(duration * 0.9, 2.2));
+    gain.gain.linearRampToValueAtTime(0, now + Math.min(duration * 0.9, 2.2));
+    osc.stop(now + Math.min(duration * 0.9, 2.2));
+  } else if (phaseName === 'Exhale') {
+    osc.frequency.setValueAtTime(290, now);
+    osc.frequency.linearRampToValueAtTime(130, now + Math.min(duration * 0.85, 2.8));
+    gain.gain.linearRampToValueAtTime(0, now + Math.min(duration * 0.85, 2.8));
+    osc.stop(now + Math.min(duration * 0.85, 2.8));
+  } else {
+    osc.frequency.setValueAtTime(210, now);
+    gain.gain.linearRampToValueAtTime(0.035, now + 0.04);
+    gain.gain.linearRampToValueAtTime(0, now + 0.22);
+    osc.stop(now + 0.22);
+  }
+  osc.start(now);
+}
 
 function resize() {
   const dpr = window.devicePixelRatio || 1;
@@ -391,8 +428,13 @@ function updatePhase(now) {
   if (elapsed >= pat.phases[phaseIndex].duration) {
     phaseIndex = (phaseIndex + 1) % pat.phases.length;
     phaseStart = now;
+    lastCuedPhase = null;
   }
   const ph = pat.phases[phaseIndex];
+  if (lastCuedPhase !== ph.name) {
+    playCue(ph.name, ph.duration);
+    lastCuedPhase = ph.name;
+  }
   phaseEl.textContent = ph.name;
   detailEl.textContent = ph.cue;
   const total = (now - startTime) / 1000;
@@ -419,6 +461,7 @@ function buildPatterns() {
       if (running) {
         phaseIndex = 0;
         phaseStart = performance.now();
+        lastCuedPhase = null;
       }
       statusEl.textContent = p.name;
     };
@@ -427,12 +470,14 @@ function buildPatterns() {
 }
 
 playBtn.onclick = () => {
+  unlockAudio();
   running = !running;
   playBtn.textContent = running ? '⏸' : '▶';
   if (running) {
     startTime = performance.now();
     phaseStart = startTime;
     phaseIndex = 0;
+    lastCuedPhase = null;
     statusEl.textContent = 'In session';
   } else {
     statusEl.textContent = 'Paused';
