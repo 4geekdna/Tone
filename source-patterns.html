@@ -1,1 +1,559 @@
-FULL_CONTENT_FROM_ARTIFACTS_SOURCE_PATTERNS
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Source Breath — Pattern Library</title>
+<style>
+  :root {
+    --bg: #07060a;
+    --surface: #111018;
+    --gold: #e8c872;
+    --gold-dim: #a88a4a;
+    --text: #f0ebe0;
+    --muted: #8a8378;
+    --base: #e85d4c;
+    --center: #ff9a3c;
+    --top: #ffd56b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  header {
+    padding: 18px 20px 6px;
+  }
+  header h1 {
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+  header p {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  .library {
+    padding: 8px 0 12px;
+  }
+  .lib-label {
+    padding: 0 20px 8px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .cards {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 0 20px 6px;
+    scrollbar-width: none;
+  }
+  .cards::-webkit-scrollbar { display: none; }
+  .card {
+    flex: 0 0 148px;
+    background: var(--surface);
+    border: 1px solid #2a2733;
+    border-radius: 16px;
+    padding: 14px 12px 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .card.active {
+    border-color: var(--gold);
+    background: #1a1610;
+  }
+  .card-vis {
+    height: 36px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card h3 {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  .card .meta {
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .live {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-height: 0;
+    padding: 10px 20px 0;
+  }
+  .live-label {
+    position: absolute;
+    top: 8px;
+    left: 20px;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--gold);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .live-label::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+  .orb-wrap {
+    position: relative;
+  }
+  .breath-ring {
+    position: absolute;
+    inset: 8px;
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
+    transform: rotate(-90deg);
+    pointer-events: none;
+  }
+  .breath-ring circle { fill: none; stroke-width: 3; }
+  .breath-ring .track { stroke: rgba(232,200,114,0.25); }
+  .breath-ring .progress { stroke: #e8c872; stroke-linecap: round; transition: stroke-dashoffset 0.1s linear; }
+  .timing, .voice-panel { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 10px 0; }
+  .timing label, .voice-panel { color: var(--muted); font-size: 13px; }
+  .timing input, .voice-panel input { width: 64px; background: #1a1610; color: var(--text); border: 1px solid #3a3428; border-radius: 8px; padding: 6px; font-size: 16px; }
+  .voice-panel input { width: 160px; }
+  .timing button, .voice-panel button { border: 1px solid var(--gold); background: #1a1610; color: var(--gold); border-radius: 10px; padding: 8px 12px; }
+  .status { text-align: center; color: var(--muted); font-size: 13px; min-height: 18px; }
+    position: relative;
+    width: 220px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .orb {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #fff6d0, #e8c872 40%, #a88a4a 70%, #3a2a10);
+    box-shadow: 0 0 60px rgba(232, 200, 114, 0.25);
+    transition: transform 0.4s ease;
+  }
+  .ring {
+    position: absolute;
+    border: 1px solid rgba(232, 200, 114, 0.25);
+    border-radius: 50%;
+  }
+  .ring1 { width: 180px; height: 180px; }
+  .ring2 { width: 210px; height: 210px; border-style: dashed; opacity: 0.5; }
+  .cue-block {
+    text-align: center;
+    margin-top: 18px;
+  }
+  .cue-phase {
+    font-size: 18px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+  .cue-text {
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .stats {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    margin-top: 22px;
+    padding: 0 8px;
+  }
+  .stat {
+    flex: 1;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .stat .label {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .stat .value {
+    font-size: 18px;
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .actions {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    padding: 16px 20px 28px;
+  }
+  .btn {
+    flex: 1;
+    height: 48px;
+    border-radius: 14px;
+    border: 1px solid #2a2733;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .btn.primary {
+    background: #1a1610;
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Breath Patterns</h1>
+    <p>Choose a pattern and breathe with intention</p>
+  </header>
+
+  <div class="library">
+    <div class="lib-label">Select a pattern</div>
+    <div class="cards" id="cards"></div>
+  </div>
+
+  <div class="live">
+    <div class="live-label">Live Session</div>
+    <div class="orb-wrap">
+      <svg class="breath-ring" viewBox="0 0 72 72">
+        <circle class="track" cx="36" cy="36" r="30" />
+        <circle class="progress" id="breathProgress" cx="36" cy="36" r="30" />
+      </svg>
+      <div class="ring ring2"></div>
+      <div class="ring ring1"></div>
+      <div class="orb" id="orb"></div>
+    </div>
+    <div class="cue-block">
+      <div class="cue-phase" id="phase">Ready</div>
+      <div class="cue-text" id="cue">Select a pattern to begin</div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Session</div>
+        <div class="value" id="timer">00:00</div>
+      </div>
+      <div class="stat">
+        <div class="label">Breaths</div>
+        <div class="value" id="breaths">0</div>
+      </div>
+      <div class="stat">
+        <div class="label">Focus</div>
+        <div class="value" id="focus">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" id="pauseBtn">Start</button>
+    <button class="btn primary" id="endBtn">End Session</button>
+  </div>
+  <div class="timing">
+    <label>Inhale <input type="number" id="inhaleSec" value="5" min="0.5" step="0.5"></label>
+    <label>Hold <input type="number" id="holdSec" value="0" min="0" step="0.5"></label>
+    <label>Exhale <input type="number" id="exhaleSec" value="7" min="0.5" step="0.5"></label>
+    <button type="button" id="applyTiming">Apply timing</button>
+  </div>
+  <div class="voice-panel">
+    <input type="password" id="elKey" placeholder="ElevenLabs key (optional)">
+    <button type="button" id="speakCue">Speak cue</button>
+  </div>
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const PATTERNS = {
+  slow: {
+    name: 'Slow Deep',
+    meta: '4–6s in · 6–8s out',
+    focus: 'Spread',
+    phases: [
+      { name: 'Inhale', dur: 5, cue: 'Fill the belly · energy rises' },
+      { name: 'Exhale', dur: 7, cue: 'Empty fully · soften Base & Center' },
+      { name: 'Pause', dur: 2, cue: 'Natural rest · feel the glow' }
+    ]
+  },
+  rhythmic: {
+    name: 'Rhythmic Belly',
+    meta: '~2 breaths / sec',
+    focus: 'Build',
+    phases: [
+      { name: 'Inhale', dur: 1.1, cue: 'Quick belly rise · light Center' },
+      { name: 'Exhale', dur: 1.1, cue: 'Belly falls · keep Base soft' }
+    ]
+  },
+  rapid: {
+    name: 'Rapid Peak',
+    meta: '15–30s max',
+    focus: 'Peak',
+    phases: [
+      { name: 'Inhale', dur: 0.35, cue: 'Shallow · Top light' },
+      { name: 'Exhale', dur: 0.35, cue: 'Quick · stay open' }
+    ]
+  },
+  box: {
+    name: 'Box Reset',
+    meta: '4-4-4-4',
+    focus: 'Reset',
+    phases: [
+      { name: 'Inhale', dur: 4, cue: 'Steady · no force' },
+      { name: 'Hold', dur: 4, cue: 'Still · notice Source' },
+      { name: 'Exhale', dur: 4, cue: 'Release · all three soft' },
+      { name: 'Hold', dur: 4, cue: 'Empty · quiet' }
+    ]
+  },
+  fusion: {
+    name: 'Relaxation Fusion',
+    meta: 'Smooth & flowing',
+    focus: 'Release',
+    phases: [
+      { name: 'Inhale', dur: 4, cue: 'Nose · deep into belly' },
+      { name: 'Hold', dur: 2, cue: 'Brief · feel the points' },
+      { name: 'Exhale', dur: 6, cue: 'Mouth · let Base, Center, Top melt' }
+    ]
+  }
+};
+
+let current = 'slow';
+let running = false;
+let startTime = 0;
+let phaseIndex = 0;
+let phaseStart = 0;
+let breathCount = 0;
+let animId;
+let audioCtx = null;
+let lastCuedPhase = null;
+
+function unlockAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playCue(phaseName, duration) {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.07, now + 0.04);
+
+  const cover = Math.max(duration, 0.4);
+  if (phaseName === 'Inhale') {
+    osc.frequency.setValueAtTime(160, now);
+    osc.frequency.linearRampToValueAtTime(340, now + cover);
+    gain.gain.linearRampToValueAtTime(0.065, now + 0.08);
+    gain.gain.setValueAtTime(0.065, now + cover - 0.25);
+    gain.gain.linearRampToValueAtTime(0, now + cover);
+    stopAt = now + cover;
+  } else if (phaseName === 'Exhale') {
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.linearRampToValueAtTime(120, now + cover);
+    gain.gain.linearRampToValueAtTime(0.065, now + 0.08);
+    gain.gain.setValueAtTime(0.065, now + cover - 0.25);
+    gain.gain.linearRampToValueAtTime(0, now + cover);
+    stopAt = now + cover;
+  } else {
+    osc.frequency.setValueAtTime(210, now);
+    gain.gain.linearRampToValueAtTime(0.04, now + 0.08);
+    gain.gain.setValueAtTime(0.04, now + cover - 0.2);
+    gain.gain.linearRampToValueAtTime(0, now + cover);
+    stopAt = now + cover;
+  }
+  osc.start(now);
+  osc.stop(stopAt);
+}
+
+const cardsEl = document.getElementById('cards');
+const phaseEl = document.getElementById('phase');
+const cueEl = document.getElementById('cue');
+const timerEl = document.getElementById('timer');
+const breathsEl = document.getElementById('breaths');
+const focusEl = document.getElementById('focus');
+const breathProgress = document.getElementById('breathProgress');
+const statusEl = document.getElementById('status');
+const orb = document.getElementById('orb');
+const pauseBtn = document.getElementById('pauseBtn');
+const endBtn = document.getElementById('endBtn');
+
+function buildCards() {
+  cardsEl.innerHTML = '';
+  Object.entries(PATTERNS).forEach(([key, p]) => {
+    const card = document.createElement('div');
+    card.className = 'card' + (key === current ? ' active' : '');
+    card.innerHTML = `
+      <div class="card-vis">${miniVis(key)}</div>
+      <h3>${p.name}</h3>
+      <div class="meta">${p.meta}</div>
+    `;
+    card.onclick = () => selectPattern(key);
+    cardsEl.appendChild(card);
+  });
+}
+
+function miniVis(key) {
+  if (key === 'slow') return '<div style="width:28px;height:28px;border-radius:50%;background:radial-gradient(circle,#fff6d0,#a88a4a);opacity:0.8"></div>';
+  if (key === 'rhythmic') return '<div style="display:flex;gap:3px;align-items:flex-end;height:20px"><div style="width:3px;height:8px;background:#e8c872;border-radius:1px"></div><div style="width:3px;height:14px;background:#e8c872;border-radius:1px"></div><div style="width:3px;height:10px;background:#e8c872;border-radius:1px"></div><div style="width:3px;height:16px;background:#e8c872;border-radius:1px"></div></div>';
+  if (key === 'rapid') return '<div style="font-size:18px;letter-spacing:-1px;color:#e8c872">⋀⋀⋀</div>';
+  if (key === 'box') return '<div style="width:22px;height:22px;border:1.5px solid #e8c872;border-radius:3px"></div>';
+  return '<div style="width:26px;height:8px;background:linear-gradient(90deg,#e85d4c,#ff9a3c,#ffd56b);border-radius:4px;opacity:0.7"></div>';
+}
+
+function selectPattern(key) {
+  current = key;
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  focusEl.textContent = PATTERNS[key].focus;
+  if (running) {
+    phaseIndex = 0;
+    phaseStart = performance.now();
+    lastCuedPhase = null;
+  }
+}
+
+function update(now) {
+  if (!running) {
+    orb.style.transform = 'scale(1)';
+    animId = requestAnimationFrame(update);
+    return;
+  }
+  const pat = PATTERNS[current];
+  if (!pat) {
+    animId = requestAnimationFrame(update);
+    return;
+  }
+  const elapsed = (now - phaseStart) / 1000;
+  if (elapsed >= pat.phases[phaseIndex].dur) {
+    phaseIndex = (phaseIndex + 1) % pat.phases.length;
+    phaseStart = now;
+    if (pat.phases[phaseIndex].name === 'Inhale') breathCount++;
+    breathsEl.textContent = breathCount;
+    lastCuedPhase = null;
+  }
+  const ph = pat.phases[phaseIndex];
+  if (lastCuedPhase !== ph.name) {
+    playCue(ph.name, ph.dur);
+    lastCuedPhase = ph.name;
+  }
+  phaseEl.textContent = ph.name;
+  cueEl.textContent = ph.cue;
+
+  const t = Math.min(elapsed / ph.dur, 1);
+  let scale = 1;
+  if (ph.name === 'Inhale') scale = 0.85 + t * 0.3;
+  else if (ph.name === 'Exhale') scale = 1.15 - t * 0.3;
+  else scale = 1.05;
+  orb.style.transform = `scale(${scale})`;
+  if (breathProgress) {
+    const circumference = 2 * Math.PI * 30;
+    breathProgress.style.strokeDasharray = circumference;
+    breathProgress.style.strokeDashoffset = circumference * (1 - t);
+    breathProgress.style.stroke = ph.name === 'Inhale' ? '#e8c872' : ph.name === 'Exhale' ? '#ff9a3c' : '#a88a4a';
+  }
+
+  const total = (now - startTime) / 1000;
+  const m = Math.floor(total / 60).toString().padStart(2, '0');
+  const s = Math.floor(total % 60).toString().padStart(2, '0');
+  timerEl.textContent = `${m}:${s}`;
+
+  animId = requestAnimationFrame(update);
+}
+
+pauseBtn.onclick = () => {
+  unlockAudio();
+  running = !running;
+  if (running) {
+    pauseBtn.textContent = 'Pause';
+    const now = performance.now();
+    if (startTime === 0) startTime = now;
+    phaseStart = now;
+    lastCuedPhase = null;
+    update(now);
+  } else {
+    pauseBtn.textContent = 'Resume';
+  }
+};
+
+endBtn.onclick = () => {
+  running = false;
+  startTime = 0;
+  phaseIndex = 0;
+  breathCount = 0;
+  lastCuedPhase = null;
+  phaseEl.textContent = 'Ready';
+  cueEl.textContent = 'Select a pattern to begin';
+  timerEl.textContent = '00:00';
+  breathsEl.textContent = '0';
+  pauseBtn.textContent = 'Start';
+  orb.style.transform = 'scale(1)';
+};
+
+buildCards();
+focusEl.textContent = PATTERNS[current].focus;
+const elKeyInput = document.getElementById('elKey');
+const savedKey = localStorage.getItem('sourceElKey');
+if (savedKey) elKeyInput.value = savedKey;
+document.getElementById('applyTiming').onclick = () => {
+  const inh = Math.max(0.5, parseFloat(document.getElementById('inhaleSec').value) || 5);
+  const hld = Math.max(0, parseFloat(document.getElementById('holdSec').value) || 0);
+  const exh = Math.max(0.5, parseFloat(document.getElementById('exhaleSec').value) || 7);
+  const phases = [{ name: 'Inhale', dur: inh, cue: 'Inhale · energy rises' }];
+  if (hld > 0) phases.push({ name: 'Hold', dur: hld, cue: 'Hold · notice the Source' });
+  phases.push({ name: 'Exhale', dur: exh, cue: 'Exhale · soften Base, Center and Top' });
+  PATTERNS[current].phases = phases;
+  statusEl.textContent = 'Timing applied';
+  if (running) { phaseIndex = 0; phaseStart = performance.now(); lastCuedPhase = null; }
+};
+document.getElementById('speakCue').onclick = async () => {
+  const key = elKeyInput.value.trim();
+  if (!key) { statusEl.textContent = 'Add ElevenLabs key'; return; }
+  localStorage.setItem('sourceElKey', key);
+  const text = cueEl.textContent || 'Breathe';
+  try {
+    statusEl.textContent = 'Speaking…';
+    const resp = await fetch('https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL', {
+      method: 'POST',
+      headers: { 'Accept': 'audio/mpeg', 'Content-Type': 'application/json', 'xi-api-key': key },
+      body: JSON.stringify({ text: text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.55, similarity_boost: 0.75, style: 0.15 } })
+    });
+    if (!resp.ok) throw new Error('Voice API error');
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = new Audio(url);
+    a.onended = () => URL.revokeObjectURL(url);
+    await a.play();
+    statusEl.textContent = 'Voice ready';
+  } catch (err) {
+    statusEl.textContent = 'Voice failed';
+  }
+};
+requestAnimationFrame(update);
+</script>
+</body>
+</html>
