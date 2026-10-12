@@ -412,6 +412,7 @@ function draw() {
 function getBreathIntensity(now) {
   if (!running) return 0.3;
   const pat = PATTERNS[currentPattern];
+  if (!pat || !pat.phases[phaseIndex]) return 0.5;
   const elapsed = (now - phaseStart) / 1000;
   const dur = pat.phases[phaseIndex].duration;
   const t = Math.min(elapsed / dur, 1);
@@ -424,6 +425,7 @@ function getBreathIntensity(now) {
 function updatePhase(now) {
   if (!running) return;
   const pat = PATTERNS[currentPattern];
+  if (!pat) return;
   const elapsed = (now - phaseStart) / 1000;
   if (elapsed >= pat.phases[phaseIndex].duration) {
     phaseIndex = (phaseIndex + 1) % pat.phases.length;
@@ -462,6 +464,7 @@ function buildPatterns() {
         phaseIndex = 0;
         phaseStart = performance.now();
         lastCuedPhase = null;
+        updatePhase(performance.now());
       }
       statusEl.textContent = p.name;
     };
@@ -474,13 +477,17 @@ playBtn.onclick = () => {
   running = !running;
   playBtn.textContent = running ? '⏸' : '▶';
   if (running) {
-    startTime = performance.now();
-    phaseStart = startTime;
+    const now = performance.now();
+    startTime = now;
+    phaseStart = now;
     phaseIndex = 0;
     lastCuedPhase = null;
     statusEl.textContent = 'In session';
+    updatePhase(now);
   } else {
     statusEl.textContent = 'Paused';
+    phaseEl.textContent = 'Paused';
+    detailEl.textContent = 'Tap play to resume';
   }
 };
 
