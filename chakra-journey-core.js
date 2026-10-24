@@ -21,6 +21,12 @@ function current(i,d=""){cur=i;if(window.chakraAuto&&typeof window.chakraAuto.ac
 let decks={};
 function shuffleDeck(c){let order=c[5].map((_,i)=>i);for(let i=order.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1)),x=order[i];order[i]=order[j];order[j]=x}decks[c[0]]={order,pos:0}}
 function next(c){
+  let favs={};try{favs=JSON.parse(localStorage.getItem("cj_fav_mantras")||"{}")}catch(e){}
+  let fav=favs[c[0]];
+  if(Number.isInteger(fav)&&fav>=0&&fav<c[5].length){
+    if(window.chakraAuto&&typeof window.chakraAuto.mantra==="function")window.chakraAuto.mantra(c[0],fav,c[5][fav]);
+    return[c[5][fav],fav+1];
+  }
   let recent={};try{recent=JSON.parse(localStorage.getItem("cj_recent_affirmations")||"{}")}catch(e){}
   let d=decks[c[0]];
   if(!d||d.pos>=d.order.length){
@@ -33,7 +39,15 @@ function next(c){
   if(window.chakraAuto&&typeof window.chakraAuto.mantra==="function")window.chakraAuto.mantra(c[0],i,c[5][i]);
   return[c[5][i],i+1]
 }
-function show(c,a){$("al").textContent=c[0]+" • AFFIRMATION "+a[1]+" OF 5";$("at").textContent=a[0];let em=document.querySelector('.card[data-i="'+C.indexOf(c)+'"] em');if(em)em.textContent=a[0]}
+function show(c,a){$("al").textContent=c[0]+" • AFFIRMATION "+a[1]+" OF 5";$("at").textContent=a[0];let em=document.querySelector('.card[data-i="'+C.indexOf(c)+'"] em');if(em)em.textContent=a[0];lastShown={chakra:c[0],idx:a[1]-1};updateFavBtn();}
+let lastShown={chakra:"",idx:-1};
+function loadFavs(){try{return JSON.parse(localStorage.getItem("cj_fav_mantras")||"{}")}catch(e){return {}}}
+function saveFavs(f){try{localStorage.setItem("cj_fav_mantras",JSON.stringify(f))}catch(e){}}
+function updateFavBtn(){let btn=$("favBtn");if(!btn)return;let favs=loadFavs();let isFav=lastShown.chakra&&favs[lastShown.chakra]===lastShown.idx;btn.textContent=isFav?"★ Favorite (tap to random)":"☆ Set as favorite";btn.style.background=isFav?"#2E7D32":"#2a2a32"}
+function toggleFav(){if(!lastShown.chakra||lastShown.idx<0)return;let favs=loadFavs();if(favs[lastShown.chakra]===lastShown.idx){delete favs[lastShown.chakra];status("Back to random for "+lastShown.chakra)}else{favs[lastShown.chakra]=lastShown.idx;status("Favorite set for "+lastShown.chakra)};saveFavs(favs);updateFavBtn();paintFavSettings()}
+function ensureFavUI(){if($("favBtn"))return;let btn=document.createElement("button");btn.id="favBtn";btn.className="btn";btn.type="button";btn.style.cssText="margin:8px auto 0;display:block;min-width:180px;font-size:14px";btn.onclick=toggleFav;let at=$("at");if(at)at.insertAdjacentElement("afterend",btn);updateFavBtn()}
+function paintFavSettings(){let box=$("favSettings");if(!box)return;let favs=loadFavs();box.innerHTML="";C.forEach((c,i)=>{let row=document.createElement("div");row.className="row";row.innerHTML='<label style="width:110px">'+c[0]+'</label>';let sel=document.createElement("select");sel.style.flex="1";let opt=document.createElement("option");opt.value="";opt.textContent="Random";sel.appendChild(opt);c[5].forEach((txt,j)=>{let o=document.createElement("option");o.value=j;o.textContent=(j+1)+". "+txt.slice(0,42)+(txt.length>42?"…":"");sel.appendChild(o)});if(favs[c[0]]!=null)sel.value=String(favs[c[0]]);sel.onchange=()=>{let f=loadFavs();if(sel.value==="")delete f[c[0]];else f[c[0]]=+sel.value;saveFavs(f);status(sel.value===""?"Random for "+c[0]:"Default set for "+c[0]);updateFavBtn()};row.appendChild(sel);box.appendChild(row)})}
+
 function stopTone(f=.45){if(typeof window.__cjStopTone==="function")return window.__cjStopTone(f);if(!tone||!ctx)return;let t=tone;tone=null;let n=ctx.currentTime;try{t.g.gain.setTargetAtTime(.0001,n,.12)}catch{}t.o.forEach(o=>{try{o.stop(n+f)}catch{}})}
 function startTone(c){if(typeof window.__cjStartTone==="function")return window.__cjStartTone(c);if(!useTone())return;audio();stopTone();let g=ctx.createGain(),o=[],n=ctx.currentTime,style=$("style").value,l=style==="pure"?[[1,.8]]:style==="tibetan"?[[1,.4],[2.02,.25],[2.98,.14],[4.18,.08]]:style==="warm"?[[.5,.16],[1,.45],[1.5,.14],[2,.1]]:[[1,.48],[2,.23],[3,.12],[4,.06]];g.gain.setValueAtTime(.0001,n);g.connect(ctx.destination);l.forEach(([m,v])=>{let x=ctx.createOscillator(),q=ctx.createGain();x.frequency.value=c[2]*m;q.gain.value=v;x.connect(q);q.connect(g);x.start();o.push(x)});g.gain.linearRampToValueAtTime(+$("tv").value,n+1);tone={g,o}}
 function ytVol(){return +$("yv").value}
@@ -282,3 +296,6 @@ yt.addEventListener("ended",()=>{if(run&&($("mode").value==="timestamps"||$("mod
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){try{audio()}catch(e){}if(run&&!paused&&useYT())yt.play().catch(()=>{})}});
 loadVideoSrc(VIDEO_FILES[0]);if(yt.readyState>=1)ytReady=true;load();try{let blob=readSession();if(blob&&blob.journey&&blob.journey.active){pendingSeek=blob.journey.videoTime||0;if(blob.journey.chakra>=0)pendingChakra=blob.journey.chakra}}catch(e){}renderSessionPanel();setTimeout(updateVoiceAccount,400);
 if(localStorage.getItem("cj_philosophicalPresetVersion")!=="1"){$("voicePreset").value="philosophical";$("model").value="eleven_multilingual_v2";$("voice").value="JBFqnCBsd6RMkjVDRZzb";applyVoicePreset("philosophical",false);localStorage.setItem("cj_philosophicalPresetVersion","1");save()}
+ensureFavUI();
+paintFavSettings();
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>{ensureFavUI();paintFavSettings()});
